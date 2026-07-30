@@ -578,6 +578,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <div class="last-edited-note" id="syncStatusNote" style="margin-bottom:12px;">Sin configurar.</div>
       <div style="display:flex; gap:10px; margin-bottom:10px;">
         <button class="btn-ghost sync-btn" id="btnTestSync" style="flex:1;">Probar conexión</button>
+        <button class="btn-ghost sync-btn" id="btnTestWrite" style="flex:1;">Probar escritura</button>
       </div>
       <div class="field-group" style="margin-bottom:8px;">
         <label>Enviar app → Sheets <span class="field-legend">— útil si un sistema no sincronizó</span></label>
@@ -1166,6 +1167,18 @@ document.getElementById('btnTestSync').addEventListener('click', async (e)=>{
   const ok = await testSheetConnection(url);
   document.getElementById('syncBulkProgress').textContent = ok ? '✓ Conexión exitosa con Google Sheets.' : '✗ No se pudo conectar. Revisa la URL y que el Web App esté publicado como "Cualquier usuario".';
   flashBtnState(btn, ok);
+});
+document.getElementById('btnTestWrite').addEventListener('click', async (e)=>{
+  const btn = e.currentTarget;
+  const url = document.getElementById('sheetSyncUrl').value.trim();
+  if(!url){ showToast('Ingresa la URL primero'); return; }
+  btn.classList.add('syncing');
+  document.getElementById('syncBulkProgress').textContent = 'Enviando fila de prueba y verificando...';
+  const result = await testSheetWrite(url);
+  document.getElementById('syncBulkProgress').textContent = result.ok
+    ? '✓ Escritura confirmada: la app SÍ puede guardar en tu Google Sheet (revisa la pestaña "PING_TEST" para verla, la puedes borrar después).'
+    : '✗ ' + result.detail;
+  flashBtnState(btn, result.ok);
 });
 document.getElementById('syncBulkBtn').addEventListener('click', async (e)=>{
   const btn = e.currentTarget;
@@ -1782,6 +1795,29 @@ async function testSheetConnection(url){
     const text = await res.text();
     return text.indexOf('OK') !== -1;
   }catch(e){ return false; }
+}
+// Prueba real de escritura: manda una fila de prueba y luego intenta leerla de vuelta,
+// para confirmar que doPost realmente está guardando datos (no solo que el script responde).
+async function testSheetWrite(url){
+  const pingUid = 'ping-' + Date.now();
+  try{
+    await fetch(url, {
+      method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'upsert', sheet:'PING_TEST', uid:pingUid, headers:['UID','TIMESTAMP'], values:[pingUid, new Date().toISOString()] })
+    });
+  }catch(e){
+    return { ok:false, stage:'send', detail:'No se pudo ni enviar la solicitud. Revisa la URL y tu conexión a internet.' };
+  }
+  await sleep(1500);
+  try{
+    const res = await fetch(`${url}?sheet=PING_TEST`, { method:'GET' });
+    const rows = await res.json();
+    const found = Array.isArray(rows) && rows.some(r => r.UID === pingUid);
+    if(found) return { ok:true };
+    return { ok:false, stage:'verify', detail:'Se envió la prueba pero no aparece al leerla de vuelta. Es casi seguro que el Web App no tiene permiso para escribir (revisa que "Quién puede acceder" esté en "Cualquier usuario", y que hayas creado una Nueva versión después de pegar el código).' };
+  }catch(e){
+    return { ok:false, stage:'read', detail:'Se envió la prueba pero no se pudo leer de vuelta (falló el doGet). Revisa que tu Apps Script tenga la función doGet actualizada y que hayas creado una Nueva versión al implementar.' };
+  }
 }
 
 /* ---------- Pull (import) changes made directly in Google Sheets back into the app ---------- */
