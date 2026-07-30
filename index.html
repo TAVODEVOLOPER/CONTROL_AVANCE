@@ -296,6 +296,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .sys-card-view{background:none; border:none; color:#9FB3C8; font-size:11.5px; text-decoration:underline; margin-top:10px; display:block; width:100%; text-align:center; padding:2px;}
 .landing-err{color:#FF9C9F; font-size:11.5px; text-align:center; min-height:16px; margin-top:7px; font-weight:600;}
 .landing-footer-note{color:#6E859C; font-size:11px; text-align:center; margin-top:8px;}
+.landing-version{color:#4E647A; font-size:10.5px; text-align:center; margin-top:14px; font-family:var(--font-mono); letter-spacing:.3px;}
 </style>
 </head>
 <body>
@@ -308,6 +309,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
     <div class="landing-sub">Selecciona un sistema para continuar</div>
     <div id="landingSystemsList"></div>
     <div class="landing-footer-note">Puedes ver los registros sin código; para editar necesitas el código del sistema.</div>
+    <div class="landing-version" id="landingVersion"></div>
   </div>
 </div>
 
@@ -558,7 +560,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <div><h2 style="font-family:var(--font-display);">Administrar accesos</h2><div class="sub">Códigos de edición por sistema</div></div>
+      <div><h2 style="font-family:var(--font-display);">Administrar accesos</h2><div class="sub" id="accessVersionSub">Códigos de edición por sistema</div></div>
       <button class="sheet-close" id="btnCloseAccess"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="sheet-body">
@@ -665,6 +667,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
+const APP_VERSION = 'v2.1 · 31 jul 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 let currentSystem = 'hvac';
 let unlockedSystems = new Set();
@@ -1103,6 +1106,7 @@ document.getElementById('btnClosePin').addEventListener('click', ()=>{
 });
 
 function openAccessSheet(){
+  document.getElementById('accessVersionSub').textContent = `Códigos de edición por sistema · App ${APP_VERSION}`;
   const list = document.getElementById('accessList');
   list.innerHTML = SYS_ORDER.map(id=>`
     <div class="access-row">
@@ -1185,16 +1189,28 @@ document.getElementById('syncBulkBtn').addEventListener('click', async (e)=>{
   state.sheetSync.url = document.getElementById('sheetSyncUrl').value.trim();
   state.sheetSync.enabled = document.getElementById('sheetSyncEnabled').checked;
   btn.classList.add('syncing');
-  await bulkSyncAll(null);
-  flashBtnState(btn, true);
+  try{
+    await bulkSyncAll(null);
+    flashBtnState(btn, true);
+  }catch(e){
+    document.getElementById('syncBulkProgress').textContent = '✗ Ocurrió un error inesperado: ' + escapeHtml(String(e && e.message ? e.message : e));
+    flashBtnState(btn, false);
+    document.querySelectorAll('.sync-btn').forEach(b=>b.disabled = false);
+  }
 });
 document.querySelectorAll('[data-sync-sys]').forEach(btn=>{
   btn.addEventListener('click', async ()=>{
     state.sheetSync.url = document.getElementById('sheetSyncUrl').value.trim();
     state.sheetSync.enabled = document.getElementById('sheetSyncEnabled').checked;
     btn.classList.add('syncing');
-    await bulkSyncAll(btn.dataset.syncSys);
-    flashBtnState(btn, true);
+    try{
+      await bulkSyncAll(btn.dataset.syncSys);
+      flashBtnState(btn, true);
+    }catch(e){
+      document.getElementById('syncBulkProgress').textContent = '✗ Ocurrió un error inesperado: ' + escapeHtml(String(e && e.message ? e.message : e));
+      flashBtnState(btn, false);
+      document.querySelectorAll('.sync-btn').forEach(b=>b.disabled = false);
+    }
   });
 });
 document.querySelectorAll('[data-pull-sys]').forEach(btn=>{
@@ -1922,19 +1938,24 @@ async function bulkSyncAll(sysFilter){
   const pool = {
     hvac: state.hvac.map(r=>['hvac',r]),
     cableado: state.cableado.map(r=>['cableado',r]),
-    fds: state.fds.map(r=>['fds',r])
+    fds: state.fds.map(r=>['fds',r]),
+    transit: state.transit.map(r=>['transit',r])
   };
-  const all = sysFilter ? pool[sysFilter] : [...pool.hvac, ...pool.cableado, ...pool.fds];
+  const all = sysFilter ? pool[sysFilter] : [...pool.hvac, ...pool.cableado, ...pool.fds, ...pool.transit];
   const total = all.length;
   let done = 0, failed = 0;
   document.querySelectorAll('.sync-btn').forEach(b=>b.disabled = true);
+  document.getElementById('syncBulkProgress').textContent = `Sincronizando ${sysFilter ? SYS[sysFilter].label+' · ' : ''}0 / ${total}...`;
   for(const [sys,row] of all){
     const payload = sheetRowPayload(sys, row);
     try{
-      await fetch(state.sheetSync.url, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ action:'upsert', ...payload }) });
+      const ctrl = new AbortController();
+      const timeoutId = setTimeout(()=>ctrl.abort(), 12000);
+      await fetch(state.sheetSync.url, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ action:'upsert', ...payload }), signal: ctrl.signal });
+      clearTimeout(timeoutId);
     }catch(e){ failed++; }
     done++;
-    if(done % 20 === 0 || done === total){
+    if(done % 5 === 0 || done === total){
       document.getElementById('syncBulkProgress').textContent = `Sincronizando ${sysFilter ? SYS[sysFilter].label+' · ' : ''}${done} / ${total}...`;
     }
     await sleep(300); // pausa entre envíos: evita solapamientos en Apps Script (junto con el candado del lado del script)
@@ -1942,7 +1963,7 @@ async function bulkSyncAll(sysFilter){
   state.sheetSync.lastSync = new Date().toISOString();
   scheduleSave();
   updateSyncStatusUI();
-  document.getElementById('syncBulkProgress').textContent = `Listo — ${total} registros enviados${failed ? ` (${failed} con error de red)` : ''}.`;
+  document.getElementById('syncBulkProgress').textContent = `Listo — ${total} registros enviados${failed ? ` (${failed} con error o tiempo agotado)` : ''}.`;
   document.querySelectorAll('.sync-btn').forEach(b=>b.disabled = false);
   showToast('Sincronización completa con Google Sheets');
 }
@@ -2287,6 +2308,7 @@ document.getElementById('btnRefreshNow').addEventListener('click', async (e)=>{
 
 /* ===================== Init ===================== */
 async function init(){
+  document.getElementById('landingVersion').textContent = APP_VERSION;
   document.documentElement.style.setProperty('--sys-accent', SYS.hvac.accent);
   document.getElementById('sysSub').textContent = SYS.hvac.subtitle + ` · ${state.hvac.length} registros`;
   initCableSheet();
