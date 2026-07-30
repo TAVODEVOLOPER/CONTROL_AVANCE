@@ -1937,7 +1937,7 @@ async function bulkSyncAll(sysFilter){
     if(done % 20 === 0 || done === total){
       document.getElementById('syncBulkProgress').textContent = `Sincronizando ${sysFilter ? SYS[sysFilter].label+' · ' : ''}${done} / ${total}...`;
     }
-    await sleep(120); // pausa breve para no saturar la cuota de Apps Script
+    await sleep(300); // pausa entre envíos: evita solapamientos en Apps Script (junto con el candado del lado del script)
   }
   state.sheetSync.lastSync = new Date().toISOString();
   scheduleSave();
