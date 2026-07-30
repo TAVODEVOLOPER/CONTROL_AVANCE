@@ -1516,14 +1516,14 @@ function openDetailTransit(id){
   document.getElementById('transitDetailSub').textContent = `${row.level||'—'} · Room ${row.room||'—'}`;
   document.getElementById('transitLastEdited').textContent = row.lastEditedAt ? `Última edición: ${formatDateTime(row.lastEditedAt)}` : 'Aún sin editar';
   document.getElementById('transitInfoGrid').innerHTML = `
-    <div class="info-cell"><div class="lbl">Hole name</div><div class="val">${escapeHtml(row.hole_name ?? '—')}</div></div>
-    <div class="info-cell"><div class="lbl">Type</div><div class="val">${escapeHtml(row.type ?? '—')}</div></div>
-    <div class="info-cell"><div class="lbl">Profile</div><div class="val">${escapeHtml(row.profile ?? '—')}</div></div>
-    <div class="info-cell"><div class="lbl">System</div><div class="val">${escapeHtml(row.system ?? '—')}</div></div>
-    <div class="info-cell"><div class="lbl">Frame type</div><div class="val">${escapeHtml(row.frame_type ?? '—')}</div></div>
-    <div class="info-cell"><div class="lbl">Frame material</div><div class="val">${escapeHtml(row.frame_material ?? '—')}</div></div>
-    <div class="info-cell"><div class="lbl">Description</div><div class="val">${escapeHtml(row.description ?? '—')}</div></div>
-    <div class="info-cell"><div class="lbl">Installer</div><div class="val">${escapeHtml(row.installer ?? '—')}</div></div>`;
+    <div class="info-cell"><div class="lbl">Hole name</div><div class="val">${escapeHtml(orDash(row.hole_name))}</div></div>
+    <div class="info-cell"><div class="lbl">Type</div><div class="val">${escapeHtml(orDash(row.type))}</div></div>
+    <div class="info-cell"><div class="lbl">Profile</div><div class="val">${escapeHtml(orDash(row.profile))}</div></div>
+    <div class="info-cell"><div class="lbl">System</div><div class="val">${escapeHtml(orDash(row.system))}</div></div>
+    <div class="info-cell"><div class="lbl">Frame type</div><div class="val">${escapeHtml(orDash(row.frame_type))}</div></div>
+    <div class="info-cell"><div class="lbl">Frame material</div><div class="val">${escapeHtml(orDash(row.frame_material))}</div></div>
+    <div class="info-cell"><div class="lbl">Description</div><div class="val">${escapeHtml(orDash(row.description))}</div></div>
+    <div class="info-cell"><div class="lbl">Installer</div><div class="val">${escapeHtml(orDash(row.installer))}</div></div>`;
 
   ['construccion','limpieza','pintura','etiquetas_cables','identificacion_transit','fotografia','estado_final'].forEach(f=>{
     document.querySelectorAll(`#detailOverlayTransit .seg[data-tfield="${f}"] button`).forEach(b=>{
@@ -1753,8 +1753,8 @@ function sheetRowPayload(sys, row){
   }
   if(sys === 'transit'){
     return { sheet:'TRANSIT', uid:'transit-'+row.id,
-      headers:['UID','TAG','LEVEL','ROOM','CONSTRUCCION','LIMPIEZA','PINTURA','CABLES_CORRECTO','ETIQUETAS_CABLES','IDENTIFICACION_TRANSIT','FOTOGRAFIA','ESTADO_FINAL','OBSERVACION','FECHA_EDICION'],
-      values:['transit-'+row.id, row.tag, row.level, row.room, row.construccion, row.limpieza, row.pintura, row.cables_correcto, row.etiquetas_cables, row.identificacion_transit, row.fotografia, row.estado_final, row.observacion, formatDateTime(row.lastEditedAt)] };
+      headers:['UID','REV','INSTALLER','TAG','HOLE_NAME','LEVEL','TYPE','PROFILE','SYSTEM','FRAME_TYPE','DESCRIPTION','FRAME_MATERIAL','ROOM','CONSTRUCCION','LIMPIEZA','PINTURA','CABLES_CORRECTO','ETIQUETAS_CABLES','IDENTIFICACION_TRANSIT','FOTOGRAFIA','ESTADO_FINAL','OBSERVACION','FECHA_EDICION'],
+      values:['transit-'+row.id, row.rev, row.installer, row.tag, row.hole_name, row.level, row.type, row.profile, row.system, row.frame_type, row.description, row.frame_material, row.room, row.construccion, row.limpieza, row.pintura, row.cables_correcto, row.etiquetas_cables, row.identificacion_transit, row.fotografia, row.estado_final, row.observacion, formatDateTime(row.lastEditedAt)] };
   }
   const lastEdited = [row.from.lastEditedAt, row.to.lastEditedAt].filter(Boolean).sort().pop();
   return { sheet:'CABLEADO', uid:'cable-'+row.id,
