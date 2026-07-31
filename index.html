@@ -312,6 +312,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
     <div id="landingSystemsList"></div>
     <div class="landing-footer-note">Puedes ver los registros sin código; para editar necesitas el código del sistema.</div>
     <div class="landing-version" id="landingVersion"></div>
+    <div class="landing-version">BY GUSTAVO_DEVELOPER</div>
   </div>
 </div>
 
@@ -669,7 +670,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v2.2 · 31 jul 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v2.3 · 31 jul 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 let currentSystem = 'hvac';
 let unlockedSystems = new Set();
@@ -2158,12 +2159,14 @@ function dailyReportItems(sys, dateStr){
     state.hvac.forEach(r=>{
       if(!sameLocalDate(r.lastEditedAt, dateStr)) return;
       const cambios = fieldChanges([['Soporte',r.soporte],['Fecha equipo',r.fecha],['Tierra',r.tierra],['Miniruta',r.miniruta],['Conexionado',r.conexionado],['Megado',r.megado]]);
+      if(cambios.length === 0) return;
       out.push({ tag:r.tag||('Ítem #'+r.item), nivel:r.level, area:r.area?('Área '+r.area):'', estado: hvacStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:[...r.photos, ...r.obsPhotos], date:r.lastEditedAt });
     });
   } else if(sys === 'fds'){
     state.fds.forEach(r=>{
       if(!sameLocalDate(r.lastEditedAt, dateStr)) return;
       const cambios = fieldChanges([['Semana',r.semana],['Soporte',r.soporte],['Equipo',r.equipo],['Mini ruta',r.minirutas],['Cableado',r.cableado],['Conexionado',r.conexionado],['N° Serie',r.nserie]]);
+      if(cambios.length === 0) return;
       out.push({ tag:r.tag||('Ítem #'+r.item), nivel:r.level, area:'', estado: fdsStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:[...r.soportePhotos, ...r.equipoPhotos, ...r.obsPhotos], date:r.lastEditedAt });
     });
   } else if(sys === 'cableado'){
@@ -2172,6 +2175,7 @@ function dailyReportItems(sys, dateStr){
         const obj = r[side];
         if(!sameLocalDate(obj.lastEditedAt, dateStr)) return;
         const cambios = fieldChanges([['Minirutas',obj.minirutas],['Tendido',obj.tendido],['Marca Gland',obj.marca_gland],['Gland',obj.gland],['Fecha Gland',obj.fecha_gland],['Conexionado',obj.conexionado],['Fecha Conexionado',obj.fecha_conexionado]]);
+        if(cambios.length === 0) return;
         out.push({ tag:`${r.cable} (${side==='from'?r.from_tag:r.to_tag} · ${side.toUpperCase()})`, nivel:r.level, area: (side==='from'?r.from_area:r.to_area) ? ('Área '+(side==='from'?r.from_area:r.to_area)) : '', estado: sideStatus(obj)==='complete'?'Completo':'Pendiente', observacion:obj.observacion, cambios, photos:[...obj.conexionadoPhotos, ...obj.obsPhotos], date:obj.lastEditedAt });
       });
     });
@@ -2179,6 +2183,7 @@ function dailyReportItems(sys, dateStr){
     state.transit.forEach(r=>{
       if(!sameLocalDate(r.lastEditedAt, dateStr)) return;
       const cambios = fieldChanges([['Construcción',r.construccion],['Limpieza',r.limpieza],['Pintura',r.pintura],['Cables correcto',r.cables_correcto],['Etiquetas cables',r.etiquetas_cables],['Identificación transit',r.identificacion_transit],['Fotografía',r.fotografia],['Estado final',r.estado_final]]);
+      if(cambios.length === 0) return;
       out.push({ tag:r.tag||('Ítem #'+r.id), nivel:r.level, area:r.room?('Room '+r.room):'', estado: transitStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:[...r.fotografiaPhotos, ...r.obsPhotos], date:r.lastEditedAt });
     });
   }
@@ -2221,52 +2226,71 @@ async function buildDailyReportPDF(sys, dateStr, items){
   const doc = new jsPDF({ unit:'pt', format:'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const margin = 40;
+  const margin = 32;
+  const footerH = 18;
   let y = margin;
 
-  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(9,24,35);
-  doc.text('Dragados Offshore · Informe diario', margin, y); y += 20;
-  doc.setFont('helvetica','normal'); doc.setFontSize(10.5); doc.setTextColor(60,78,94);
-  doc.text(`${SYS[sys].label} · ${formatDateShort(dateStr+'T00:00:00')} · ${items.length} registro(s) modificados`, margin, y); y += 18;
-  doc.setDrawColor(210,210,210); doc.line(margin, y, pageW-margin, y); y += 16;
+  const logoImg = document.querySelector('.masthead img');
+  const logoSrc = logoImg ? logoImg.getAttribute('src') : null;
+  function drawHeader(){
+    y = margin;
+    if(logoSrc){
+      try{ doc.addImage(logoSrc, 'PNG', margin, y, 82, 15.6); }catch(e){}
+    }
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(9,24,35);
+    doc.text('Informe diario', pageW-margin, y+7, { align:'right' }); y += 24;
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(60,78,94);
+    doc.text(`${SYS[sys].label} · ${formatDateShort(dateStr+'T00:00:00')} · ${items.length} tag(s) modificados`, margin, y); y += 10;
+    doc.setDrawColor(210,210,210); doc.line(margin, y, pageW-margin, y); y += 12;
+  }
+  drawHeader();
 
   for(const it of items){
-    if(y > pageH - 130){ doc.addPage(); y = margin; }
-    doc.setFont('helvetica','bold'); doc.setFontSize(11.5); doc.setTextColor(9,24,35);
-    doc.text(String(it.tag||'—'), margin, y); y += 15;
-    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(100,110,120);
+    if(y > pageH - footerH - 90){ doc.addPage(); drawHeader(); }
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(9,24,35);
+    doc.text(String(it.tag||'—'), margin, y); y += 11;
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(100,110,120);
     const metaLine = [it.nivel?`Nivel: ${it.nivel}`:'', it.area||'', `Estado: ${it.estado}`].filter(Boolean).join('   ·   ');
-    doc.text(metaLine, margin, y); y += 14;
+    doc.text(metaLine, margin, y); y += 10;
     if(it.cambios && it.cambios.length){
-      doc.setTextColor(50,60,70); doc.setFontSize(9.5);
-      if(y > pageH - 40){ doc.addPage(); y = margin; }
-      it.cambios.forEach(c=>{
-        if(y > pageH - 40){ doc.addPage(); y = margin; }
-        doc.text(`•  ${c.label}: ${c.value}`, margin+4, y); y += 12.5;
-      });
-      y += 2;
+      doc.setTextColor(50,60,70); doc.setFontSize(7.8);
+      const changesLine = it.cambios.map(c=>`${c.label}: ${c.value}`).join('   ·   ');
+      const lines = doc.splitTextToSize(changesLine, pageW - margin*2 - 6);
+      if(y + lines.length*9.5 > pageH - footerH - 10){ doc.addPage(); drawHeader(); }
+      doc.text(lines, margin+3, y); y += lines.length*9.5 + 2;
     }
     if(it.observacion){
-      doc.setTextColor(120,91,0); doc.setFontSize(9.5);
-      const lines = doc.splitTextToSize('Observación: ' + it.observacion, pageW - margin*2);
-      doc.text(lines, margin, y); y += lines.length*12 + 4;
+      doc.setTextColor(120,91,0); doc.setFontSize(7.8);
+      const lines = doc.splitTextToSize('Obs: ' + it.observacion, pageW - margin*2);
+      if(y + lines.length*9.5 > pageH - footerH - 10){ doc.addPage(); drawHeader(); }
+      doc.text(lines, margin, y); y += lines.length*9.5 + 3;
     }
     if(it.photos && it.photos.length){
-      let x = margin; const imgSize = 68;
-      if(y + imgSize > pageH - margin){ doc.addPage(); y = margin; }
-      for(const p of it.photos.slice(0,6)){
+      let x = margin; const imgSize = 40;
+      if(y + imgSize > pageH - footerH - margin){ doc.addPage(); drawHeader(); }
+      for(const p of it.photos.slice(0,8)){
         try{
-          if(x + imgSize > pageW - margin){ x = margin; y += imgSize + 8; if(y + imgSize > pageH - margin){ doc.addPage(); y = margin; } }
+          if(x + imgSize > pageW - margin){ x = margin; y += imgSize + 5; if(y + imgSize > pageH - footerH - margin){ doc.addPage(); drawHeader(); x = margin; } }
           const mimeMatch = p.substring(p.indexOf('/')+1, p.indexOf(';')).toUpperCase();
           const fmt = mimeMatch === 'PNG' ? 'PNG' : 'JPEG';
           doc.addImage(p, fmt, x, y, imgSize, imgSize);
-          x += imgSize + 8;
+          x += imgSize + 5;
         }catch(e){ /* si una foto no se puede incrustar, se omite y sigue */ }
       }
-      y += imgSize + 12;
-    } else { y += 6; }
-    doc.setDrawColor(235,235,235); doc.line(margin, y, pageW-margin, y); y += 14;
+      y += imgSize + 8;
+    } else { y += 4; }
+    doc.setDrawColor(238,238,238); doc.line(margin, y, pageW-margin, y); y += 9;
   }
+
+  const pageCount = doc.internal.getNumberOfPages();
+  for(let p=1; p<=pageCount; p++){
+    doc.setPage(p);
+    doc.setDrawColor(225,225,225); doc.line(margin, pageH-footerH, pageW-margin, pageH-footerH);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(140,148,158);
+    doc.text('BY GUSTAVO_DEVELOPER', margin, pageH-7);
+    doc.text(`Página ${p} de ${pageCount}`, pageW-margin, pageH-7, { align:'right' });
+  }
+
   doc.save(`Informe_Diario_${SYS[sys].label}_${dateStr}.pdf`);
   showToast('PDF descargado');
 }
