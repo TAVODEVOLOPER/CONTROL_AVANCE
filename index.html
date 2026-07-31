@@ -228,8 +228,10 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .daily-card-changes{margin:9px 0 0; padding:0 0 0 16px; font-size:12px; color:var(--ink-600); line-height:1.6;}
 .daily-card-changes li b{color:var(--navy-900);}
 .daily-card-obs{font-size:12px; color:var(--ink-600); margin-top:8px; line-height:1.4; background:var(--warn-100); border-radius:8px; padding:8px 10px;}
-.daily-card-photos{display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;}
-.daily-card-photos img{width:52px; height:52px; border-radius:7px; object-fit:cover; border:1px solid var(--steel-300);}
+.daily-card-photos{display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;}
+.daily-photo-item{display:flex; flex-direction:column; align-items:center; gap:3px; width:56px;}
+.daily-photo-item img{width:52px; height:52px; border-radius:7px; object-fit:cover; border:1px solid var(--steel-300);}
+.daily-photo-item span{font-size:9px; color:var(--steel-500); text-align:center; line-height:1.2;}
 .report-section-title{font-family:var(--font-display); font-size:13px; font-weight:600; color:var(--navy-900); margin:18px 0 10px; text-transform:uppercase; letter-spacing:.4px;}
 .report-section-title:first-child{margin-top:0;}
 .week-row{margin-bottom:12px;}
@@ -670,7 +672,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v2.3 · 31 jul 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v2.4 · 31 jul 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 let currentSystem = 'hvac';
 let unlockedSystems = new Set();
@@ -2153,6 +2155,11 @@ function sameLocalDate(iso, dateStr){
 function fieldChanges(pairs){
   return pairs.filter(([,v]) => v !== '' && v !== null && v !== undefined).map(([label,v]) => ({ label, value: String(v) }));
 }
+function labeledPhotos(groups){
+  const out = [];
+  groups.forEach(([label, arr])=>{ arr.forEach(src => out.push({ src, label })); });
+  return out;
+}
 function dailyReportItems(sys, dateStr){
   const out = [];
   if(sys === 'hvac'){
@@ -2160,14 +2167,14 @@ function dailyReportItems(sys, dateStr){
       if(!sameLocalDate(r.lastEditedAt, dateStr)) return;
       const cambios = fieldChanges([['Soporte',r.soporte],['Fecha equipo',r.fecha],['Tierra',r.tierra],['Miniruta',r.miniruta],['Conexionado',r.conexionado],['Megado',r.megado]]);
       if(cambios.length === 0) return;
-      out.push({ tag:r.tag||('Ítem #'+r.item), nivel:r.level, area:r.area?('Área '+r.area):'', estado: hvacStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:[...r.photos, ...r.obsPhotos], date:r.lastEditedAt });
+      out.push({ tag:r.tag||('Ítem #'+r.item), nivel:r.level, area:r.area?('Área '+r.area):'', estado: hvacStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Instalación',r.photos],['Observación',r.obsPhotos]]), date:r.lastEditedAt });
     });
   } else if(sys === 'fds'){
     state.fds.forEach(r=>{
       if(!sameLocalDate(r.lastEditedAt, dateStr)) return;
       const cambios = fieldChanges([['Semana',r.semana],['Soporte',r.soporte],['Equipo',r.equipo],['Mini ruta',r.minirutas],['Cableado',r.cableado],['Conexionado',r.conexionado],['N° Serie',r.nserie]]);
       if(cambios.length === 0) return;
-      out.push({ tag:r.tag||('Ítem #'+r.item), nivel:r.level, area:'', estado: fdsStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:[...r.soportePhotos, ...r.equipoPhotos, ...r.obsPhotos], date:r.lastEditedAt });
+      out.push({ tag:r.tag||('Ítem #'+r.item), nivel:r.level, area:'', estado: fdsStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Soporte',r.soportePhotos],['Equipo',r.equipoPhotos],['Observación',r.obsPhotos]]), date:r.lastEditedAt });
     });
   } else if(sys === 'cableado'){
     state.cableado.forEach(r=>{
@@ -2176,7 +2183,7 @@ function dailyReportItems(sys, dateStr){
         if(!sameLocalDate(obj.lastEditedAt, dateStr)) return;
         const cambios = fieldChanges([['Minirutas',obj.minirutas],['Tendido',obj.tendido],['Marca Gland',obj.marca_gland],['Gland',obj.gland],['Fecha Gland',obj.fecha_gland],['Conexionado',obj.conexionado],['Fecha Conexionado',obj.fecha_conexionado]]);
         if(cambios.length === 0) return;
-        out.push({ tag:`${r.cable} (${side==='from'?r.from_tag:r.to_tag} · ${side.toUpperCase()})`, nivel:r.level, area: (side==='from'?r.from_area:r.to_area) ? ('Área '+(side==='from'?r.from_area:r.to_area)) : '', estado: sideStatus(obj)==='complete'?'Completo':'Pendiente', observacion:obj.observacion, cambios, photos:[...obj.conexionadoPhotos, ...obj.obsPhotos], date:obj.lastEditedAt });
+        out.push({ tag:`${r.cable} (${side==='from'?r.from_tag:r.to_tag} · ${side.toUpperCase()})`, nivel:r.level, area: (side==='from'?r.from_area:r.to_area) ? ('Área '+(side==='from'?r.from_area:r.to_area)) : '', estado: sideStatus(obj)==='complete'?'Completo':'Pendiente', observacion:obj.observacion, cambios, photos:labeledPhotos([['Conexionado',obj.conexionadoPhotos],['Observación',obj.obsPhotos]]), date:obj.lastEditedAt });
       });
     });
   } else if(sys === 'transit'){
@@ -2184,7 +2191,7 @@ function dailyReportItems(sys, dateStr){
       if(!sameLocalDate(r.lastEditedAt, dateStr)) return;
       const cambios = fieldChanges([['Construcción',r.construccion],['Limpieza',r.limpieza],['Pintura',r.pintura],['Cables correcto',r.cables_correcto],['Etiquetas cables',r.etiquetas_cables],['Identificación transit',r.identificacion_transit],['Fotografía',r.fotografia],['Estado final',r.estado_final]]);
       if(cambios.length === 0) return;
-      out.push({ tag:r.tag||('Ítem #'+r.id), nivel:r.level, area:r.room?('Room '+r.room):'', estado: transitStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:[...r.fotografiaPhotos, ...r.obsPhotos], date:r.lastEditedAt });
+      out.push({ tag:r.tag||('Ítem #'+r.id), nivel:r.level, area:r.room?('Room '+r.room):'', estado: transitStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Fotografía',r.fotografiaPhotos],['Observación',r.obsPhotos]]), date:r.lastEditedAt });
     });
   }
   return out.sort((a,b)=> (a.date||'').localeCompare(b.date||''));
@@ -2212,16 +2219,37 @@ function renderDailyReport(){
       </div>
       ${it.cambios && it.cambios.length ? `<ul class="daily-card-changes">${it.cambios.map(c=>`<li><b>${escapeHtml(c.label)}:</b> ${escapeHtml(c.value)}</li>`).join('')}</ul>` : ''}
       ${it.observacion ? `<div class="daily-card-obs">⚠ ${escapeHtml(it.observacion)}</div>` : ''}
-      ${it.photos.length ? `<div class="daily-card-photos">${it.photos.map(p=>`<img src="${p}">`).join('')}</div>` : ''}
+      ${it.photos.length ? `<div class="daily-card-photos">${it.photos.map(p=>`<div class="daily-photo-item"><img src="${p.src}"><span>${escapeHtml(p.label)}</span></div>`).join('')}</div>` : ''}
     </div>
   `).join('');
   body.innerHTML = `<div class="report-section-title">Informe diario (${items.length})</div>${cardsHtml}`;
+}
+// Corrige la rotación EXIF de fotos de cámara: las dibuja en un canvas (que sí respeta
+// la orientación) y devuelve una imagen ya "horneada" en la orientación correcta.
+function correctPhotoOrientation(dataUrl){
+  return new Promise((resolve)=>{
+    try{
+      const img = new Image();
+      img.onload = ()=>{
+        try{
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          resolve({ src: canvas.toDataURL('image/jpeg', 0.85), w: canvas.width, h: canvas.height });
+        }catch(e){ resolve(null); }
+      };
+      img.onerror = ()=> resolve(null);
+      img.src = dataUrl;
+    }catch(e){ resolve(null); }
+  });
 }
 async function buildDailyReportPDF(sys, dateStr, items){
   if(!window.jspdf || !window.jspdf.jsPDF){
     showToast('No se pudo cargar el generador de PDF. Revisa tu conexión a internet e intenta de nuevo.');
     return;
   }
+  showToast('Generando PDF...');
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit:'pt', format:'a4' });
   const pageW = doc.internal.pageSize.getWidth();
@@ -2232,16 +2260,23 @@ async function buildDailyReportPDF(sys, dateStr, items){
 
   const logoImg = document.querySelector('.masthead img');
   const logoSrc = logoImg ? logoImg.getAttribute('src') : null;
+  const fechaTxt = formatDateShort(dateStr+'T00:00:00');
   function drawHeader(){
     y = margin;
+    const headerBottom = y + 34;
     if(logoSrc){
-      try{ doc.addImage(logoSrc, 'PNG', margin, y, 82, 15.6); }catch(e){}
+      try{ doc.addImage(logoSrc, 'PNG', margin, y, 78, 14.8); }catch(e){}
     }
-    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(9,24,35);
-    doc.text('Informe diario', pageW-margin, y+7, { align:'right' }); y += 24;
-    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(60,78,94);
-    doc.text(`${SYS[sys].label} · ${formatDateShort(dateStr+'T00:00:00')} · ${items.length} tag(s) modificados`, margin, y); y += 10;
-    doc.setDrawColor(210,210,210); doc.line(margin, y, pageW-margin, y); y += 12;
+    doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(9,24,35);
+    doc.text('Informe diario', pageW/2, y+9, { align:'center' });
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(7,80,156);
+    doc.text(SYS[sys].label, pageW/2, y+23, { align:'center' });
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(60,78,94);
+    doc.text(fechaTxt, pageW-margin, y+23, { align:'right' });
+    y = headerBottom;
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(100,110,120);
+    doc.text(`${items.length} tag(s) modificados`, margin, y); y += 10;
+    doc.setDrawColor(200,200,200); doc.line(margin, y, pageW-margin, y); y += 12;
   }
   drawHeader();
 
@@ -2266,18 +2301,25 @@ async function buildDailyReportPDF(sys, dateStr, items){
       doc.text(lines, margin, y); y += lines.length*9.5 + 3;
     }
     if(it.photos && it.photos.length){
-      let x = margin; const imgSize = 40;
-      if(y + imgSize > pageH - footerH - margin){ doc.addPage(); drawHeader(); }
+      const imgSize = 42; const captionH = 9;
+      let x = margin;
+      if(y + imgSize + captionH > pageH - footerH - margin){ doc.addPage(); drawHeader(); }
       for(const p of it.photos.slice(0,8)){
-        try{
-          if(x + imgSize > pageW - margin){ x = margin; y += imgSize + 5; if(y + imgSize > pageH - footerH - margin){ doc.addPage(); drawHeader(); x = margin; } }
-          const mimeMatch = p.substring(p.indexOf('/')+1, p.indexOf(';')).toUpperCase();
-          const fmt = mimeMatch === 'PNG' ? 'PNG' : 'JPEG';
-          doc.addImage(p, fmt, x, y, imgSize, imgSize);
-          x += imgSize + 5;
-        }catch(e){ /* si una foto no se puede incrustar, se omite y sigue */ }
+        const fixed = await correctPhotoOrientation(p.src);
+        if(x + imgSize > pageW - margin){ x = margin; y += imgSize + captionH + 6; if(y + imgSize + captionH > pageH - footerH - margin){ doc.addPage(); drawHeader(); x = margin; } }
+        if(fixed){
+          try{
+            const ratio = Math.min(imgSize/fixed.w, imgSize/fixed.h);
+            const dw = fixed.w*ratio, dh = fixed.h*ratio;
+            const dx = x + (imgSize-dw)/2, dy = y + (imgSize-dh)/2;
+            doc.addImage(fixed.src, 'JPEG', dx, dy, dw, dh);
+          }catch(e){ /* si una foto no se puede incrustar, se omite */ }
+        }
+        doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(120,128,138);
+        doc.text(p.label, x+imgSize/2, y+imgSize+7, { align:'center' });
+        x += imgSize + 8;
       }
-      y += imgSize + 8;
+      y += imgSize + captionH + 6;
     } else { y += 4; }
     doc.setDrawColor(238,238,238); doc.line(margin, y, pageW-margin, y); y += 9;
   }
