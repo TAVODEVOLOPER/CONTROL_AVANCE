@@ -682,7 +682,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v3.4 · 03 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v3.5 · 03 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 let currentSystem = 'hvac';
 let unlockedSystems = new Set();
@@ -1115,15 +1115,19 @@ function unlockCurrentSystemAfterAuth(){
   showToast(`${SYS[currentSystem].label} desbloqueado para editar`);
   if(pendingUnlockAction){ pendingUnlockAction(); pendingUnlockAction = null; }
 }
+function unlockCurrentSystemAfterPin(){
+  unlockCurrentSystemAfterAuth();
+  offerBiometricRegistration(currentSystem);
+}
 document.getElementById('btnBiometricUnlockSys').addEventListener('click', async ()=>{
-  const ok = await verifyBiometric();
+  const ok = await verifyBiometricForSys(currentSystem);
   if(ok){ unlockCurrentSystemAfterAuth(); }
   else { document.getElementById('pinErr').textContent = 'No se pudo verificar la huella / Face ID.'; }
 });
 function confirmPin(){
   const val = document.getElementById('pinInput').value.trim();
   if(val && val === state.access[currentSystem].pin){
-    unlockCurrentSystemAfterAuth();
+    unlockCurrentSystemAfterPin();
   } else {
     document.getElementById('pinErr').textContent = 'Código incorrecto, intenta de nuevo.';
   }
@@ -1175,6 +1179,50 @@ document.getElementById('masterPwInput').addEventListener('keydown', (e)=>{ if(e
 /* ===================== Entrada biométrica (WebAuthn, huella / Face ID) ===================== */
 // El credencial queda guardado solo en este celular (localStorage), no viaja con el backup ni con Sheets.
 const BIOMETRIC_KEY = 'controlAvanceBiometricCredId';
+function sysBioKey(sys){ return 'controlAvanceBiometricCredId_sys_' + sys; }
+async function registerBiometricForSys(sys){
+  if(!await biometricSupported()) return false;
+  try{
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const userId = crypto.getRandomValues(new Uint8Array(16));
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge,
+        rp: { name: 'Control Avance Dragados' },
+        user: { id: userId, name: sys, displayName: SYS[sys].label },
+        pubKeyCredParams: [{alg:-7, type:'public-key'}, {alg:-257, type:'public-key'}],
+        authenticatorSelection: { authenticatorAttachment:'platform', userVerification:'required' },
+        timeout: 60000
+      }
+    });
+    localStorage.setItem(sysBioKey(sys), bufToBase64(cred.rawId));
+    return true;
+  }catch(e){ return false; }
+}
+async function verifyBiometricForSys(sys){
+  const credId = localStorage.getItem(sysBioKey(sys));
+  if(!credId) return false;
+  try{
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        allowCredentials: [{ id: base64ToBuf(credId), type:'public-key' }],
+        userVerification: 'required',
+        timeout: 60000
+      }
+    });
+    return true;
+  }catch(e){ return false; }
+}
+async function offerBiometricRegistration(sys){
+  if(localStorage.getItem(sysBioKey(sys))) return;
+  if(!await biometricSupported()) return;
+  if(confirm(`¿Quieres usar huella / Face ID para entrar a ${SYS[sys].label} en este celular la próxima vez, en vez del código?`)){
+    const ok = await registerBiometricForSys(sys);
+    showToast(ok ? `Huella / Face ID registrada para ${SYS[sys].label}` : 'No se pudo registrar la huella, intenta de nuevo');
+  }
+}
 function bufToBase64(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))); }
 function base64ToBuf(b64){ return Uint8Array.from(atob(b64), c=>c.charCodeAt(0)); }
 async function biometricSupported(){
@@ -1190,7 +1238,7 @@ async function refreshBiometricUnlockButton(){
 }
 async function refreshSysBiometricButton(){
   const btn = document.getElementById('btnBiometricUnlockSys');
-  const hasCred = !!localStorage.getItem(BIOMETRIC_KEY);
+  const hasCred = !!localStorage.getItem(sysBioKey(currentSystem));
   const supported = hasCred && await biometricSupported();
   btn.style.display = supported ? 'block' : 'none';
 }
@@ -2469,18 +2517,19 @@ function renderLandingCards(){
     </div>`;
   }).join('');
 
-  const bioHasCred = !!localStorage.getItem(BIOMETRIC_KEY);
-  if(bioHasCred){
+  SYS_ORDER.forEach(id=>{
+    if(!localStorage.getItem(sysBioKey(id))) return;
     biometricSupported().then(supported=>{
       if(!supported) return;
-      list.querySelectorAll('.landing-biometric-btn').forEach(b=> b.style.display = 'block');
+      const b = list.querySelector(`.landing-biometric-btn[data-sys-bio="${id}"]`);
+      if(b) b.style.display = 'block';
     });
-  }
+  });
   list.querySelectorAll('.landing-biometric-btn').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const sys = btn.dataset.sysBio;
       const errEl = list.querySelector(`.landing-err[data-sys-err="${sys}"]`);
-      const ok = await verifyBiometric();
+      const ok = await verifyBiometricForSys(sys);
       if(ok){
         unlockedSystems.add(sys);
         closeLanding();
@@ -2503,6 +2552,7 @@ function renderLandingCards(){
         closeLanding();
         switchSystem(sys);
         showToast(`${SYS[sys].label} desbloqueado para editar`);
+        offerBiometricRegistration(sys);
       } else {
         errEl.textContent = 'Código incorrecto, intenta de nuevo.';
       }
