@@ -672,7 +672,8 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v2.9 · 3 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v3.0 · 3 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 
 let currentSystem = 'hvac';
 let unlockedSystems = new Set();
@@ -717,7 +718,7 @@ let state = {
     fds: { pin:'9012' },
     transit: { pin:'3456' }
   },
-  sheetSync: { url:'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec', enabled:true, lastSync:'' }
+  sheetSync: { url:DEFAULT_SHEET_URL, enabled:true, lastSync:'' }
 };
 function emptySide(){
   return { minirutas:'', tendido:'', marca_gland:'', gland:'', fecha_gland:'', conexionado:'', fecha_conexionado:'',
@@ -1118,7 +1119,7 @@ function openAccessSheet(){
     <div class="access-row">
       <span class="sys-dot" style="background:${SYS[id].accent}"></span>
       <div class="tx"><div class="t">${SYS[id].label}</div><div class="d">Código requerido para editar este sistema</div></div>
-      <input type="password" inputmode="numeric" maxlength="8" value="${escapeHtml(state.access[id].pin)}" data-sys="${id}" class="access-pin-input">
+      <input type="text" inputmode="numeric" maxlength="8" value="${escapeHtml(state.access[id].pin)}" data-sys="${id}" class="access-pin-input">
     </div>
   `).join('');
   document.getElementById('sheetSyncUrl').value = state.sheetSync.url || '';
@@ -2413,16 +2414,20 @@ async function init(){
     state = saved;
     showToast('Sesión anterior recuperada');
   }
-  // Las contraseñas (PIN) y la config de Google Sheets se conservan siempre,
-  // aunque el número de registros cambie entre versiones (lo que evita el
-  // restore completo de arriba). Así una actualización de la app nunca
-  // resetea los códigos de acceso que Gustavo haya definido.
+  // Los PIN de acceso y la sincronización con Google Sheets se conservan
+  // SIEMPRE entre actualizaciones de la app, aunque cambie el número de
+  // registros (lo que evita el restore completo de arriba), y aunque el
+  // objeto guardado tuviera la URL vacía por alguna sesión previa.
   if(saved && saved.access){
     state.access = { ...state.access, ...saved.access };
   }
   if(saved && saved.sheetSync && saved.sheetSync.url){
-    state.sheetSync = saved.sheetSync;
+    state.sheetSync.url = saved.sheetSync.url;
+    if(saved.sheetSync.lastSync) state.sheetSync.lastSync = saved.sheetSync.lastSync;
   }
+  if(!state.sheetSync.url){ state.sheetSync.url = DEFAULT_SHEET_URL; }
+  state.sheetSync.enabled = true; // la sincronización debe permanecer siempre activa
+  scheduleSave();
   renderAll();
   openLanding();
   const banner = document.getElementById('jsFailBanner');
