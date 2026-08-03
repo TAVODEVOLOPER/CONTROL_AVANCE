@@ -672,7 +672,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v3.1 · 3 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v3.3 · 3 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 
 let currentSystem = 'hvac';
@@ -768,6 +768,16 @@ function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&'
 // Equivalente a "valor ?? '—'" pero sin usar el operador ?? (algunos iPhone con iOS viejo no lo soportan
 // y eso hacía que TODO el script dejara de ejecutarse con solo mostrar la pantalla estática).
 function orDash(v){ return (v === null || v === undefined) ? '—' : v; }
+// Busca un valor probando varias variantes de nombre de columna (por si en Google
+// Sheets el encabezado quedó con espacio, guion bajo, mayúsculas distintas, etc.).
+// Evita el operador ?? a propósito (rompe en iPhones viejos).
+function pickSheetField(obj, keys){
+  for(var i=0; i<keys.length; i++){
+    var k = keys[i];
+    if(obj[k] !== undefined && obj[k] !== null && obj[k] !== '') return obj[k];
+  }
+  return '';
+}
 function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
@@ -1010,7 +1020,7 @@ function cardTemplateFds(r){
     <div class="status-pill ${st}"></div>
     <div class="card-body">
       <div class="card-top"><div class="card-tag">${escapeHtml(r.tag||'—')}</div><div class="card-item">#${r.item}</div></div>
-      <div class="card-meta"><span class="tag-pill"><b>${escapeHtml(r.level||'—')}</b></span>${r.stdSupport?`<span class="tag-pill">${escapeHtml(r.stdSupport)}</span>`:''}${r.nserie?`<span class="tag-pill">N° Serie ${escapeHtml(r.nserie)}</span>`:''}</div>
+      <div class="card-meta"><span class="tag-pill"><b>${escapeHtml(r.level||'—')}</b></span>${r.stdSupport?`<span class="tag-pill">${escapeHtml(r.stdSupport)}</span>`:''}</div>
       <div class="card-progress">${bars}</div>
       <div class="badge-row">
       ${photoCount ? `<span class="photo-badge">📷 ${photoCount} foto(s)</span>` : ''}
@@ -1785,7 +1795,7 @@ function sheetRowPayload(sys, row){
   }
   if(sys === 'fds'){
     return { sheet:'FDS', uid:'fds-'+row.id,
-      headers:['UID','ITEM','TAG_EQUIPOS','STD_SUPPORT','NIVEL','SEMANA','SOPORTE','EQUIPO','MINI_RUTA','CABLEADO','CONEXIONADO','N_SERIE_EQUIPO','OBSERVACION','FECHA_EDICION'],
+      headers:['UID','ITEM','TAG_EQUIPOS','STD SUPPORT','NIVEL','SEMANA','SOPORTE','EQUIPO','MINI_RUTA','CABLEADO','CONEXIONADO','N_SERIE_EQUIPO','OBSERVACION','FECHA_EDICION'],
       values:['fds-'+row.id, row.item, row.tag, row.stdSupport, row.level, row.semana, row.soporte, row.equipo, row.minirutas, row.cableado, row.conexionado, row.nserie, row.observacion, formatDateTime(row.lastEditedAt)] };
   }
   if(sys === 'transit'){
@@ -1866,7 +1876,7 @@ function applySheetRowToFds(obj){
   const idNum = parseInt(String(uid).replace('fds-',''));
   const row = state.fds.find(r=>r.id===idNum);
   if(!row) return false;
-  row.stdSupport = (obj.STD_SUPPORT !== undefined && obj.STD_SUPPORT !== null) ? String(obj.STD_SUPPORT) : '';
+  row.stdSupport = String(pickSheetField(obj, ['STD_SUPPORT','STD SUPPORT','Std_Support','Std Support','STDSUPPORT','stdSupport']));
   row.semana = obj.SEMANA || '';
   row.soporte = obj.SOPORTE || '';
   row.equipo = obj.EQUIPO || '';
