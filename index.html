@@ -672,7 +672,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v2.7 · 3 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v2.9 · 3 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 let currentSystem = 'hvac';
 let unlockedSystems = new Set();
@@ -717,7 +717,7 @@ let state = {
     fds: { pin:'9012' },
     transit: { pin:'3456' }
   },
-  sheetSync: { url:'', enabled:false, lastSync:'' }
+  sheetSync: { url:'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec', enabled:true, lastSync:'' }
 };
 function emptySide(){
   return { minirutas:'', tendido:'', marca_gland:'', gland:'', fecha_gland:'', conexionado:'', fecha_conexionado:'',
@@ -2412,6 +2412,16 @@ async function init(){
   if(saved && saved.hvac && saved.hvac.length === state.hvac.length && saved.cableado && saved.cableado.length === state.cableado.length && saved.fds && saved.fds.length === state.fds.length && saved.transit && saved.transit.length === state.transit.length){
     state = saved;
     showToast('Sesión anterior recuperada');
+  }
+  // Las contraseñas (PIN) y la config de Google Sheets se conservan siempre,
+  // aunque el número de registros cambie entre versiones (lo que evita el
+  // restore completo de arriba). Así una actualización de la app nunca
+  // resetea los códigos de acceso que Gustavo haya definido.
+  if(saved && saved.access){
+    state.access = { ...state.access, ...saved.access };
+  }
+  if(saved && saved.sheetSync && saved.sheetSync.url){
+    state.sheetSync = saved.sheetSync;
   }
   renderAll();
   openLanding();
