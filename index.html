@@ -428,12 +428,12 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <div class="field-group"><label>Megado</label><div class="seg" data-hfield="megado"><button data-val="SI">Sí</button><button data-val="NO">No</button></div></div>
       <div class="field-group">
         <label>Fotografías <span class="field-legend">— evidencia de instalación</span></label>
-        <div class="photo-grid" id="hvacPhotoGrid"><label class="photo-add brand-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" capture="environment" id="hvacPhotoInput" multiple></label></div>
+        <div class="photo-grid" id="hvacPhotoGrid"><label class="photo-add brand-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="hvacPhotoInput" multiple></label></div>
       </div>
       <div class="incident-block">
         <div class="incident-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Observación / Incidencia</div>
         <div class="field-group" style="margin-bottom:10px;"><label>Motivo por el que no se avanzó <span class="field-legend">(opcional)</span></label><textarea class="text-input" id="hvacObservacion" rows="3" placeholder="Ej: falta de material, acceso bloqueado, equipo dañado..."></textarea></div>
-        <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="photo-grid" id="hvacObsPhotoGrid"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" capture="environment" id="hvacObsPhotoInput" multiple></label></div></div>
+        <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="photo-grid" id="hvacObsPhotoGrid"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="hvacObsPhotoInput" multiple></label></div></div>
       </div>
     </div>
     <div class="sheet-footer"><button class="btn-ghost" id="hvacCloseDetail2">Cerrar</button><button class="btn-primary" id="hvacSaveDetail">Guardar cambios</button></div>
@@ -471,12 +471,12 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <div class="field-group">
         <label>Soporte</label>
         <div class="seg" data-ffield="soporte"><button data-val="SI">Sí</button><button data-val="NO">No</button></div>
-        <div class="photo-grid" id="fdsSoportePhotoGrid" style="margin-top:10px;"><label class="photo-add brand-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" capture="environment" id="fdsSoportePhotoInput" multiple></label></div>
+        <div class="photo-grid" id="fdsSoportePhotoGrid" style="margin-top:10px;"><label class="photo-add brand-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="fdsSoportePhotoInput" multiple></label></div>
       </div>
       <div class="field-group">
         <label>Equipo</label>
         <div class="seg" data-ffield="equipo"><button data-val="SI">Sí</button><button data-val="NO">No</button></div>
-        <div class="photo-grid" id="fdsEquipoPhotoGrid" style="margin-top:10px;"><label class="photo-add brand-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" capture="environment" id="fdsEquipoPhotoInput" multiple></label></div>
+        <div class="photo-grid" id="fdsEquipoPhotoGrid" style="margin-top:10px;"><label class="photo-add brand-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="fdsEquipoPhotoInput" multiple></label></div>
       </div>
       <div class="field-group"><label>Mini ruta</label><div class="seg" data-ffield="minirutas"><button data-val="SI">Sí</button><button data-val="NO">No</button></div></div>
       <div class="field-group"><label>Cableado</label><div class="seg" data-ffield="cableado"><button data-val="SI">Sí</button><button data-val="NO">No</button></div></div>
@@ -485,7 +485,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <div class="incident-block">
         <div class="incident-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Observación / Incidencia</div>
         <div class="field-group" style="margin-bottom:10px;"><label>Motivo por el que no se avanzó <span class="field-legend">(opcional)</span></label><textarea class="text-input" id="fdsObservacion" rows="3" placeholder="Ej: falta de material, detector dañado..."></textarea></div>
-        <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="photo-grid" id="fdsObsPhotoGrid"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" capture="environment" id="fdsObsPhotoInput" multiple></label></div></div>
+        <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="photo-grid" id="fdsObsPhotoGrid"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="fdsObsPhotoInput" multiple></label></div></div>
       </div>
     </div>
     <div class="sheet-footer"><button class="btn-ghost" id="fdsCloseDetail2">Cerrar</button><button class="btn-primary" id="fdsSaveDetail">Guardar cambios</button></div>
@@ -511,13 +511,13 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <div class="field-group">
         <label>Fotografía <span class="field-legend">— cuando se cierre completamente el transit</span></label>
         <div class="seg" data-tfield="fotografia"><button data-val="SI">Sí</button><button data-val="NO">No</button></div>
-        <div class="photo-grid" id="transitFotografiaPhotoGrid" style="margin-top:10px; display:none;"><label class="photo-add brand-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" capture="environment" id="transitFotografiaPhotoInput" multiple></label></div>
+        <div class="photo-grid" id="transitFotografiaPhotoGrid" style="margin-top:10px; display:none;"><label class="photo-add brand-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="transitFotografiaPhotoInput" multiple></label></div>
       </div>
       <div class="field-group"><label>Estado final <span class="field-legend">— finalizado</span></label><div class="seg" data-tfield="estado_final"><button data-val="SI">Sí</button><button data-val="NO">No</button></div></div>
       <div class="incident-block">
         <div class="incident-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Observación / Incidencia</div>
         <div class="field-group" style="margin-bottom:10px;"><label>Motivo por el que no se avanzó <span class="field-legend">(opcional)</span></label><textarea class="text-input" id="transitObservacion" rows="3" placeholder="Ej: falta de material, acceso bloqueado..."></textarea></div>
-        <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="photo-grid" id="transitObsPhotoGrid" style="display:none;"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" capture="environment" id="transitObsPhotoInput" multiple></label></div></div>
+        <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="photo-grid" id="transitObsPhotoGrid" style="display:none;"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="transitObsPhotoInput" multiple></label></div></div>
       </div>
     </div>
     <div class="sheet-footer"><button class="btn-ghost" id="transitCloseDetail2">Cerrar</button><button class="btn-primary" id="transitSaveDetail">Guardar cambios</button></div>
@@ -682,7 +682,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v3.5 · 03 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v3.6 · 03 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 let currentSystem = 'hvac';
 let unlockedSystems = new Set();
@@ -1499,12 +1499,12 @@ function sideFieldsHtml(prefix, tagLabel){
     <div class="field-group"><label>Fecha Conexionado</label><input type="date" class="text-input" id="cable${cap(prefix)}FechaConexionado"></div>
     <div class="field-group" style="margin-bottom:0;">
       <label>Foto de conexionado <span class="field-legend">— evidencia</span></label>
-      <div class="photo-grid" id="cable${cap(prefix)}ConPhotoGrid"><label class="photo-add brand-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" capture="environment" id="cable${cap(prefix)}ConPhotoInput" multiple></label></div>
+      <div class="photo-grid" id="cable${cap(prefix)}ConPhotoGrid"><label class="photo-add brand-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="cable${cap(prefix)}ConPhotoInput" multiple></label></div>
     </div>
     <div class="incident-block">
       <div class="incident-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Observación / Incidencia</div>
       <div class="field-group" style="margin-bottom:10px;"><label>Motivo por el que no se avanzó <span class="field-legend">(opcional)</span></label><textarea class="text-input" id="cable${cap(prefix)}Observacion" rows="2" placeholder="Ej: falta de material, gland dañado..."></textarea></div>
-      <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="photo-grid" id="cable${cap(prefix)}ObsPhotoGrid"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" capture="environment" id="cable${cap(prefix)}ObsPhotoInput" multiple></label></div></div>
+      <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="photo-grid" id="cable${cap(prefix)}ObsPhotoGrid"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="cable${cap(prefix)}ObsPhotoInput" multiple></label></div></div>
     </div>
   </div>`;
 }
