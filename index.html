@@ -536,6 +536,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <div class="pin-pad-wrap">
         <input type="password" inputmode="numeric" class="text-input pin-input" id="pinInput" maxlength="8" placeholder="••••">
         <div class="pin-err" id="pinErr"></div>
+        <button class="btn-ghost" id="btnBiometricUnlockSys" style="display:none; margin-top:14px; width:100%;">👆 Usar huella / Face ID</button>
       </div>
     </div>
     <div class="sheet-footer"><button class="btn-primary" id="btnPinConfirm">Desbloquear</button></div>
@@ -555,6 +556,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <div class="pin-pad-wrap">
         <input type="password" class="text-input pin-input" id="masterPwInput" placeholder="Contraseña maestra">
         <div class="pin-err" id="masterPwErr"></div>
+        <button class="btn-ghost" id="btnBiometricUnlock" style="display:none; margin-top:14px; width:100%;">👆 Usar huella / Face ID</button>
       </div>
     </div>
     <div class="sheet-footer"><button class="btn-primary" id="btnMasterPwConfirm">Entrar</button></div>
@@ -571,6 +573,14 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
     <div class="sheet-body">
       <div class="warn-note">Estos códigos solo son visibles aquí, tras ingresar la contraseña de administrador. Aun así, quedan guardados en el archivo — esto evita ediciones accidentales del equipo, pero no reemplaza un control de acceso real con usuarios y contraseñas en un servidor. Cambia la contraseña maestra y estos códigos antes de repartir el archivo.</div>
       <div id="accessList"></div>
+
+      <div class="report-section-title">Entrada biométrica (este celular)</div>
+      <div class="warn-note" style="background:var(--steel-100); border-color:var(--steel-300); color:var(--ink-600);">Registra tu huella o Face ID en este dispositivo para entrar como administrador sin escribir la contraseña. Es por celular: cada equipo necesita registrarse por separado.</div>
+      <div class="last-edited-note" id="biometricStatusNote" style="margin-bottom:10px;"></div>
+      <div style="display:flex; gap:10px; margin-bottom:16px;">
+        <button class="btn-ghost" id="btnRegisterBiometric" style="flex:1;">👆 Registrar huella / Face ID</button>
+        <button class="btn-ghost" id="btnRemoveBiometric" style="flex:1;">Quitar</button>
+      </div>
 
       <div class="report-section-title">Sincronización con Google Sheets</div>
       <div class="warn-note" style="background:var(--steel-100); border-color:var(--steel-300); color:var(--ink-600);">Cada vez que alguien guarde una ficha, esos datos (sin fotos) se envían a tu Google Sheet. Necesitas publicar un Google Apps Script como Web App primero — pide las instrucciones y el código a quien te compartió esta app.</div>
@@ -591,7 +601,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
         <label>Enviar app → Sheets <span class="field-legend">— útil si un sistema no sincronizó</span></label>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn-ghost sync-btn" data-sync-sys="hvac" style="flex:1; min-width:100px;">Solo HVAC</button>
-          <button class="btn-ghost sync-btn" data-sync-sys="cableado" style="flex:1; min-width:100px;">Solo CABLEADO</button>
+          <button class="btn-ghost sync-btn" data-sync-sys="cableado" style="flex:1; min-width:100px;">Solo CONEXIONADO</button>
           <button class="btn-ghost sync-btn" data-sync-sys="fds" style="flex:1; min-width:100px;">Solo FDS</button>
           <button class="btn-ghost sync-btn" data-sync-sys="transit" style="flex:1; min-width:100px;">Solo TRANSIT</button>
         </div>
@@ -603,7 +613,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
         <div class="warn-note" style="background:var(--steel-100); border-color:var(--steel-300); color:var(--ink-600); margin-bottom:10px;">Necesita la función <b>doGet</b> actualizada en tu Apps Script (con lectura por hoja) y volver a implementar una nueva versión. Pide el código actualizado si aún no lo tienes.</div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn-ghost sync-btn" data-pull-sys="hvac" style="flex:1; min-width:100px;">Traer HVAC</button>
-          <button class="btn-ghost sync-btn" data-pull-sys="cableado" style="flex:1; min-width:100px;">Traer CABLEADO</button>
+          <button class="btn-ghost sync-btn" data-pull-sys="cableado" style="flex:1; min-width:100px;">Traer CONEXIONADO</button>
           <button class="btn-ghost sync-btn" data-pull-sys="fds" style="flex:1; min-width:100px;">Traer FDS</button>
           <button class="btn-ghost sync-btn" data-pull-sys="transit" style="flex:1; min-width:100px;">Traer TRANSIT</button>
         </div>
@@ -666,13 +676,13 @@ const FDS_RAW = [{"item": 1, "tag": "731.CKA00-BR01", "level": "NIVEL 0", "seman
 
 const SYS = {
   hvac: { label:'HVAC', subtitle:'Control de instalación de equipos', accent:'#07509C', hasRoom:true, hasArea:true },
-  cableado: { label:'CABLEADO', subtitle:'Conexionado y rotulado de cables', accent:'#E92127', hasRoom:false, hasArea:true },
+  cableado: { label:'CONEXIONADO', subtitle:'Conexionado y rotulado de cables', accent:'#E92127', hasRoom:false, hasArea:true },
   fds: { label:'FDS', subtitle:'Instalación de detectores', accent:'#FFC905', hasRoom:false, hasArea:false },
   transit: { label:'TRANSIT', subtitle:'Cierre y acabado de transits', accent:'#133752', hasRoom:true, hasArea:false }
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v3.2 · 03 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v3.4 · 03 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 let currentSystem = 'hvac';
 let unlockedSystems = new Set();
@@ -1094,17 +1104,26 @@ function requestOpenDetail(sys, id){
   document.getElementById('pinErr').textContent = '';
   document.getElementById('pinOverlay').classList.add('open');
   setTimeout(()=>document.getElementById('pinInput').focus(), 200);
+  refreshSysBiometricButton();
 }
 document.getElementById('btnPinConfirm').addEventListener('click', confirmPin);
 document.getElementById('pinInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') confirmPin(); });
+function unlockCurrentSystemAfterAuth(){
+  unlockedSystems.add(currentSystem);
+  document.getElementById('pinOverlay').classList.remove('open');
+  renderSystemTabs();
+  showToast(`${SYS[currentSystem].label} desbloqueado para editar`);
+  if(pendingUnlockAction){ pendingUnlockAction(); pendingUnlockAction = null; }
+}
+document.getElementById('btnBiometricUnlockSys').addEventListener('click', async ()=>{
+  const ok = await verifyBiometric();
+  if(ok){ unlockCurrentSystemAfterAuth(); }
+  else { document.getElementById('pinErr').textContent = 'No se pudo verificar la huella / Face ID.'; }
+});
 function confirmPin(){
   const val = document.getElementById('pinInput').value.trim();
   if(val && val === state.access[currentSystem].pin){
-    unlockedSystems.add(currentSystem);
-    document.getElementById('pinOverlay').classList.remove('open');
-    renderSystemTabs();
-    showToast(`${SYS[currentSystem].label} desbloqueado para editar`);
-    if(pendingUnlockAction){ pendingUnlockAction(); pendingUnlockAction = null; }
+    unlockCurrentSystemAfterAuth();
   } else {
     document.getElementById('pinErr').textContent = 'Código incorrecto, intenta de nuevo.';
   }
@@ -1115,6 +1134,7 @@ document.getElementById('btnClosePin').addEventListener('click', ()=>{
 
 function openAccessSheet(){
   document.getElementById('accessVersionSub').textContent = `Códigos de edición por sistema · App ${APP_VERSION}`;
+  updateBiometricStatusNote();
   const list = document.getElementById('accessList');
   list.innerHTML = SYS_ORDER.map(id=>`
     <div class="access-row">
@@ -1135,6 +1155,7 @@ document.getElementById('btnAccessOpen').addEventListener('click', ()=>{
   document.getElementById('masterPwErr').textContent = '';
   document.getElementById('masterPwOverlay').classList.add('open');
   setTimeout(()=>document.getElementById('masterPwInput').focus(), 200);
+  refreshBiometricUnlockButton();
 });
 document.getElementById('btnCloseMasterPw').addEventListener('click', ()=> document.getElementById('masterPwOverlay').classList.remove('open'));
 document.getElementById('masterPwOverlay').addEventListener('click', (e)=>{ if(e.target.id==='masterPwOverlay') document.getElementById('masterPwOverlay').classList.remove('open'); });
@@ -1150,6 +1171,94 @@ function confirmMasterPw(){
 }
 document.getElementById('btnMasterPwConfirm').addEventListener('click', confirmMasterPw);
 document.getElementById('masterPwInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') confirmMasterPw(); });
+
+/* ===================== Entrada biométrica (WebAuthn, huella / Face ID) ===================== */
+// El credencial queda guardado solo en este celular (localStorage), no viaja con el backup ni con Sheets.
+const BIOMETRIC_KEY = 'controlAvanceBiometricCredId';
+function bufToBase64(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+function base64ToBuf(b64){ return Uint8Array.from(atob(b64), c=>c.charCodeAt(0)); }
+async function biometricSupported(){
+  try{
+    return !!(window.PublicKeyCredential && window.isSecureContext && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());
+  }catch(e){ return false; }
+}
+async function refreshBiometricUnlockButton(){
+  const btn = document.getElementById('btnBiometricUnlock');
+  const hasCred = !!localStorage.getItem(BIOMETRIC_KEY);
+  const supported = hasCred && await biometricSupported();
+  btn.style.display = supported ? 'block' : 'none';
+}
+async function refreshSysBiometricButton(){
+  const btn = document.getElementById('btnBiometricUnlockSys');
+  const hasCred = !!localStorage.getItem(BIOMETRIC_KEY);
+  const supported = hasCred && await biometricSupported();
+  btn.style.display = supported ? 'block' : 'none';
+}
+async function registerBiometric(){
+  if(!await biometricSupported()){
+    showToast('Este celular o navegador no soporta huella/Face ID (necesita HTTPS y un lector compatible).');
+    return;
+  }
+  try{
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    const userId = crypto.getRandomValues(new Uint8Array(16));
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge,
+        rp: { name: 'Control Avance Dragados' },
+        user: { id: userId, name: 'admin', displayName: 'Administrador' },
+        pubKeyCredParams: [{alg:-7, type:'public-key'}, {alg:-257, type:'public-key'}],
+        authenticatorSelection: { authenticatorAttachment:'platform', userVerification:'required' },
+        timeout: 60000
+      }
+    });
+    localStorage.setItem(BIOMETRIC_KEY, bufToBase64(cred.rawId));
+    showToast('Huella / Face ID registrada en este celular');
+    updateBiometricStatusNote();
+  }catch(e){
+    showToast('No se pudo registrar: ' + (e && e.message ? e.message : 'intenta de nuevo'));
+  }
+}
+async function verifyBiometric(){
+  const credId = localStorage.getItem(BIOMETRIC_KEY);
+  if(!credId) return false;
+  try{
+    const challenge = crypto.getRandomValues(new Uint8Array(32));
+    await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        allowCredentials: [{ id: base64ToBuf(credId), type:'public-key' }],
+        userVerification: 'required',
+        timeout: 60000
+      }
+    });
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+function updateBiometricStatusNote(){
+  const note = document.getElementById('biometricStatusNote');
+  if(!note) return;
+  note.textContent = localStorage.getItem(BIOMETRIC_KEY) ? 'Huella / Face ID registrada en este celular.' : 'Sin registrar en este celular.';
+}
+document.getElementById('btnBiometricUnlock').addEventListener('click', async ()=>{
+  const ok = await verifyBiometric();
+  if(ok){
+    accessPanelUnlocked = true;
+    document.getElementById('masterPwOverlay').classList.remove('open');
+    openAccessSheet();
+  } else {
+    document.getElementById('masterPwErr').textContent = 'No se pudo verificar la huella / Face ID.';
+  }
+});
+document.getElementById('btnRegisterBiometric').addEventListener('click', registerBiometric);
+document.getElementById('btnRemoveBiometric').addEventListener('click', ()=>{
+  localStorage.removeItem(BIOMETRIC_KEY);
+  showToast('Huella / Face ID eliminada de este celular');
+  updateBiometricStatusNote();
+});
+
 document.getElementById('btnCloseAccess').addEventListener('click', ()=> document.getElementById('accessOverlay').classList.remove('open'));
 document.getElementById('accessOverlay').addEventListener('click', (e)=>{ if(e.target.id==='accessOverlay') document.getElementById('accessOverlay').classList.remove('open'); });
 document.getElementById('btnSaveAccess').addEventListener('click', ()=>{
@@ -1751,7 +1860,7 @@ function buildWorkbook(sys){
       r.to.minirutas, r.to.tendido, r.to.marca_gland, r.to.gland, r.to.fecha_gland, r.to.conexionado, r.to.fecha_conexionado, r.to.observacion
     ])];
     const ws = XLSX.utils.aoa_to_sheet(data);
-    XLSX.utils.book_append_sheet(wb, ws, 'CABLEADO');
+    XLSX.utils.book_append_sheet(wb, ws, 'CONEXIONADO');
   } else if(sys === 'transit'){
     const header = ['ID','REV','INSTALLER','TAG N°','HOLE NAME','LEVEL','TYPE','PROFILE','SYSTEM','FRAME TYPE','DESCRIPTION','FRAME MATERIAL','ROOM','CONSTRUCCION','LIMPIEZA','PINTURA','CABLES_CORRECTO','ETIQUETAS_CABLES','IDENTIFICACION_TRANSIT','FOTOGRAFIA','ESTADO_FINAL','OBSERVACIONES','FECHA_EDICION','FOTOS_FOTOGRAFIA','FOTOS_INCIDENCIA'];
     const data = [header, ...state.transit.map(r=>[
@@ -1795,7 +1904,7 @@ function sheetRowPayload(sys, row){
       values:['transit-'+row.id, row.rev, row.installer, row.tag, row.hole_name, row.level, row.type, row.profile, row.system, row.frame_type, row.description, row.frame_material, row.room, row.construccion, row.limpieza, row.pintura, row.cables_correcto, row.etiquetas_cables, row.identificacion_transit, row.fotografia, row.estado_final, row.observacion, formatDateTime(row.lastEditedAt)] };
   }
   const lastEdited = [row.from.lastEditedAt, row.to.lastEditedAt].filter(Boolean).sort().pop();
-  return { sheet:'CABLEADO', uid:'cable-'+row.id,
+  return { sheet:'CONEXIONADO', uid:'cable-'+row.id,
     headers:['UID','CABLE_NUMBER','From_Tag','From_Area','Nivel','From_Minirutas','From_Tendido','From_Marca_Gland','From_Gland','From_Fecha_Gland','From_Conexionado','From_Fecha_Conexionado','From_Observacion','To_Tag','To_Area','To_Minirutas','To_Tendido','To_Marca_Gland','To_Gland','To_Fecha_Gland','To_Conexionado','To_Fecha_Conexionado','To_Observacion','FECHA_EDICION'],
     values:['cable-'+row.id, row.cable, row.from_tag, row.from_area, row.level, row.from.minirutas, row.from.tendido, row.from.marca_gland, row.from.gland, row.from.fecha_gland, row.from.conexionado, row.from.fecha_conexionado, row.from.observacion, row.to_tag, row.to_area, row.to.minirutas, row.to.tendido, row.to.marca_gland, row.to.gland, row.to.fecha_gland, row.to.conexionado, row.to.fecha_conexionado, row.to.observacion, formatDateTime(lastEdited)] };
 }
@@ -1921,7 +2030,7 @@ function applySheetRowToTransit(obj){
 }
 async function pullFromSheet(sys, silent){
   if(!state.sheetSync.url){ showToast('Primero guarda la URL de Google Sheets'); return false; }
-  const sheetName = sys === 'hvac' ? 'HVAC' : sys === 'cableado' ? 'CABLEADO' : sys === 'transit' ? 'TRANSIT' : 'FDS';
+  const sheetName = sys === 'hvac' ? 'HVAC' : sys === 'cableado' ? 'CONEXIONADO' : sys === 'transit' ? 'TRANSIT' : 'FDS';
   const progressEl = document.getElementById('syncBulkProgress');
   if(progressEl) progressEl.textContent = `Leyendo ${SYS[sys].label} desde Google Sheets...`;
   try{
@@ -2355,9 +2464,33 @@ function renderLandingCards(){
         <button style="background:${s.accent}" class="landing-enter-btn" data-sys="${id}">Entrar</button>
       </div>
       <div class="landing-err" data-sys-err="${id}"></div>
+      <button class="sys-card-view landing-biometric-btn" data-sys-bio="${id}" style="display:none;">👆 Entrar con huella / Face ID</button>
       <button class="sys-card-view" data-sys-view="${id}">Ver sin editar →</button>
     </div>`;
   }).join('');
+
+  const bioHasCred = !!localStorage.getItem(BIOMETRIC_KEY);
+  if(bioHasCred){
+    biometricSupported().then(supported=>{
+      if(!supported) return;
+      list.querySelectorAll('.landing-biometric-btn').forEach(b=> b.style.display = 'block');
+    });
+  }
+  list.querySelectorAll('.landing-biometric-btn').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const sys = btn.dataset.sysBio;
+      const errEl = list.querySelector(`.landing-err[data-sys-err="${sys}"]`);
+      const ok = await verifyBiometric();
+      if(ok){
+        unlockedSystems.add(sys);
+        closeLanding();
+        switchSystem(sys);
+        showToast(`${SYS[sys].label} desbloqueado para editar`);
+      } else {
+        errEl.textContent = 'No se pudo verificar la huella / Face ID.';
+      }
+    });
+  });
 
   list.querySelectorAll('.landing-enter-btn').forEach(btn=>{
     const go = ()=>{
