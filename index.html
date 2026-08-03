@@ -672,7 +672,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v3.1 · 03 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v3.2 · 03 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 let currentSystem = 'hvac';
 let unlockedSystems = new Set();
@@ -1120,7 +1120,7 @@ function openAccessSheet(){
     <div class="access-row">
       <span class="sys-dot" style="background:${SYS[id].accent}"></span>
       <div class="tx"><div class="t">${SYS[id].label}</div><div class="d">Código requerido para editar este sistema</div></div>
-      <input type="password" inputmode="numeric" maxlength="8" value="${escapeHtml(state.access[id].pin)}" data-sys="${id}" class="access-pin-input">
+      <input type="text" inputmode="numeric" maxlength="8" value="${escapeHtml(state.access[id].pin)}" data-sys="${id}" class="access-pin-input">
     </div>
   `).join('');
   document.getElementById('sheetSyncUrl').value = state.sheetSync.url || '';
