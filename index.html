@@ -128,8 +128,6 @@ input,select,button,textarea{font-family:inherit;font-size:16px;}
 .status-pill.empty{background:var(--steel-300);}
 .card-body{flex:1; min-width:0;}
 .card-top{display:flex; justify-content:space-between; gap:8px; align-items:baseline;}
-.card-top-row{display:flex; justify-content:space-between; gap:8px; align-items:flex-start;}
-.card-top-row .status-badge{font-size:10.5px; padding:3px 9px; flex:none;}
 .card-tag{font-family:var(--font-mono); font-size:13.5px; font-weight:600; color:var(--navy-900); word-break:break-all;}
 .card-item{font-size:11px; color:var(--steel-500); font-family:var(--font-mono); flex:none;}
 .card-meta{display:flex; flex-wrap:wrap; gap:5px 8px; margin-top:6px;}
@@ -142,10 +140,6 @@ input,select,button,textarea{font-family:inherit;font-size:16px;}
 .badge-row{display:flex; gap:10px; flex-wrap:wrap;}
 .photo-badge{display:flex; align-items:center; gap:3px; font-size:11px; color:var(--ink-600); margin-top:6px;}
 .obs-badge{display:flex; align-items:center; gap:3px; font-size:11px; color:var(--brand-red-dark); margin-top:6px; font-weight:600;}
-.status-badge{display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:800; letter-spacing:.03em; padding:5px 12px; border-radius:20px; color:#fff; box-shadow:0 2px 6px rgba(0,0,0,.15);}
-.status-badge.habilitado{background:linear-gradient(135deg,#00c853,#00a844);}
-.status-badge.no-habilitado{background:linear-gradient(135deg,#ff3d3d,#e00000);}
-.card-tag-row{display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
 
 .empty-state{text-align:center; padding:60px 20px; color:var(--steel-500);}
 .empty-state svg{margin-bottom:10px; opacity:.5;}
@@ -407,8 +401,6 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
     <div class="chip" data-status="empty">Pendientes</div>
     <div class="chip" data-status="complete">Completos</div>
     <div class="chip" data-status="obs">Con observación</div>
-    <div class="chip transit-only" data-status="habilitado" style="display:none;">✅ Habilitados</div>
-    <div class="chip transit-only" data-status="no_habilitado" style="display:none;">⛔ No habilitados</div>
   </div>
   <button class="clear-filters" id="btnClearFilters" style="display:none;">Limpiar filtros</button>
 </div>
@@ -448,7 +440,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   </div>
 </div>
 
-<!-- CONEXIONADO detail sheet -->
+<!-- CABLEADO detail sheet -->
 <div class="overlay" id="detailOverlayCable">
   <div class="sheet">
     <div class="sheet-handle"></div>
@@ -513,12 +505,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <div class="field-group"><label>Construcción</label><div class="seg" data-tfield="construccion"><button data-val="SI">Sí</button><button data-val="NO">No</button></div></div>
       <div class="field-group"><label>Limpieza</label><div class="seg" data-tfield="limpieza"><button data-val="SI">Sí</button><button data-val="NO">No</button></div></div>
       <div class="field-group"><label>Pintura</label><div class="seg" data-tfield="pintura"><button data-val="SI">Sí</button><button data-val="NO">No</button></div></div>
-      <div class="field-group">
-        <label>Status <span class="field-legend">— automático según Construcción, Limpieza y Pintura</span></label>
-        <div id="transitStatusBadgeWrap"><span class="status-badge" id="transitStatusBadge">NO HABILITADO</span></div>
-      </div>
-      <div class="field-group"><label>Cables correcto <span class="field-legend">— cantidad de cables</span></label>
-<input type="number" min="0" inputmode="numeric" class="text-input" id="transitCablesCorrecto" placeholder="0"></div>
+      <div class="field-group"><label>Cables correcto <span class="field-legend">— cantidad de cables</span></label><input type="number" min="0" inputmode="numeric" class="text-input" id="transitCablesCorrecto" placeholder="0"></div>
       <div class="field-group"><label>Etiquetas cables</label><div class="seg" data-tfield="etiquetas_cables"><button data-val="SI">Sí</button><button data-val="NO">No</button></div></div>
       <div class="field-group"><label>Identificación transit <span class="field-legend">— trafolite</span></label><div class="seg" data-tfield="identificacion_transit"><button data-val="SI">Sí</button><button data-val="NO">No</button></div></div>
       <div class="field-group">
@@ -583,10 +570,6 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
     </div>
     <div class="sheet-body">
       <div class="warn-note">Estos códigos solo son visibles aquí, tras ingresar la contraseña de administrador. Aun así, quedan guardados en el archivo — esto evita ediciones accidentales del equipo, pero no reemplaza un control de acceso real con usuarios y contraseñas en un servidor. Cambia la contraseña maestra y estos códigos antes de repartir el archivo.</div>
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:2px;">
-        <div class="last-edited-note" id="accessSyncNote" style="margin:0;">Códigos guardados solo en este equipo.</div>
-        <button class="btn-ghost sync-btn" id="btnRefreshAccess" style="flex:none; padding:6px 12px; font-size:12px;">🔄 Actualizar</button>
-      </div>
       <div id="accessList"></div>
 
       <div class="report-section-title">Sincronización con Google Sheets</div>
@@ -608,7 +591,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
         <label>Enviar app → Sheets <span class="field-legend">— útil si un sistema no sincronizó</span></label>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn-ghost sync-btn" data-sync-sys="hvac" style="flex:1; min-width:100px;">Solo HVAC</button>
-          <button class="btn-ghost sync-btn" data-sync-sys="cableado" style="flex:1; min-width:100px;">Solo CONEXIONADO</button>
+          <button class="btn-ghost sync-btn" data-sync-sys="cableado" style="flex:1; min-width:100px;">Solo CABLEADO</button>
           <button class="btn-ghost sync-btn" data-sync-sys="fds" style="flex:1; min-width:100px;">Solo FDS</button>
           <button class="btn-ghost sync-btn" data-sync-sys="transit" style="flex:1; min-width:100px;">Solo TRANSIT</button>
         </div>
@@ -620,7 +603,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
         <div class="warn-note" style="background:var(--steel-100); border-color:var(--steel-300); color:var(--ink-600); margin-bottom:10px;">Necesita la función <b>doGet</b> actualizada en tu Apps Script (con lectura por hoja) y volver a implementar una nueva versión. Pide el código actualizado si aún no lo tienes.</div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn-ghost sync-btn" data-pull-sys="hvac" style="flex:1; min-width:100px;">Traer HVAC</button>
-          <button class="btn-ghost sync-btn" data-pull-sys="cableado" style="flex:1; min-width:100px;">Traer CONEXIONADO</button>
+          <button class="btn-ghost sync-btn" data-pull-sys="cableado" style="flex:1; min-width:100px;">Traer CABLEADO</button>
           <button class="btn-ghost sync-btn" data-pull-sys="fds" style="flex:1; min-width:100px;">Traer FDS</button>
           <button class="btn-ghost sync-btn" data-pull-sys="transit" style="flex:1; min-width:100px;">Traer TRANSIT</button>
         </div>
@@ -683,13 +666,13 @@ const FDS_RAW = [{"item": 1, "tag": "731.CKA00-BR01", "level": "NIVEL 0", "seman
 
 const SYS = {
   hvac: { label:'HVAC', subtitle:'Control de instalación de equipos', accent:'#07509C', hasRoom:true, hasArea:true },
-  cableado: { label:'CONEXIONADO', subtitle:'Conexionado y rotulado de cables', accent:'#E92127', hasRoom:false, hasArea:true },
+  cableado: { label:'CABLEADO', subtitle:'Conexionado y rotulado de cables', accent:'#E92127', hasRoom:false, hasArea:true },
   fds: { label:'FDS', subtitle:'Instalación de detectores', accent:'#FFC905', hasRoom:false, hasArea:false },
   transit: { label:'TRANSIT', subtitle:'Cierre y acabado de transits', accent:'#133752', hasRoom:true, hasArea:false }
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v2.6 · 31 jul 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v2.7 · 3 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 let currentSystem = 'hvac';
 let unlockedSystems = new Set();
@@ -709,6 +692,7 @@ let state = {
   })),
   fds: FDS_RAW.map(r => ({
     id:r.id, item:r.item, tag:r.tag, level:r.level,
+    stdSupport:r.stdSupport || '',
     semana:r.semana || '', semana_date:r.semana_date || '',
     soporte:r.soporte || '', soportePhotos:[],
     equipo:r.equipo || '', equipoPhotos:[],
@@ -869,15 +853,6 @@ function rowStatus(sys, row){
   return cableStatus(row);
 }
 
-// STATUS de habilitación TRANSIT: HABILITADO solo si Construcción, Limpieza y Pintura están en SI.
-// Cualquier NO o campo vacío en esas tres columnas => NO HABILITADO.
-function transitHabilitado(row){
-  return row.construccion === 'SI' && row.limpieza === 'SI' && row.pintura === 'SI';
-}
-function transitStatusLabel(row){
-  return transitHabilitado(row) ? 'HABILITADO' : 'NO HABILITADO';
-}
-
 /* ===================== System tabs ===================== */
 function renderSystemTabs(){
   const nav = document.getElementById('systemTabs');
@@ -901,9 +876,6 @@ function switchSystem(sys){
   document.documentElement.style.setProperty('--sys-accent', SYS[sys].accent);
   document.getElementById('roomSelect').style.display = SYS[sys].hasRoom ? '' : 'none';
   document.getElementById('searchInput').value = filters[sys].search;
-  document.querySelectorAll('.chip.transit-only').forEach(c=> c.style.display = sys === 'transit' ? '' : 'none');
-  if(sys !== 'transit' && (filters[sys].status === 'habilitado' || filters[sys].status === 'no_habilitado')) filters[sys].status = 'all';
-  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active', c.dataset.status === filters[sys].status));
   renderSystemTabs();
   populateSelects();
   renderAll();
@@ -969,8 +941,6 @@ function getFiltered(){
       if(f.area && r.from_area !== f.area && r.to_area !== f.area) return false;
     }
     if(f.status === 'obs'){ if(!hasObservation(sys, r)) return false; }
-    else if(f.status === 'habilitado'){ if(sys !== 'transit' || !transitHabilitado(r)) return false; }
-    else if(f.status === 'no_habilitado'){ if(sys !== 'transit' || transitHabilitado(r)) return false; }
     else if(f.status !== 'all' && rowStatus(sys, r) !== f.status) return false;
     if(s){
       let hay;
@@ -1050,16 +1020,12 @@ function cardTemplateFds(r){
 }
 function cardTemplateTransit(r){
   const st = transitStatus(r);
-  const habilitado = transitHabilitado(r);
   const bars = fieldBars([[r.construccion,true],[r.limpieza,true],[r.pintura,true],[r.cables_correcto,false],[r.etiquetas_cables,true],[r.identificacion_transit,true],[r.fotografia,true],[r.estado_final,true]]);
   const photoCount = r.fotografiaPhotos.length + r.obsPhotos.length;
   return `<div class="card" data-item="${r.id}">
     <div class="status-pill ${st}"></div>
     <div class="card-body">
-      <div class="card-top-row">
-        <div class="card-tag-row"><div class="card-tag">${escapeHtml(r.tag||'—')}</div><span class="status-badge ${habilitado?'habilitado':'no-habilitado'}">${habilitado?'✅ HABILITADO':'⛔ NO HABILITADO'}</span></div>
-        <div class="card-item">#${r.id}</div>
-      </div>
+      <div class="card-top"><div class="card-tag">${escapeHtml(r.tag||'—')}</div><div class="card-item">#${r.id}</div></div>
       <div class="card-meta"><span class="tag-pill"><b>${escapeHtml(r.level||'—')}</b></span><span class="tag-pill">Room ${escapeHtml(r.room||'—')}</span><span class="tag-pill">${escapeHtml(r.system||'—')}</span></div>
       <div class="card-progress">${bars}</div>
       <div class="badge-row">
@@ -1145,47 +1111,22 @@ document.getElementById('btnClosePin').addEventListener('click', ()=>{
   document.getElementById('pinOverlay').classList.remove('open'); pendingUnlockAction = null;
 });
 
-async function openAccessSheet(){
-  document.getElementById('accessOverlay').classList.add('open');
+function openAccessSheet(){
   document.getElementById('accessVersionSub').textContent = `Códigos de edición por sistema · App ${APP_VERSION}`;
-  renderAccessList();
-  document.getElementById('sheetSyncUrl').value = state.sheetSync.url || '';
-  document.getElementById('sheetSyncEnabled').checked = !!state.sheetSync.enabled;
-  document.getElementById('syncBulkProgress').textContent = '';
-  updateSyncStatusUI();
-  if(state.sheetSync.url){
-    document.getElementById('accessSyncNote').textContent = 'Buscando los códigos más recientes...';
-    const ok = await pullAccessFromSheet(true);
-    renderAccessList();
-    document.getElementById('accessSyncNote').textContent = ok
-      ? `Códigos actualizados desde Google Sheets · ${formatDateTime(new Date().toISOString())}`
-      : 'No se pudo conectar a Google Sheets — mostrando los códigos guardados en este equipo.';
-  } else {
-    document.getElementById('accessSyncNote').textContent = 'Códigos guardados solo en este equipo (configura Google Sheets para compartirlos automáticamente).';
-  }
-}
-function renderAccessList(){
   const list = document.getElementById('accessList');
   list.innerHTML = SYS_ORDER.map(id=>`
     <div class="access-row">
       <span class="sys-dot" style="background:${SYS[id].accent}"></span>
       <div class="tx"><div class="t">${SYS[id].label}</div><div class="d">Código requerido para editar este sistema</div></div>
-      <input type="text" autocomplete="off" inputmode="text" maxlength="8" value="${escapeHtml(state.access[id].pin)}" data-sys="${id}" class="access-pin-input">
+      <input type="password" inputmode="numeric" maxlength="8" value="${escapeHtml(state.access[id].pin)}" data-sys="${id}" class="access-pin-input">
     </div>
   `).join('');
+  document.getElementById('sheetSyncUrl').value = state.sheetSync.url || '';
+  document.getElementById('sheetSyncEnabled').checked = !!state.sheetSync.enabled;
+  document.getElementById('syncBulkProgress').textContent = '';
+  updateSyncStatusUI();
+  document.getElementById('accessOverlay').classList.add('open');
 }
-document.getElementById('btnRefreshAccess').addEventListener('click', async ()=>{
-  if(!state.sheetSync.url){ showToast('Primero guarda la URL de Google Sheets'); return; }
-  const btn = document.getElementById('btnRefreshAccess');
-  btn.classList.add('spinning');
-  const ok = await pullAccessFromSheet(true);
-  btn.classList.remove('spinning');
-  renderAccessList();
-  document.getElementById('accessSyncNote').textContent = ok
-    ? `Códigos actualizados desde Google Sheets · ${formatDateTime(new Date().toISOString())}`
-    : 'No se pudo actualizar — revisa tu conexión.';
-  showToast(ok ? 'Códigos actualizados' : 'No se pudo actualizar — revisa tu conexión');
-});
 document.getElementById('btnAccessOpen').addEventListener('click', ()=>{
   if(accessPanelUnlocked){ openAccessSheet(); return; }
   document.getElementById('masterPwInput').value = '';
@@ -1209,7 +1150,7 @@ document.getElementById('btnMasterPwConfirm').addEventListener('click', confirmM
 document.getElementById('masterPwInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') confirmMasterPw(); });
 document.getElementById('btnCloseAccess').addEventListener('click', ()=> document.getElementById('accessOverlay').classList.remove('open'));
 document.getElementById('accessOverlay').addEventListener('click', (e)=>{ if(e.target.id==='accessOverlay') document.getElementById('accessOverlay').classList.remove('open'); });
-document.getElementById('btnSaveAccess').addEventListener('click', async ()=>{
+document.getElementById('btnSaveAccess').addEventListener('click', ()=>{
   document.querySelectorAll('.access-pin-input').forEach(inp=>{
     const sys = inp.dataset.sys;
     const v = inp.value.trim();
@@ -1220,13 +1161,7 @@ document.getElementById('btnSaveAccess').addEventListener('click', async ()=>{
   scheduleSave();
   updateSyncStatusUI();
   document.getElementById('accessOverlay').classList.remove('open');
-  if(state.sheetSync.enabled && state.sheetSync.url){
-    showToast('Guardando y enviando códigos a Google Sheets...');
-    const ok = await pushAccessToSheet();
-    showToast(ok ? 'Códigos guardados y sincronizados a todos los equipos' : 'Guardado en este equipo — no se pudo enviar a Google Sheets');
-  } else {
-    showToast('Configuración guardada (solo en este equipo — activa la sincronización para compartir los códigos)');
-  }
+  showToast('Configuración guardada');
 });
 function flashBtnState(btn, ok){
   btn.classList.remove('syncing');
@@ -1391,7 +1326,7 @@ document.getElementById('hvacSaveDetail').addEventListener('click', ()=>{
   if(row) pushRowToSheet('hvac', row);
 });
 
-/* ===================== CONEXIONADO detail ===================== */
+/* ===================== CABLEADO detail ===================== */
 function sideFieldsHtml(prefix, tagLabel){
   return `
   <div class="side-block side-${prefix}">
@@ -1538,6 +1473,7 @@ function openDetailFds(id){
   document.getElementById('fdsLastEdited').textContent = row.lastEditedAt ? `Última edición: ${formatDateTime(row.lastEditedAt)}` : 'Aún sin editar';
   document.getElementById('fdsInfoGrid').innerHTML = `
     <div class="info-cell"><div class="lbl">Tag equipo</div><div class="val">${escapeHtml(orDash(row.tag))}</div></div>
+    <div class="info-cell"><div class="lbl">Std Support</div><div class="val">${escapeHtml(orDash(row.stdSupport))}</div></div>
     <div class="info-cell"><div class="lbl">Nivel</div><div class="val">${escapeHtml(orDash(row.level))}</div></div>`;
 
   document.getElementById('fdsFechaPick').value = row.semana_date || '';
@@ -1636,16 +1572,7 @@ function openDetailTransit(id){
   document.getElementById('transitFotografiaPhotoGrid').style.display = row.fotografia === 'SI' ? '' : 'none';
   document.getElementById('transitObsPhotoGrid').style.display = row.observacion ? '' : 'none';
   refreshTransitPhotoGrids();
-  refreshTransitStatusBadge(row);
   document.getElementById('detailOverlayTransit').classList.add('open');
-}
-function refreshTransitStatusBadge(row){
-  const badge = document.getElementById('transitStatusBadge');
-  if(!badge) return;
-  const habilitado = transitHabilitado(row);
-  badge.textContent = habilitado ? 'HABILITADO' : 'NO HABILITADO';
-  badge.classList.toggle('habilitado', habilitado);
-  badge.classList.toggle('no-habilitado', !habilitado);
 }
 function refreshTransitPhotoGrids(){
   const row = state.transit.find(r=>r.id===currentDetailItem);
@@ -1670,9 +1597,6 @@ document.querySelectorAll('#detailOverlayTransit .seg').forEach(seg=>{
     if(field === 'fotografia'){
       document.getElementById('transitFotografiaPhotoGrid').style.display = row.fotografia === 'SI' ? '' : 'none';
       if(row.fotografia !== 'SI'){ row.fotografiaPhotos = []; refreshTransitPhotoGrids(); }
-    }
-    if(field === 'construccion' || field === 'limpieza' || field === 'pintura'){
-      refreshTransitStatusBadge(row);
     }
   });
 });
@@ -1811,10 +1735,10 @@ function buildWorkbook(sys){
     ws['!cols'] = [{wch:6},{wch:22},{wch:9},{wch:14},{wch:12},{wch:16},{wch:14},{wch:9},{wch:10},{wch:10},{wch:14},{wch:8},{wch:10},{wch:13},{wch:10},{wch:34},{wch:16},{wch:10},{wch:10}];
     XLSX.utils.book_append_sheet(wb, ws, 'HVAC');
   } else if(sys === 'fds'){
-    const header = ['ITEM','TAG EQUIPOS','NIVEL','SEMANA','SOPORTE','EQUIPO','MINI RUTA','CABLEADO','CONEXIONADO','N_SERIE_EQUIPO','OBSERVACION','FECHA_EDICION','FOTOS_SOPORTE','FOTOS_EQUIPO','FOTOS_INCIDENCIA'];
-    const data = [header, ...state.fds.map(r=>[r.item, r.tag, r.level, r.semana, r.soporte, r.equipo, r.minirutas, r.cableado, r.conexionado, r.nserie, r.observacion, formatDateTime(r.lastEditedAt), r.soportePhotos.length, r.equipoPhotos.length, r.obsPhotos.length])];
+    const header = ['ITEM','TAG EQUIPOS','STD SUPPORT','NIVEL','SEMANA','SOPORTE','EQUIPO','MINI RUTA','CABLEADO','CONEXIONADO','N_SERIE_EQUIPO','OBSERVACION','FECHA_EDICION','FOTOS_SOPORTE','FOTOS_EQUIPO','FOTOS_INCIDENCIA'];
+    const data = [header, ...state.fds.map(r=>[r.item, r.tag, r.stdSupport, r.level, r.semana, r.soporte, r.equipo, r.minirutas, r.cableado, r.conexionado, r.nserie, r.observacion, formatDateTime(r.lastEditedAt), r.soportePhotos.length, r.equipoPhotos.length, r.obsPhotos.length])];
     const ws = XLSX.utils.aoa_to_sheet(data);
-    ws['!cols'] = [{wch:6},{wch:18},{wch:10},{wch:9},{wch:9},{wch:9},{wch:10},{wch:10},{wch:12},{wch:16},{wch:34},{wch:16},{wch:12},{wch:11},{wch:12}];
+    ws['!cols'] = [{wch:6},{wch:18},{wch:14},{wch:10},{wch:9},{wch:9},{wch:9},{wch:10},{wch:10},{wch:12},{wch:16},{wch:34},{wch:16},{wch:12},{wch:11},{wch:12}];
     XLSX.utils.book_append_sheet(wb, ws, 'FDS');
   } else if(sys === 'cableado'){
     const header = ['CABLE_NUMBER','From_Tag','From_Area','Nivel','From_Minirutas','From_Tendido','From_Marca Gland','From_Gland','From_Fecha Gland','From_Conexionado','From_Fecha Conexionado','From_Observacion','To_Tag','To_Area','To_Minirutas','To_Tendido','To_Marca Gland','To_Gland','To_Fecha Gland','To_Conexionado','To_Fecha Conexionado','To_Observacion'];
@@ -1825,16 +1749,16 @@ function buildWorkbook(sys){
       r.to.minirutas, r.to.tendido, r.to.marca_gland, r.to.gland, r.to.fecha_gland, r.to.conexionado, r.to.fecha_conexionado, r.to.observacion
     ])];
     const ws = XLSX.utils.aoa_to_sheet(data);
-    XLSX.utils.book_append_sheet(wb, ws, 'CONEXIONADO');
+    XLSX.utils.book_append_sheet(wb, ws, 'CABLEADO');
   } else if(sys === 'transit'){
-    const header = ['ID','REV','INSTALLER','TAG N°','HOLE NAME','LEVEL','TYPE','PROFILE','SYSTEM','FRAME TYPE','DESCRIPTION','FRAME MATERIAL','ROOM','CONSTRUCCION','LIMPIEZA','PINTURA','STATUS','CABLES_CORRECTO','ETIQUETAS_CABLES','IDENTIFICACION_TRANSIT','FOTOGRAFIA','ESTADO_FINAL','OBSERVACIONES','FECHA_EDICION','FOTOS_FOTOGRAFIA','FOTOS_INCIDENCIA'];
+    const header = ['ID','REV','INSTALLER','TAG N°','HOLE NAME','LEVEL','TYPE','PROFILE','SYSTEM','FRAME TYPE','DESCRIPTION','FRAME MATERIAL','ROOM','CONSTRUCCION','LIMPIEZA','PINTURA','CABLES_CORRECTO','ETIQUETAS_CABLES','IDENTIFICACION_TRANSIT','FOTOGRAFIA','ESTADO_FINAL','OBSERVACIONES','FECHA_EDICION','FOTOS_FOTOGRAFIA','FOTOS_INCIDENCIA'];
     const data = [header, ...state.transit.map(r=>[
       r.id, r.rev, r.installer, r.tag, r.hole_name, r.level, r.type, r.profile, r.system, r.frame_type, r.description, r.frame_material, r.room,
-      r.construccion, r.limpieza, r.pintura, transitStatusLabel(r), r.cables_correcto, r.etiquetas_cables, r.identificacion_transit, r.fotografia, r.estado_final,
+      r.construccion, r.limpieza, r.pintura, r.cables_correcto, r.etiquetas_cables, r.identificacion_transit, r.fotografia, r.estado_final,
       r.observacion, formatDateTime(r.lastEditedAt), r.fotografiaPhotos.length, r.obsPhotos.length
     ])];
     const ws = XLSX.utils.aoa_to_sheet(data);
-    ws['!cols'] = [{wch:6},{wch:6},{wch:14},{wch:22},{wch:16},{wch:10},{wch:12},{wch:8},{wch:14},{wch:12},{wch:14},{wch:18},{wch:16},{wch:12},{wch:10},{wch:10},{wch:14},{wch:14},{wch:14},{wch:16},{wch:10},{wch:12},{wch:34},{wch:16},{wch:12},{wch:12}];
+    ws['!cols'] = [{wch:6},{wch:6},{wch:14},{wch:22},{wch:16},{wch:10},{wch:12},{wch:8},{wch:14},{wch:12},{wch:14},{wch:18},{wch:16},{wch:12},{wch:10},{wch:10},{wch:14},{wch:14},{wch:16},{wch:10},{wch:12},{wch:34},{wch:16},{wch:12},{wch:12}];
     XLSX.utils.book_append_sheet(wb, ws, 'TRANSIT');
   }
   const weeks = weeklySummaryRows(sys);
@@ -1860,16 +1784,16 @@ function sheetRowPayload(sys, row){
   }
   if(sys === 'fds'){
     return { sheet:'FDS', uid:'fds-'+row.id,
-      headers:['UID','ITEM','TAG_EQUIPOS','NIVEL','SEMANA','SOPORTE','EQUIPO','MINI_RUTA','CABLEADO','CONEXIONADO','N_SERIE_EQUIPO','OBSERVACION','FECHA_EDICION'],
-      values:['fds-'+row.id, row.item, row.tag, row.level, row.semana, row.soporte, row.equipo, row.minirutas, row.cableado, row.conexionado, row.nserie, row.observacion, formatDateTime(row.lastEditedAt)] };
+      headers:['UID','ITEM','TAG_EQUIPOS','STD_SUPPORT','NIVEL','SEMANA','SOPORTE','EQUIPO','MINI_RUTA','CABLEADO','CONEXIONADO','N_SERIE_EQUIPO','OBSERVACION','FECHA_EDICION'],
+      values:['fds-'+row.id, row.item, row.tag, row.stdSupport, row.level, row.semana, row.soporte, row.equipo, row.minirutas, row.cableado, row.conexionado, row.nserie, row.observacion, formatDateTime(row.lastEditedAt)] };
   }
   if(sys === 'transit'){
     return { sheet:'TRANSIT', uid:'transit-'+row.id,
-      headers:['UID','REV','INSTALLER','TAG','HOLE_NAME','LEVEL','TYPE','PROFILE','SYSTEM','FRAME_TYPE','DESCRIPTION','FRAME_MATERIAL','ROOM','CONSTRUCCION','LIMPIEZA','PINTURA','STATUS','CABLES_CORRECTO','ETIQUETAS_CABLES','IDENTIFICACION_TRANSIT','FOTOGRAFIA','ESTADO_FINAL','OBSERVACION','FECHA_EDICION'],
-      values:['transit-'+row.id, row.rev, row.installer, row.tag, row.hole_name, row.level, row.type, row.profile, row.system, row.frame_type, row.description, row.frame_material, row.room, row.construccion, row.limpieza, row.pintura, transitStatusLabel(row), row.cables_correcto, row.etiquetas_cables, row.identificacion_transit, row.fotografia, row.estado_final, row.observacion, formatDateTime(row.lastEditedAt)] };
+      headers:['UID','REV','INSTALLER','TAG','HOLE_NAME','LEVEL','TYPE','PROFILE','SYSTEM','FRAME_TYPE','DESCRIPTION','FRAME_MATERIAL','ROOM','CONSTRUCCION','LIMPIEZA','PINTURA','CABLES_CORRECTO','ETIQUETAS_CABLES','IDENTIFICACION_TRANSIT','FOTOGRAFIA','ESTADO_FINAL','OBSERVACION','FECHA_EDICION'],
+      values:['transit-'+row.id, row.rev, row.installer, row.tag, row.hole_name, row.level, row.type, row.profile, row.system, row.frame_type, row.description, row.frame_material, row.room, row.construccion, row.limpieza, row.pintura, row.cables_correcto, row.etiquetas_cables, row.identificacion_transit, row.fotografia, row.estado_final, row.observacion, formatDateTime(row.lastEditedAt)] };
   }
   const lastEdited = [row.from.lastEditedAt, row.to.lastEditedAt].filter(Boolean).sort().pop();
-  return { sheet:'CONEXIONADO', uid:'cable-'+row.id,
+  return { sheet:'CABLEADO', uid:'cable-'+row.id,
     headers:['UID','CABLE_NUMBER','From_Tag','From_Area','Nivel','From_Minirutas','From_Tendido','From_Marca_Gland','From_Gland','From_Fecha_Gland','From_Conexionado','From_Fecha_Conexionado','From_Observacion','To_Tag','To_Area','To_Minirutas','To_Tendido','To_Marca_Gland','To_Gland','To_Fecha_Gland','To_Conexionado','To_Fecha_Conexionado','To_Observacion','FECHA_EDICION'],
     values:['cable-'+row.id, row.cable, row.from_tag, row.from_area, row.level, row.from.minirutas, row.from.tendido, row.from.marca_gland, row.from.gland, row.from.fecha_gland, row.from.conexionado, row.from.fecha_conexionado, row.from.observacion, row.to_tag, row.to_area, row.to.minirutas, row.to.tendido, row.to.marca_gland, row.to.gland, row.to.fecha_gland, row.to.conexionado, row.to.fecha_conexionado, row.to.observacion, formatDateTime(lastEdited)] };
 }
@@ -1886,46 +1810,6 @@ async function pushRowToSheet(sys, row){
     updateSyncStatusUI();
   }catch(e){
     showToast('No se pudo sincronizar con Google Sheets (revisa tu conexión)');
-  }
-}
-// Códigos de acceso por sistema: se guardan en una pestaña 'ACCESS' del mismo Google Sheet,
-// para que al cambiar un código desde un equipo (con la contraseña maestra), los demás
-// equipos lo reciban la próxima vez que abran el panel de accesos, la app, o pulsen Actualizar.
-async function pushAccessToSheet(){
-  if(!state.sheetSync.enabled || !state.sheetSync.url) return false;
-  try{
-    for(const sys of SYS_ORDER){
-      const pin = String(state.access[sys].pin);
-      const payload = {
-        sheet:'ACCESS', uid:'access-'+sys,
-        headers:['UID','SISTEMA','CODIGO','FECHA_ACTUALIZACION'],
-        values:['access-'+sys, SYS[sys].label, "'"+pin, formatDateTime(new Date().toISOString())]
-      };
-      await fetch(state.sheetSync.url, {
-        method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify({ action:'upsert', ...payload })
-      });
-    }
-    return true;
-  }catch(e){ return false; }
-}
-async function pullAccessFromSheet(silent){
-  if(!state.sheetSync.url) return false;
-  try{
-    const res = await fetch(`${state.sheetSync.url}?sheet=${encodeURIComponent('ACCESS')}`, { method:'GET' });
-    const rows = await res.json();
-    if(!Array.isArray(rows)) return false;
-    const labelToSys = {}; SYS_ORDER.forEach(id=> labelToSys[SYS[id].label] = id);
-    rows.forEach(obj=>{
-      const sys = labelToSys[obj.SISTEMA] || (obj.UID||'').replace('access-','');
-      const code = obj.CODIGO || obj.PIN;
-      if(sys && state.access[sys] && code) state.access[sys].pin = String(code);
-    });
-    scheduleSave();
-    return true;
-  }catch(e){
-    if(!silent) showToast('No se pudo leer los códigos desde Google Sheets');
-    return false;
   }
 }
 async function testSheetConnection(url){
@@ -1981,6 +1865,7 @@ function applySheetRowToFds(obj){
   const idNum = parseInt(String(uid).replace('fds-',''));
   const row = state.fds.find(r=>r.id===idNum);
   if(!row) return false;
+  row.stdSupport = (obj.STD_SUPPORT !== undefined && obj.STD_SUPPORT !== null) ? String(obj.STD_SUPPORT) : '';
   row.semana = obj.SEMANA || '';
   row.soporte = obj.SOPORTE || '';
   row.equipo = obj.EQUIPO || '';
@@ -2034,7 +1919,7 @@ function applySheetRowToTransit(obj){
 }
 async function pullFromSheet(sys, silent){
   if(!state.sheetSync.url){ showToast('Primero guarda la URL de Google Sheets'); return false; }
-  const sheetName = sys === 'hvac' ? 'HVAC' : sys === 'cableado' ? 'CONEXIONADO' : sys === 'transit' ? 'TRANSIT' : 'FDS';
+  const sheetName = sys === 'hvac' ? 'HVAC' : sys === 'cableado' ? 'CABLEADO' : sys === 'transit' ? 'TRANSIT' : 'FDS';
   const progressEl = document.getElementById('syncBulkProgress');
   if(progressEl) progressEl.textContent = `Leyendo ${SYS[sys].label} desde Google Sheets...`;
   try{
@@ -2529,9 +2414,6 @@ async function init(){
     showToast('Sesión anterior recuperada');
   }
   renderAll();
-  if(state.sheetSync.url){
-    pullAccessFromSheet(true).then(ok=>{ if(ok) renderAll(); });
-  }
   openLanding();
   const banner = document.getElementById('jsFailBanner');
   if(banner) banner.remove();
