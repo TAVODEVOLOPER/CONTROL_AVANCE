@@ -672,8 +672,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v3.3 · 3 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
-const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
+const APP_VERSION = 'v3.1 · 03 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 let currentSystem = 'hvac';
 let unlockedSystems = new Set();
@@ -693,7 +692,7 @@ let state = {
   })),
   fds: FDS_RAW.map(r => ({
     id:r.id, item:r.item, tag:r.tag, level:r.level,
-    stdSupport:r.stdSupport || '',
+    std_support:r.std_support || '',
     semana:r.semana || '', semana_date:r.semana_date || '',
     soporte:r.soporte || '', soportePhotos:[],
     equipo:r.equipo || '', equipoPhotos:[],
@@ -718,7 +717,7 @@ let state = {
     fds: { pin:'9012' },
     transit: { pin:'3456' }
   },
-  sheetSync: { url:DEFAULT_SHEET_URL, enabled:true, lastSync:'' }
+  sheetSync: { url:'', enabled:false, lastSync:'' }
 };
 function emptySide(){
   return { minirutas:'', tendido:'', marca_gland:'', gland:'', fecha_gland:'', conexionado:'', fecha_conexionado:'',
@@ -768,16 +767,6 @@ function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&'
 // Equivalente a "valor ?? '—'" pero sin usar el operador ?? (algunos iPhone con iOS viejo no lo soportan
 // y eso hacía que TODO el script dejara de ejecutarse con solo mostrar la pantalla estática).
 function orDash(v){ return (v === null || v === undefined) ? '—' : v; }
-// Busca un valor probando varias variantes de nombre de columna (por si en Google
-// Sheets el encabezado quedó con espacio, guion bajo, mayúsculas distintas, etc.).
-// Evita el operador ?? a propósito (rompe en iPhones viejos).
-function pickSheetField(obj, keys){
-  for(var i=0; i<keys.length; i++){
-    var k = keys[i];
-    if(obj[k] !== undefined && obj[k] !== null && obj[k] !== '') return obj[k];
-  }
-  return '';
-}
 function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
@@ -982,6 +971,7 @@ function cardTemplateHvac(r){
     <div class="card-body">
       <div class="card-top"><div class="card-tag">${escapeHtml(r.tag||'—')}</div><div class="card-item">#${r.item}</div></div>
       <div class="card-meta"><span class="tag-pill"><b>${escapeHtml(r.level||'—')}</b></span><span class="tag-pill">Área ${escapeHtml(r.area||'—')}</span><span class="tag-pill">Room ${escapeHtml(r.room||'—')}</span></div>
+      <div class="card-meta"><span class="tag-pill">STD SUPPORT: ${escapeHtml(orDash(r.std_support))}</span></div>
       <div class="card-progress">${bars}</div>
       <div class="badge-row">
       ${r.photos.length ? `<span class="photo-badge">📷 ${r.photos.length} foto(s)</span>` : ''}
@@ -1020,7 +1010,8 @@ function cardTemplateFds(r){
     <div class="status-pill ${st}"></div>
     <div class="card-body">
       <div class="card-top"><div class="card-tag">${escapeHtml(r.tag||'—')}</div><div class="card-item">#${r.item}</div></div>
-      <div class="card-meta"><span class="tag-pill"><b>${escapeHtml(r.level||'—')}</b></span>${r.stdSupport?`<span class="tag-pill">${escapeHtml(r.stdSupport)}</span>`:''}</div>
+      <div class="card-meta"><span class="tag-pill"><b>${escapeHtml(r.level||'—')}</b></span></div>
+      <div class="card-meta"><span class="tag-pill">STD SUPPORT: ${escapeHtml(orDash(r.std_support))}</span></div>
       <div class="card-progress">${bars}</div>
       <div class="badge-row">
       ${photoCount ? `<span class="photo-badge">📷 ${photoCount} foto(s)</span>` : ''}
@@ -1129,7 +1120,7 @@ function openAccessSheet(){
     <div class="access-row">
       <span class="sys-dot" style="background:${SYS[id].accent}"></span>
       <div class="tx"><div class="t">${SYS[id].label}</div><div class="d">Código requerido para editar este sistema</div></div>
-      <input type="text" inputmode="numeric" maxlength="8" value="${escapeHtml(state.access[id].pin)}" data-sys="${id}" class="access-pin-input">
+      <input type="password" inputmode="numeric" maxlength="8" value="${escapeHtml(state.access[id].pin)}" data-sys="${id}" class="access-pin-input">
     </div>
   `).join('');
   document.getElementById('sheetSyncUrl').value = state.sheetSync.url || '';
@@ -1484,8 +1475,8 @@ function openDetailFds(id){
   document.getElementById('fdsLastEdited').textContent = row.lastEditedAt ? `Última edición: ${formatDateTime(row.lastEditedAt)}` : 'Aún sin editar';
   document.getElementById('fdsInfoGrid').innerHTML = `
     <div class="info-cell"><div class="lbl">Tag equipo</div><div class="val">${escapeHtml(orDash(row.tag))}</div></div>
-    <div class="info-cell"><div class="lbl">Std Support</div><div class="val">${escapeHtml(orDash(row.stdSupport))}</div></div>
-    <div class="info-cell"><div class="lbl">Nivel</div><div class="val">${escapeHtml(orDash(row.level))}</div></div>`;
+    <div class="info-cell"><div class="lbl">Nivel</div><div class="val">${escapeHtml(orDash(row.level))}</div></div>
+    <div class="info-cell"><div class="lbl">Std support</div><div class="val">${escapeHtml(orDash(row.std_support))}</div></div>`;
 
   document.getElementById('fdsFechaPick').value = row.semana_date || '';
   document.getElementById('fdsSemanaPreview').textContent = row.semana ? `Semana registrada: ${row.semana}` : 'Sin semana registrada';
@@ -1746,10 +1737,10 @@ function buildWorkbook(sys){
     ws['!cols'] = [{wch:6},{wch:22},{wch:9},{wch:14},{wch:12},{wch:16},{wch:14},{wch:9},{wch:10},{wch:10},{wch:14},{wch:8},{wch:10},{wch:13},{wch:10},{wch:34},{wch:16},{wch:10},{wch:10}];
     XLSX.utils.book_append_sheet(wb, ws, 'HVAC');
   } else if(sys === 'fds'){
-    const header = ['ITEM','TAG EQUIPOS','STD SUPPORT','NIVEL','SEMANA','SOPORTE','EQUIPO','MINI RUTA','CABLEADO','CONEXIONADO','N_SERIE_EQUIPO','OBSERVACION','FECHA_EDICION','FOTOS_SOPORTE','FOTOS_EQUIPO','FOTOS_INCIDENCIA'];
-    const data = [header, ...state.fds.map(r=>[r.item, r.tag, r.stdSupport, r.level, r.semana, r.soporte, r.equipo, r.minirutas, r.cableado, r.conexionado, r.nserie, r.observacion, formatDateTime(r.lastEditedAt), r.soportePhotos.length, r.equipoPhotos.length, r.obsPhotos.length])];
+    const header = ['ITEM','TAG EQUIPOS','NIVEL','STD SUPPORT','SEMANA','SOPORTE','EQUIPO','MINI RUTA','CABLEADO','CONEXIONADO','N_SERIE_EQUIPO','OBSERVACION','FECHA_EDICION','FOTOS_SOPORTE','FOTOS_EQUIPO','FOTOS_INCIDENCIA'];
+    const data = [header, ...state.fds.map(r=>[r.item, r.tag, r.level, r.std_support, r.semana, r.soporte, r.equipo, r.minirutas, r.cableado, r.conexionado, r.nserie, r.observacion, formatDateTime(r.lastEditedAt), r.soportePhotos.length, r.equipoPhotos.length, r.obsPhotos.length])];
     const ws = XLSX.utils.aoa_to_sheet(data);
-    ws['!cols'] = [{wch:6},{wch:18},{wch:14},{wch:10},{wch:9},{wch:9},{wch:9},{wch:10},{wch:10},{wch:12},{wch:16},{wch:34},{wch:16},{wch:12},{wch:11},{wch:12}];
+    ws['!cols'] = [{wch:6},{wch:18},{wch:10},{wch:14},{wch:9},{wch:9},{wch:9},{wch:10},{wch:10},{wch:12},{wch:16},{wch:34},{wch:16},{wch:12},{wch:11},{wch:12}];
     XLSX.utils.book_append_sheet(wb, ws, 'FDS');
   } else if(sys === 'cableado'){
     const header = ['CABLE_NUMBER','From_Tag','From_Area','Nivel','From_Minirutas','From_Tendido','From_Marca Gland','From_Gland','From_Fecha Gland','From_Conexionado','From_Fecha Conexionado','From_Observacion','To_Tag','To_Area','To_Minirutas','To_Tendido','To_Marca Gland','To_Gland','To_Fecha Gland','To_Conexionado','To_Fecha Conexionado','To_Observacion'];
@@ -1795,8 +1786,8 @@ function sheetRowPayload(sys, row){
   }
   if(sys === 'fds'){
     return { sheet:'FDS', uid:'fds-'+row.id,
-      headers:['UID','ITEM','TAG_EQUIPOS','STD SUPPORT','NIVEL','SEMANA','SOPORTE','EQUIPO','MINI_RUTA','CABLEADO','CONEXIONADO','N_SERIE_EQUIPO','OBSERVACION','FECHA_EDICION'],
-      values:['fds-'+row.id, row.item, row.tag, row.stdSupport, row.level, row.semana, row.soporte, row.equipo, row.minirutas, row.cableado, row.conexionado, row.nserie, row.observacion, formatDateTime(row.lastEditedAt)] };
+      headers:['UID','ITEM','TAG_EQUIPOS','STD_SUPPORT','NIVEL','SEMANA','SOPORTE','EQUIPO','MINI_RUTA','CABLEADO','CONEXIONADO','N_SERIE_EQUIPO','OBSERVACION','FECHA_EDICION'],
+      values:['fds-'+row.id, row.item, row.tag, row.std_support, row.level, row.semana, row.soporte, row.equipo, row.minirutas, row.cableado, row.conexionado, row.nserie, row.observacion, formatDateTime(row.lastEditedAt)] };
   }
   if(sys === 'transit'){
     return { sheet:'TRANSIT', uid:'transit-'+row.id,
@@ -1876,7 +1867,7 @@ function applySheetRowToFds(obj){
   const idNum = parseInt(String(uid).replace('fds-',''));
   const row = state.fds.find(r=>r.id===idNum);
   if(!row) return false;
-  row.stdSupport = String(pickSheetField(obj, ['STD_SUPPORT','STD SUPPORT','Std_Support','Std Support','STDSUPPORT','stdSupport']));
+  row.std_support = obj.STD_SUPPORT || obj.STD_SUPORT || obj['STD SUPPORT'] || obj['STD_SUPPORT '] || '';
   row.semana = obj.SEMANA || '';
   row.soporte = obj.SOPORTE || '';
   row.equipo = obj.EQUIPO || '';
@@ -2424,24 +2415,19 @@ async function init(){
     state = saved;
     showToast('Sesión anterior recuperada');
   }
-  // Los PIN de acceso y la sincronización con Google Sheets se conservan
-  // SIEMPRE entre actualizaciones de la app, aunque cambie el número de
-  // registros (lo que evita el restore completo de arriba), y aunque el
-  // objeto guardado tuviera la URL vacía por alguna sesión previa.
-  if(saved && saved.access){
-    state.access = { ...state.access, ...saved.access };
-  }
-  if(saved && saved.sheetSync && saved.sheetSync.url){
-    state.sheetSync.url = saved.sheetSync.url;
-    if(saved.sheetSync.lastSync) state.sheetSync.lastSync = saved.sheetSync.lastSync;
-  }
-  if(!state.sheetSync.url){ state.sheetSync.url = DEFAULT_SHEET_URL; }
-  state.sheetSync.enabled = true; // la sincronización debe permanecer siempre activa
-  scheduleSave();
   renderAll();
   openLanding();
   const banner = document.getElementById('jsFailBanner');
   if(banner) banner.remove();
+
+  // Auto-actualización silenciosa desde Google Sheets al abrir la app (sin tocar ningún botón),
+  // para que un celular nuevo o recién actualizado ya traiga los últimos datos (ej. STD SUPPORT de FDS).
+  if(state.sheetSync.url){
+    for(const sys of ['hvac','fds','cableado','transit']){
+      await pullFromSheet(sys, true);
+    }
+    renderAll();
+  }
 }
 init().catch(function(err){
   const banner = document.getElementById('jsFailBanner');
