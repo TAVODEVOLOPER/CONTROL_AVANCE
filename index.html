@@ -672,7 +672,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v3.0 · 3 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v3.1 · 3 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 
 let currentSystem = 'hvac';
@@ -1010,7 +1010,7 @@ function cardTemplateFds(r){
     <div class="status-pill ${st}"></div>
     <div class="card-body">
       <div class="card-top"><div class="card-tag">${escapeHtml(r.tag||'—')}</div><div class="card-item">#${r.item}</div></div>
-      <div class="card-meta"><span class="tag-pill"><b>${escapeHtml(r.level||'—')}</b></span>${r.semana?`<span class="tag-pill">${escapeHtml(r.semana)}</span>`:''}${r.nserie?`<span class="tag-pill">N° Serie ${escapeHtml(r.nserie)}</span>`:''}</div>
+      <div class="card-meta"><span class="tag-pill"><b>${escapeHtml(r.level||'—')}</b></span>${r.stdSupport?`<span class="tag-pill">${escapeHtml(r.stdSupport)}</span>`:''}${r.nserie?`<span class="tag-pill">N° Serie ${escapeHtml(r.nserie)}</span>`:''}</div>
       <div class="card-progress">${bars}</div>
       <div class="badge-row">
       ${photoCount ? `<span class="photo-badge">📷 ${photoCount} foto(s)</span>` : ''}
