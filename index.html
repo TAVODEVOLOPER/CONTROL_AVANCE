@@ -121,6 +121,22 @@ input,select,button,textarea{font-family:inherit;font-size:16px;}
 /* ---------- List ---------- */
 .list-wrap{padding:12px; padding-bottom:100px;}
 .result-count{font-size:12px; color:var(--ink-600); margin:2px 4px 10px; font-family:var(--font-mono);}
+.result-count-row{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+.result-count-row .result-count{margin:2px 0 10px;}
+.table-view-toggle{flex-shrink:0; margin-bottom:8px; padding:7px 12px; border-radius:8px; border:1.5px solid var(--steel-300); background:#fff; font-weight:700; font-size:12px; color:var(--brand-blue);}
+.table-view-toggle.active{background:var(--brand-blue); border-color:var(--brand-blue); color:#fff;}
+.fds-table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch; border:1.5px solid var(--steel-300); border-radius:10px; background:#fff; margin-bottom:16px;}
+.fds-table{border-collapse:collapse; width:100%; min-width:520px; font-family:var(--font-body);}
+.fds-table thead th{position:sticky; top:0; background:var(--steel-050); color:var(--ink-600); font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.02em; padding:9px 6px; text-align:center; border-bottom:1.5px solid var(--steel-300); white-space:nowrap; z-index:2;}
+.fds-table thead th:first-child{text-align:left; padding-left:12px; position:sticky; left:0; z-index:3; background:var(--steel-050);}
+.fds-table tbody tr:nth-child(even){background:var(--steel-050);}
+.fds-table td{border-bottom:1px solid var(--steel-200); padding:0; text-align:center; vertical-align:middle;}
+.fds-cell-tag{position:sticky; left:0; background:inherit; padding:9px 12px; text-align:left; min-width:150px; max-width:170px; border-right:1.5px solid var(--steel-300); cursor:pointer;}
+.fds-cell-tag-name{font-weight:700; font-size:12.5px; color:var(--ink-900); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.fds-cell-tag-sub{font-size:10.5px; color:var(--steel-500); white-space:nowrap; margin-top:1px;}
+.fds-cell{cursor:pointer; padding:12px 4px; font-weight:700; font-size:12px; min-width:76px; color:var(--steel-500); user-select:none;}
+.fds-cell.on-si{background:var(--green-100); color:var(--green-600);}
+.fds-cell.on-no{background:var(--red-100); color:var(--brand-red-dark);}
 .card{background:#fff; border-radius:var(--radius); border:1px solid var(--steel-300); border-left:4px solid var(--sys-accent, var(--brand-blue)); padding:12px 13px; margin-bottom:9px; display:flex; gap:11px; align-items:flex-start; cursor:pointer;}
 .card:active{box-shadow:inset 0 0 0 2px var(--sys-accent, var(--brand-blue));}
 .status-pill{flex:none; width:9px; height:9px; border-radius:50%; margin-top:6px;}
@@ -406,7 +422,10 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 </div>
 
 <div class="list-wrap">
-  <div class="result-count" id="resultCount"></div>
+  <div class="result-count-row">
+    <div class="result-count" id="resultCount"></div>
+    <button class="table-view-toggle" id="btnTableView" style="display:none;">📋 Vista tabla</button>
+  </div>
   <div id="listContainer"></div>
 </div>
 
@@ -682,9 +701,65 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v3.6 · 03 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v3.8 · 05 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 let currentSystem = 'hvac';
+const viewMode = { hvac:'cards', cableado:'cards', fds:'cards', transit:'cards' };
+const TABLE_CONFIG = {
+  hvac: {
+    idField:'uid', tagField:'tag',
+    subField: r => `#${r.item} · ${r.level||'—'}`,
+    fields: [
+      {key:'soporte', label:'Soporte'},
+      {key:'miniruta', label:'Miniruta'},
+      {key:'conexionado', label:'Conexionado'},
+      {key:'megado', label:'Megado'}
+    ],
+    statusFn: hvacStatus
+  },
+  fds: {
+    idField:'id', tagField:'tag',
+    subField: r => `#${r.item} · ${r.level||'—'}`,
+    fields: [
+      {key:'soporte', label:'Soporte'},
+      {key:'equipo', label:'Equipo'},
+      {key:'minirutas', label:'Mini ruta'},
+      {key:'cableado', label:'Cableado'},
+      {key:'conexionado', label:'Conexionado'}
+    ],
+    statusFn: fdsStatus
+  },
+  transit: {
+    idField:'id', tagField:'tag',
+    subField: r => `#${r.id} · ${r.level||'—'} · Room ${r.room||'—'}`,
+    fields: [
+      {key:'construccion', label:'Construcción'},
+      {key:'limpieza', label:'Limpieza'},
+      {key:'pintura', label:'Pintura'},
+      {key:'etiquetas_cables', label:'Etiq. cables'},
+      {key:'identificacion_transit', label:'Identif.'},
+      {key:'fotografia', label:'Fotografía'},
+      {key:'estado_final', label:'Estado final'}
+    ],
+    statusFn: transitStatus
+  },
+  cableado: {
+    idField:'id', tagField:'cable',
+    subField: r => `${r.from_tag||'—'} → ${r.to_tag||'—'}`,
+    nested: true,
+    fields: [
+      {key:'minirutas', label:'Minirutas', side:'from'},
+      {key:'tendido', label:'Tendido', side:'from'},
+      {key:'gland', label:'Gland', side:'from'},
+      {key:'conexionado', label:'Conexionado', side:'from'},
+      {key:'minirutas', label:'Minirutas', side:'to'},
+      {key:'tendido', label:'Tendido', side:'to'},
+      {key:'gland', label:'Gland', side:'to'},
+      {key:'conexionado', label:'Conexionado', side:'to'}
+    ],
+    statusFn: cableStatus
+  }
+};
 let unlockedSystems = new Set();
 let pendingUnlockAction = null; // function to run once unlocked
 let accessPanelUnlocked = false;
@@ -1054,15 +1129,103 @@ function renderList(){
   const container = document.getElementById('listContainer');
   document.getElementById('resultCount').textContent = `Mostrando ${list.length} de ${state[sys].length} registros`;
 
+  const tableBtn = document.getElementById('btnTableView');
+  tableBtn.style.display = 'inline-block';
+  tableBtn.classList.toggle('active', viewMode[sys] === 'table');
+  tableBtn.textContent = viewMode[sys] === 'table' ? '🗂 Vista tarjetas' : '📋 Vista tabla';
+
   if(list.length === 0){
     container.innerHTML = `<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><div>No se encontraron registros con estos filtros.</div></div>`;
     return;
   }
+
+  if(viewMode[sys] === 'table'){
+    renderSysTable(sys, list, container);
+    return;
+  }
+
   const tplMap = { hvac:cardTemplateHvac, cableado:cardTemplateCable, fds:cardTemplateFds, transit:cardTemplateTransit };
   container.innerHTML = list.map(r => tplMap[sys](r)).join('');
   container.querySelectorAll('.card').forEach(el=>{
     el.addEventListener('click', ()=> requestOpenDetail(sys, parseInt(el.dataset.item)));
   });
+}
+document.getElementById('btnTableView').addEventListener('click', ()=>{
+  const sys = currentSystem;
+  viewMode[sys] = viewMode[sys] === 'table' ? 'cards' : 'table';
+  renderList();
+});
+function renderSysTable(sys, list, container){
+  const cfg = TABLE_CONFIG[sys];
+  const rowsHtml = list.map(r=>{
+    const id = r[cfg.idField];
+    const cells = cfg.fields.map(f=>{
+      const val = (cfg.nested ? (r[f.side]||{})[f.key] : r[f.key]) || '';
+      const cls = val === 'SI' ? 'fds-cell on-si' : (val === 'NO' ? 'fds-cell on-no' : 'fds-cell');
+      const sideAttr = cfg.nested ? ` data-side="${f.side}"` : '';
+      return `<td class="${cls}" data-id="${id}" data-field="${f.key}"${sideAttr}>${val || '—'}</td>`;
+    }).join('');
+    return `<tr>
+      <td class="fds-cell-tag" data-id="${id}">
+        <div class="fds-cell-tag-name">${escapeHtml(r[cfg.tagField]||'—')}</div>
+        <div class="fds-cell-tag-sub">${cfg.subField(r)}</div>
+      </td>
+      ${cells}
+    </tr>`;
+  }).join('');
+  const headerCells = cfg.fields.map(f=>`<th>${cfg.nested ? (f.side==='from'?'Desde ':'Hasta ')+f.label : f.label}</th>`).join('');
+  container.innerHTML = `<div class="fds-table-wrap"><table class="fds-table">
+    <thead><tr><th>Tag</th>${headerCells}</tr></thead>
+    <tbody>${rowsHtml}</tbody>
+  </table></div>`;
+  container.querySelectorAll('.fds-cell').forEach(td=>{
+    td.addEventListener('click', ()=>{
+      const id = parseInt(td.dataset.id);
+      const field = td.dataset.field;
+      const side = td.dataset.side || null;
+      requestSysTableToggle(sys, id, field, side, td);
+    });
+  });
+  container.querySelectorAll('.fds-cell-tag').forEach(td=>{
+    td.addEventListener('click', ()=> requestOpenDetail(sys, parseInt(td.dataset.id)));
+  });
+}
+function requestSysTableToggle(sys, id, field, side, cellEl){
+  if(isUnlocked(sys)){ toggleSysTableField(sys, id, field, side, cellEl); return; }
+  pendingUnlockAction = ()=> toggleSysTableField(sys, id, field, side, cellEl);
+  document.getElementById('pinSub').textContent = `Ingresa el código para editar ${SYS[sys].label}`;
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinErr').textContent = '';
+  document.getElementById('pinOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('pinInput').focus(), 200);
+  refreshSysBiometricButton();
+}
+function toggleSysTableField(sys, id, field, side, cellEl){
+  const cfg = TABLE_CONFIG[sys];
+  const row = state[sys].find(r=>r[cfg.idField]===id);
+  if(!row) return;
+  const now = new Date().toISOString();
+  if(cfg.nested){
+    const obj = row[side];
+    obj[field] = (obj[field] === 'SI') ? 'NO' : 'SI';
+    obj.lastEditedAt = now;
+    if(sideStatus(obj) === 'complete'){ if(!obj.completedAt) obj.completedAt = now; } else { obj.completedAt = ''; }
+    if(cellEl && cellEl.isConnected){
+      cellEl.className = 'fds-cell ' + (obj[field]==='SI' ? 'on-si' : 'on-no');
+      cellEl.textContent = obj[field];
+    }
+  } else {
+    row[field] = (row[field] === 'SI') ? 'NO' : 'SI';
+    row.lastEditedAt = now;
+    if(cfg.statusFn(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt; } else { row.completedAt = ''; }
+    if(cellEl && cellEl.isConnected){
+      cellEl.className = 'fds-cell ' + (row[field]==='SI' ? 'on-si' : 'on-no');
+      cellEl.textContent = row[field];
+    }
+  }
+  scheduleSave();
+  pushRowToSheet(sys, row);
+  renderGauge();
 }
 
 function renderGauge(){
