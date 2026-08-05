@@ -137,6 +137,9 @@ input,select,button,textarea{font-family:inherit;font-size:16px;}
 .fds-cell{cursor:pointer; padding:12px 4px; font-weight:700; font-size:12px; min-width:76px; color:var(--steel-500); user-select:none;}
 .fds-cell.on-si{background:var(--green-100); color:var(--green-600);}
 .fds-cell.on-no{background:var(--red-100); color:var(--brand-red-dark);}
+.fds-input-td{padding:4px 6px !important;}
+.fds-input-cell{width:100px; min-width:100px; border:1.5px solid var(--steel-300); border-radius:7px; padding:7px 6px; font-size:12px; font-family:var(--font-body); color:var(--ink-900); background:#fff;}
+.fds-input-cell:focus{border-color:var(--brand-blue); outline:none;}
 .card{background:#fff; border-radius:var(--radius); border:1px solid var(--steel-300); border-left:4px solid var(--sys-accent, var(--brand-blue)); padding:12px 13px; margin-bottom:9px; display:flex; gap:11px; align-items:flex-start; cursor:pointer;}
 .card:active{box-shadow:inset 0 0 0 2px var(--sys-accent, var(--brand-blue));}
 .status-pill{flex:none; width:9px; height:9px; border-radius:50%; margin-top:6px;}
@@ -591,6 +594,11 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
     </div>
     <div class="sheet-body">
       <div class="warn-note">Estos códigos solo son visibles aquí, tras ingresar la contraseña de administrador. Aun así, quedan guardados en el archivo — esto evita ediciones accidentales del equipo, pero no reemplaza un control de acceso real con usuarios y contraseñas en un servidor. Cambia la contraseña maestra y estos códigos antes de repartir el archivo.</div>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+        <div class="report-section-title" style="margin:0;">Códigos por sistema</div>
+        <button class="btn-ghost sync-btn" id="btnRefreshAccess" style="padding:6px 12px; font-size:12px;">🔄 Actualizar</button>
+      </div>
+      <div class="last-edited-note" id="accessSyncNote" style="margin-bottom:10px;"></div>
       <div id="accessList"></div>
 
       <div class="report-section-title">Entrada biométrica (este celular)</div>
@@ -701,8 +709,9 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v3.8 · 05 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v4.0 · 05 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
+const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
 const viewMode = { hvac:'cards', cableado:'cards', fds:'cards', transit:'cards' };
 const TABLE_CONFIG = {
@@ -715,6 +724,10 @@ const TABLE_CONFIG = {
       {key:'conexionado', label:'Conexionado'},
       {key:'megado', label:'Megado'}
     ],
+    extraFields: [
+      {key:'fecha', label:'Fecha instal.', type:'date'},
+      {key:'tierra', label:'Tierra', type:'number'}
+    ],
     statusFn: hvacStatus
   },
   fds: {
@@ -726,6 +739,9 @@ const TABLE_CONFIG = {
       {key:'minirutas', label:'Mini ruta'},
       {key:'cableado', label:'Cableado'},
       {key:'conexionado', label:'Conexionado'}
+    ],
+    extraFields: [
+      {key:'nserie', label:'N° Serie', type:'text'}
     ],
     statusFn: fdsStatus
   },
@@ -740,6 +756,9 @@ const TABLE_CONFIG = {
       {key:'identificacion_transit', label:'Identif.'},
       {key:'fotografia', label:'Fotografía'},
       {key:'estado_final', label:'Estado final'}
+    ],
+    extraFields: [
+      {key:'cables_correcto', label:'Cables correcto', type:'number'}
     ],
     statusFn: transitStatus
   },
@@ -756,6 +775,14 @@ const TABLE_CONFIG = {
       {key:'tendido', label:'Tendido', side:'to'},
       {key:'gland', label:'Gland', side:'to'},
       {key:'conexionado', label:'Conexionado', side:'to'}
+    ],
+    extraFields: [
+      {key:'marca_gland', label:'Marca gland', type:'number', side:'from'},
+      {key:'fecha_gland', label:'Fecha gland', type:'date', side:'from'},
+      {key:'fecha_conexionado', label:'Fecha conex.', type:'date', side:'from'},
+      {key:'marca_gland', label:'Marca gland', type:'number', side:'to'},
+      {key:'fecha_gland', label:'Fecha gland', type:'date', side:'to'},
+      {key:'fecha_conexionado', label:'Fecha conex.', type:'date', side:'to'}
     ],
     statusFn: cableStatus
   }
@@ -802,7 +829,7 @@ let state = {
     fds: { pin:'9012' },
     transit: { pin:'3456' }
   },
-  sheetSync: { url:'', enabled:false, lastSync:'' }
+  sheetSync: { url:'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec', enabled:true, lastSync:'' }
 };
 function emptySide(){
   return { minirutas:'', tendido:'', marca_gland:'', gland:'', fecha_gland:'', conexionado:'', fecha_conexionado:'',
@@ -1157,6 +1184,7 @@ document.getElementById('btnTableView').addEventListener('click', ()=>{
 });
 function renderSysTable(sys, list, container){
   const cfg = TABLE_CONFIG[sys];
+  const extra = cfg.extraFields || [];
   const rowsHtml = list.map(r=>{
     const id = r[cfg.idField];
     const cells = cfg.fields.map(f=>{
@@ -1165,17 +1193,24 @@ function renderSysTable(sys, list, container){
       const sideAttr = cfg.nested ? ` data-side="${f.side}"` : '';
       return `<td class="${cls}" data-id="${id}" data-field="${f.key}"${sideAttr}>${val || '—'}</td>`;
     }).join('');
+    const extraCells = extra.map(f=>{
+      const val = (cfg.nested ? (r[f.side]||{})[f.key] : r[f.key]) || '';
+      const sideAttr = cfg.nested ? ` data-side="${f.side}"` : '';
+      const inputMode = f.type === 'number' ? ' inputmode="numeric"' : '';
+      return `<td class="fds-input-td"><input class="fds-input-cell" type="${f.type}"${inputMode} value="${escapeHtml(val)}" data-id="${id}" data-field="${f.key}" data-type="${f.type}"${sideAttr}></td>`;
+    }).join('');
     return `<tr>
       <td class="fds-cell-tag" data-id="${id}">
         <div class="fds-cell-tag-name">${escapeHtml(r[cfg.tagField]||'—')}</div>
         <div class="fds-cell-tag-sub">${cfg.subField(r)}</div>
       </td>
-      ${cells}
+      ${cells}${extraCells}
     </tr>`;
   }).join('');
   const headerCells = cfg.fields.map(f=>`<th>${cfg.nested ? (f.side==='from'?'Desde ':'Hasta ')+f.label : f.label}</th>`).join('');
+  const extraHeaderCells = extra.map(f=>`<th>${cfg.nested ? (f.side==='from'?'Desde ':'Hasta ')+f.label : f.label}</th>`).join('');
   container.innerHTML = `<div class="fds-table-wrap"><table class="fds-table">
-    <thead><tr><th>Tag</th>${headerCells}</tr></thead>
+    <thead><tr><th>Tag</th>${headerCells}${extraHeaderCells}</tr></thead>
     <tbody>${rowsHtml}</tbody>
   </table></div>`;
   container.querySelectorAll('.fds-cell').forEach(td=>{
@@ -1189,16 +1224,53 @@ function renderSysTable(sys, list, container){
   container.querySelectorAll('.fds-cell-tag').forEach(td=>{
     td.addEventListener('click', ()=> requestOpenDetail(sys, parseInt(td.dataset.id)));
   });
+  container.querySelectorAll('.fds-input-cell').forEach(inp=>{
+    inp.addEventListener('focus', (e)=>{
+      if(!isUnlocked(sys)){
+        e.target.blur();
+        requestSysUnlock(sys, ()=> renderList());
+      }
+    });
+    inp.addEventListener('change', ()=>{
+      const id = parseInt(inp.dataset.id);
+      const field = inp.dataset.field;
+      const side = inp.dataset.side || null;
+      if(!isUnlocked(sys)){ requestSysUnlock(sys, ()=> renderList()); return; }
+      saveSysTableTextField(sys, id, field, side, inp.value);
+    });
+  });
 }
-function requestSysTableToggle(sys, id, field, side, cellEl){
-  if(isUnlocked(sys)){ toggleSysTableField(sys, id, field, side, cellEl); return; }
-  pendingUnlockAction = ()=> toggleSysTableField(sys, id, field, side, cellEl);
+function requestSysUnlock(sys, onUnlocked){
+  pendingUnlockAction = onUnlocked;
   document.getElementById('pinSub').textContent = `Ingresa el código para editar ${SYS[sys].label}`;
   document.getElementById('pinInput').value = '';
   document.getElementById('pinErr').textContent = '';
   document.getElementById('pinOverlay').classList.add('open');
   setTimeout(()=>document.getElementById('pinInput').focus(), 200);
   refreshSysBiometricButton();
+}
+function saveSysTableTextField(sys, id, field, side, value){
+  const cfg = TABLE_CONFIG[sys];
+  const row = state[sys].find(r=>r[cfg.idField]===id);
+  if(!row) return;
+  const now = new Date().toISOString();
+  if(side){
+    const obj = row[side];
+    obj[field] = value;
+    obj.lastEditedAt = now;
+    if(sideStatus(obj) === 'complete'){ if(!obj.completedAt) obj.completedAt = now; } else { obj.completedAt = ''; }
+  } else {
+    row[field] = value;
+    row.lastEditedAt = now;
+    if(cfg.statusFn(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt; } else { row.completedAt = ''; }
+  }
+  scheduleSave();
+  pushRowToSheet(sys, row);
+  renderGauge();
+}
+function requestSysTableToggle(sys, id, field, side, cellEl){
+  if(isUnlocked(sys)){ toggleSysTableField(sys, id, field, side, cellEl); return; }
+  requestSysUnlock(sys, ()=> toggleSysTableField(sys, id, field, side, cellEl));
 }
 function toggleSysTableField(sys, id, field, side, cellEl){
   const cfg = TABLE_CONFIG[sys];
@@ -1470,6 +1542,7 @@ document.getElementById('btnRemoveBiometric').addEventListener('click', ()=>{
   updateBiometricStatusNote();
 });
 
+document.getElementById('btnRefreshAccess').addEventListener('click', ()=> pullAccessFromSheet(false));
 document.getElementById('btnCloseAccess').addEventListener('click', ()=> document.getElementById('accessOverlay').classList.remove('open'));
 document.getElementById('accessOverlay').addEventListener('click', (e)=>{ if(e.target.id==='accessOverlay') document.getElementById('accessOverlay').classList.remove('open'); });
 document.getElementById('btnSaveAccess').addEventListener('click', ()=>{
@@ -1482,6 +1555,7 @@ document.getElementById('btnSaveAccess').addEventListener('click', ()=>{
   state.sheetSync.enabled = document.getElementById('sheetSyncEnabled').checked;
   scheduleSave();
   updateSyncStatusUI();
+  pushAllAccessToSheet();
   document.getElementById('accessOverlay').classList.remove('open');
   showToast('Configuración guardada');
 });
@@ -2239,6 +2313,52 @@ function applySheetRowToTransit(obj){
   if(transitStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt; } else { row.completedAt = ''; }
   return true;
 }
+async function pushAccessToSheet(sys){
+  if(!state.sheetSync.enabled || !state.sheetSync.url) return;
+  const uid = 'access-'+sys;
+  const pin = state.access[sys].pin;
+  try{
+    await fetch(state.sheetSync.url, {
+      method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'upsert', sheet:'ACCESS', uid,
+        headers:['UID','SISTEMA','PIN','ACTUALIZADO'],
+        values:[uid, SYS[sys].label, "'"+pin, formatDateTime(new Date().toISOString())] })
+    });
+    state.sheetSync.lastSync = new Date().toISOString();
+    scheduleSave();
+    updateSyncStatusUI();
+  }catch(e){
+    showToast('No se pudo sincronizar los códigos con Google Sheets (revisa tu conexión)');
+  }
+}
+async function pushAllAccessToSheet(){
+  for(const sys of SYS_ORDER){ await pushAccessToSheet(sys); }
+}
+async function pullAccessFromSheet(silent){
+  if(!state.sheetSync.url){ if(!silent) showToast('Primero guarda la URL de Google Sheets'); return false; }
+  const note = document.getElementById('accessSyncNote');
+  if(note) note.textContent = 'Leyendo códigos desde Google Sheets...';
+  try{
+    const res = await fetch(`${state.sheetSync.url}?sheet=${encodeURIComponent('ACCESS')}`, { method:'GET' });
+    const rows = await res.json();
+    let applied = 0;
+    rows.forEach(obj=>{
+      const uid = obj.UID; if(!uid || !String(uid).startsWith('access-')) return;
+      const sys = String(uid).replace('access-','');
+      if(!SYS[sys]) return;
+      const pin = String(obj.PIN !== undefined && obj.PIN !== null ? obj.PIN : '').replace(/^'/,'').trim();
+      if(pin){ state.access[sys].pin = pin; applied++; }
+    });
+    scheduleSave();
+    if(note) note.textContent = applied ? `Códigos actualizados desde Google Sheets (${applied}).` : 'No se encontraron códigos en la hoja ACCESS.';
+    if(!silent) showToast(applied ? `Códigos actualizados (${applied})` : 'No se encontraron códigos en la hoja ACCESS');
+    if(document.getElementById('accessOverlay').classList.contains('open')) openAccessSheet();
+    return true;
+  }catch(e){
+    if(note) note.textContent = '✗ No se pudo leer la hoja ACCESS. Revisa que exista esa pestaña y que el doGet esté actualizado.';
+    return false;
+  }
+}
 async function pullFromSheet(sys, silent){
   if(!state.sheetSync.url){ showToast('Primero guarda la URL de Google Sheets'); return false; }
   const sheetName = sys === 'hvac' ? 'HVAC' : sys === 'cableado' ? 'CONEXIONADO' : sys === 'transit' ? 'TRANSIT' : 'FDS';
@@ -2759,6 +2879,7 @@ async function init(){
   const saved = await idbLoad();
   if(saved && saved.hvac && saved.hvac.length === state.hvac.length && saved.cableado && saved.cableado.length === state.cableado.length && saved.fds && saved.fds.length === state.fds.length && saved.transit && saved.transit.length === state.transit.length){
     state = saved;
+    if(!state.sheetSync.url){ state.sheetSync.url = DEFAULT_SHEET_URL; state.sheetSync.enabled = true; }
     showToast('Sesión anterior recuperada');
   }
   renderAll();
@@ -2772,6 +2893,7 @@ async function init(){
     for(const sys of ['hvac','fds','cableado','transit']){
       await pullFromSheet(sys, true);
     }
+    await pullAccessFromSheet(true);
     renderAll();
   }
 }
