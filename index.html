@@ -715,7 +715,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v4.4 · 06 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v4.5 · 06 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -891,6 +891,15 @@ function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&'
 // Equivalente a "valor ?? '—'" pero sin usar el operador ?? (algunos iPhone con iOS viejo no lo soportan
 // y eso hacía que TODO el script dejara de ejecutarse con solo mostrar la pantalla estática).
 function orDash(v){ return (v === null || v === undefined) ? '—' : v; }
+// Google Sheets/Apps Script devuelve celdas de tipo fecha como datetime completo
+// (ej. "2026-07-18T00:00:00.000Z"), pero <input type="date"> solo acepta "YYYY-MM-DD".
+// Esta función recorta a solo la fecha para que el campo se muestre correctamente.
+function toDateOnly(v){
+  if(v === null || v === undefined || v === '') return '';
+  const s = String(v);
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : s;
+}
 function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
@@ -2303,8 +2312,8 @@ function applySheetRowToHvac(obj){
   if(obj.LEVEL !== undefined) row.level = obj.LEVEL || '';
   // Llenado por la app (campos editables en campo)
   row.soporte = obj.SOPORTE || '';
-  row.fecha = obj.FECHA_EQUIPO || '';
-  row.tagged_items = obj.TAGGED_ITEMS || '';
+  row.fecha = toDateOnly(obj.FECHA_EQUIPO);
+  row.tagged_items = toDateOnly(obj.TAGGED_ITEMS);
   row.tierra_soporte = (obj['TIERRA SOPORTE'] !== undefined && obj['TIERRA SOPORTE'] !== null) ? String(obj['TIERRA SOPORTE']) : '';
   row.tierra_equipos = (obj['TIERRA EQUIPOS'] !== undefined && obj['TIERRA EQUIPOS'] !== null) ? String(obj['TIERRA EQUIPOS']) : '';
   row.miniruta = obj.MINIRUTA || '';
@@ -2343,13 +2352,13 @@ function applySheetRowToCable(obj){
   const g = (v)=> (v !== undefined && v !== null) ? String(v) : '';
   row.from.minirutas = obj.From_Minirutas || ''; row.from.tendido = obj.From_Tendido || '';
   row.from.marca_gland = g(obj.From_Marca_Gland); row.from.gland = obj.From_Gland || '';
-  row.from.fecha_gland = obj.From_Fecha_Gland || ''; row.from.conexionado = obj.From_Conexionado || '';
-  row.from.fecha_conexionado = obj.From_Fecha_Conexionado || ''; row.from.observacion = obj.From_Observacion || '';
+  row.from.fecha_gland = toDateOnly(obj.From_Fecha_Gland); row.from.conexionado = obj.From_Conexionado || '';
+  row.from.fecha_conexionado = toDateOnly(obj.From_Fecha_Conexionado); row.from.observacion = obj.From_Observacion || '';
   row.from.lastEditedAt = now;
   row.to.minirutas = obj.To_Minirutas || ''; row.to.tendido = obj.To_Tendido || '';
   row.to.marca_gland = g(obj.To_Marca_Gland); row.to.gland = obj.To_Gland || '';
-  row.to.fecha_gland = obj.To_Fecha_Gland || ''; row.to.conexionado = obj.To_Conexionado || '';
-  row.to.fecha_conexionado = obj.To_Fecha_Conexionado || ''; row.to.observacion = obj.To_Observacion || '';
+  row.to.fecha_gland = toDateOnly(obj.To_Fecha_Gland); row.to.conexionado = obj.To_Conexionado || '';
+  row.to.fecha_conexionado = toDateOnly(obj.To_Fecha_Conexionado); row.to.observacion = obj.To_Observacion || '';
   row.to.lastEditedAt = now;
   if(sideStatus(row.from) === 'complete'){ if(!row.from.completedAt) row.from.completedAt = now; } else { row.from.completedAt = ''; }
   if(sideStatus(row.to) === 'complete'){ if(!row.to.completedAt) row.to.completedAt = now; } else { row.to.completedAt = ''; }
