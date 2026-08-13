@@ -451,7 +451,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <div class="field-group"><label>Tierra soporte <span class="field-legend">— número de tierras del soporte</span></label><input type="number" min="0" inputmode="numeric" class="text-input" id="hvacTierraSoporte" placeholder="0"></div>
       <div class="field-group"><label>Tierra equipos <span class="field-legend">— número de tierras del equipo</span></label><input type="number" min="0" inputmode="numeric" class="text-input" id="hvacTierraEquipos" placeholder="0"></div>
       <div class="field-group"><label>Miniruta</label><div class="seg" data-hfield="miniruta"><button data-val="SI">Sí</button><button data-val="NO">No</button></div></div>
-      <div class="field-group"><label>Conexionado</label><div class="seg" data-hfield="conexionado"><button data-val="SI">Sí</button><button data-val="NO">No</button><button data-val="PROVISIONAL">Provisional</button></div></div>
+      <div class="field-group"><label>Conexionado</label><div class="seg" data-hfield="conexionado"><button data-val="SI">Sí</button><button data-val="NO">No</button><button data-val="TEMPORAL">Temporal</button></div></div>
       <div class="field-group"><label>Megado</label><div class="seg" data-hfield="megado"><button data-val="SI">Sí</button><button data-val="NO">No</button></div></div>
       <div class="field-group"><label>Tubing</label><div class="seg" data-hfield="tubing"><button data-val="SI">Sí</button><button data-val="NO">No</button></div></div>
       <div class="field-group">
@@ -715,7 +715,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v4.3 · 06 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v4.4 · 06 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -727,7 +727,7 @@ const TABLE_CONFIG = {
     fields: [
       {key:'soporte', label:'Soporte'},
       {key:'miniruta', label:'Miniruta'},
-      {key:'conexionado', label:'Conexionado', states:['SI','NO','PROVISIONAL']},
+      {key:'conexionado', label:'Conexionado', states:['SI','NO','TEMPORAL']},
       {key:'megado', label:'Megado'},
       {key:'tubing', label:'Tubing'}
     ],
@@ -937,7 +937,7 @@ function downloadBlob(blob, filename){
 function hvacStatus(row){
   const siNoFields = [row.soporte, row.miniruta, row.conexionado, row.megado, row.tubing];
   const allFields = [row.soporte, row.fecha, row.tierra_soporte, row.miniruta, row.conexionado, row.megado, row.tubing];
-  const hasBlocking = siNoFields.some(v => v === 'NO' || v === 'PROVISIONAL');
+  const hasBlocking = siNoFields.some(v => v === 'NO' || v === 'TEMPORAL');
   const filled = allFields.filter(v => v !== '' && v !== null && v !== undefined).length;
   if(!hasBlocking && filled === allFields.length) return 'complete';
   return 'empty';
@@ -1080,7 +1080,7 @@ function getFiltered(){
 
 function fieldBar(value, isSiNo){
   if(value === '' || value === null || value === undefined) return '<i></i>';
-  if(isSiNo && (value === 'NO' || value === 'PROVISIONAL')) return '<i class="on-yellow"></i>';
+  if(isSiNo && (value === 'NO' || value === 'TEMPORAL')) return '<i class="on-yellow"></i>';
   return '<i class="on-green"></i>';
 }
 function fieldBars(pairs){
@@ -1197,7 +1197,7 @@ document.getElementById('btnTableView').addEventListener('click', ()=>{
 function cellClassFor(val){
   if(val === 'SI') return 'fds-cell on-si';
   if(val === 'NO') return 'fds-cell on-no';
-  if(val === 'PROVISIONAL') return 'fds-cell on-provisional';
+  if(val === 'TEMPORAL' || val === 'PROVISIONAL') return 'fds-cell on-provisional';
   return 'fds-cell';
 }
 function nextStateFor(field, current){
@@ -2308,7 +2308,7 @@ function applySheetRowToHvac(obj){
   row.tierra_soporte = (obj['TIERRA SOPORTE'] !== undefined && obj['TIERRA SOPORTE'] !== null) ? String(obj['TIERRA SOPORTE']) : '';
   row.tierra_equipos = (obj['TIERRA EQUIPOS'] !== undefined && obj['TIERRA EQUIPOS'] !== null) ? String(obj['TIERRA EQUIPOS']) : '';
   row.miniruta = obj.MINIRUTA || '';
-  row.conexionado = obj.CONEXIONADO || '';
+  row.conexionado = (obj.CONEXIONADO === 'PROVISIONAL') ? 'TEMPORAL' : (obj.CONEXIONADO || '');
   row.megado = obj.MEGADO || '';
   row.tubing = obj.TUBING || '';
   row.observacion = obj.OBSERVACION || '';
