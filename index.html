@@ -715,7 +715,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v4.6 · 06 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v4.8 · 06 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -2397,7 +2397,7 @@ async function pushAccessToSheet(sys){
     await fetch(state.sheetSync.url, {
       method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify({ action:'upsert', sheet:'ACCESS', uid,
-        headers:['UID','SISTEMA','PIN','ACTUALIZADO'],
+        headers:['UID','SISTEMA','CODIGO','FECHA_ACTUALIZACION'],
         values:[uid, SYS[sys].label, "'"+pin, formatDateTime(new Date().toISOString())] })
     });
     state.sheetSync.lastSync = new Date().toISOString();
@@ -2410,6 +2410,15 @@ async function pushAccessToSheet(sys){
 async function pushAllAccessToSheet(){
   for(const sys of SYS_ORDER){ await pushAccessToSheet(sys); }
 }
+function findFlexKey(obj, ...candidates){
+  const keys = Object.keys(obj);
+  for(const cand of candidates){
+    const target = cand.trim().toLowerCase();
+    const match = keys.find(k => k.trim().toLowerCase() === target);
+    if(match !== undefined) return obj[match];
+  }
+  return undefined;
+}
 async function pullAccessFromSheet(silent){
   if(!state.sheetSync.url){ if(!silent) showToast('Primero guarda la URL de Google Sheets'); return false; }
   const note = document.getElementById('accessSyncNote');
@@ -2419,10 +2428,14 @@ async function pullAccessFromSheet(silent){
     const rows = await res.json();
     let applied = 0;
     rows.forEach(obj=>{
-      const uid = obj.UID; if(!uid || !String(uid).startsWith('access-')) return;
-      const sys = String(uid).replace('access-','');
+      const rawUid = findFlexKey(obj, 'UID');
+      if(rawUid === undefined || rawUid === null) return;
+      const uid = String(rawUid).trim();
+      if(!uid.toLowerCase().startsWith('access-')) return;
+      const sys = uid.toLowerCase().replace('access-','');
       if(!SYS[sys]) return;
-      const pin = String(obj.PIN !== undefined && obj.PIN !== null ? obj.PIN : '').replace(/^'/,'').trim();
+      const rawPin = findFlexKey(obj, 'PIN', 'CODIGO');
+      const pin = String(rawPin !== undefined && rawPin !== null ? rawPin : '').replace(/^'/,'').trim();
       if(pin){ state.access[sys].pin = pin; applied++; }
     });
     scheduleSave();
