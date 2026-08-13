@@ -492,7 +492,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
     <div class="sheet-body">
       <div class="info-grid" id="fdsInfoGrid"></div>
       <div class="field-group">
-        <label>Fecha <span class="field-legend">— se guarda como semana (ej. SEM24)</span></label>
+        <label>Fecha soporte <span class="field-legend">— se guarda como fecha corta en Sheets (columna FECHA_SOPORTE)</span></label>
         <input type="date" class="text-input" id="fdsFechaPick">
         <div class="last-edited-note" id="fdsSemanaPreview" style="margin-top:6px;"></div>
       </div>
@@ -715,7 +715,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v4.5 · 06 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v4.6 · 06 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -2184,8 +2184,8 @@ function buildWorkbook(sys){
     ws['!cols'] = [{wch:22},{wch:6},{wch:22},{wch:20},{wch:9},{wch:14},{wch:12},{wch:16},{wch:14},{wch:9},{wch:10},{wch:10},{wch:14},{wch:14},{wch:12},{wch:12},{wch:10},{wch:13},{wch:10},{wch:10},{wch:34},{wch:16},{wch:10},{wch:10}];
     XLSX.utils.book_append_sheet(wb, ws, 'HVAC');
   } else if(sys === 'fds'){
-    const header = ['ITEM','TAG EQUIPOS','NIVEL','STD SUPPORT','SEMANA','SOPORTE','EQUIPO','MINI RUTA','CABLEADO','CONEXIONADO','N_SERIE_EQUIPO','OBSERVACION','FECHA_EDICION','FOTOS_SOPORTE','FOTOS_EQUIPO','FOTOS_INCIDENCIA'];
-    const data = [header, ...state.fds.map(r=>[r.item, r.tag, r.level, r.std_support, r.semana, r.soporte, r.equipo, r.minirutas, r.cableado, r.conexionado, r.nserie, r.observacion, formatDateTime(r.lastEditedAt), r.soportePhotos.length, r.equipoPhotos.length, r.obsPhotos.length])];
+    const header = ['ITEM','TAG EQUIPOS','NIVEL','STD SUPPORT','FECHA_SOPORTE','SOPORTE','EQUIPO','MINI RUTA','CABLEADO','CONEXIONADO','N_SERIE_EQUIPO','OBSERVACION','FECHA_EDICION','FOTOS_SOPORTE','FOTOS_EQUIPO','FOTOS_INCIDENCIA'];
+    const data = [header, ...state.fds.map(r=>[r.item, r.tag, r.level, r.std_support, r.semana_date, r.soporte, r.equipo, r.minirutas, r.cableado, r.conexionado, r.nserie, r.observacion, formatDateTime(r.lastEditedAt), r.soportePhotos.length, r.equipoPhotos.length, r.obsPhotos.length])];
     const ws = XLSX.utils.aoa_to_sheet(data);
     ws['!cols'] = [{wch:6},{wch:18},{wch:10},{wch:14},{wch:9},{wch:9},{wch:9},{wch:10},{wch:10},{wch:12},{wch:16},{wch:34},{wch:16},{wch:12},{wch:11},{wch:12}];
     XLSX.utils.book_append_sheet(wb, ws, 'FDS');
@@ -2233,8 +2233,8 @@ function sheetRowPayload(sys, row){
   }
   if(sys === 'fds'){
     return { sheet:'FDS', uid:'fds-'+row.id,
-      headers:['UID','ITEM','TAG_EQUIPOS','STD_SUPPORT','NIVEL','SEMANA','SOPORTE','EQUIPO','MINI_RUTA','CABLEADO','CONEXIONADO','N_SERIE_EQUIPO','OBSERVACION','FECHA_EDICION'],
-      values:['fds-'+row.id, row.item, row.tag, row.std_support, row.level, row.semana, row.soporte, row.equipo, row.minirutas, row.cableado, row.conexionado, row.nserie, row.observacion, formatDateTime(row.lastEditedAt)] };
+      headers:['UID','ITEM','TAG_EQUIPOS','STD_SUPPORT','NIVEL','FECHA_SOPORTE','SOPORTE','EQUIPO','MINI_RUTA','CABLEADO','CONEXIONADO','N_SERIE_EQUIPO','OBSERVACION','FECHA_EDICION'],
+      values:['fds-'+row.id, row.item, row.tag, row.std_support, row.level, row.semana_date, row.soporte, row.equipo, row.minirutas, row.cableado, row.conexionado, row.nserie, row.observacion, formatDateTime(row.lastEditedAt)] };
   }
   if(sys === 'transit'){
     return { sheet:'TRANSIT', uid:'transit-'+row.id,
@@ -2331,7 +2331,14 @@ function applySheetRowToFds(obj){
   const row = state.fds.find(r=>r.id===idNum);
   if(!row) return false;
   row.std_support = obj.STD_SUPPORT || obj.STD_SUPORT || obj['STD SUPPORT'] || obj['STD_SUPPORT '] || '';
-  row.semana = obj.SEMANA || '';
+  const fechaSoporte = toDateOnly(obj.FECHA_SOPORTE !== undefined ? obj.FECHA_SOPORTE : obj.SEMANA_DATE);
+  if(fechaSoporte){
+    row.semana_date = fechaSoporte;
+    row.semana = 'SEM' + isoWeekInfo(fechaSoporte + 'T00:00:00').week;
+  } else {
+    row.semana_date = '';
+    row.semana = '';
+  }
   row.soporte = obj.SOPORTE || '';
   row.equipo = obj.EQUIPO || '';
   row.minirutas = obj.MINI_RUTA || '';
