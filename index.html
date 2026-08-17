@@ -740,7 +740,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v5.0 · 06 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v5.1 · 06 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1198,7 +1198,7 @@ function cardTemplateTimbrado(r){
     <div class="status-pill ${st}"></div>
     <div class="card-body">
       <div class="card-top"><div class="card-tag">${escapeHtml(r.cable||'—')}</div><div class="card-item">#${r.id}</div></div>
-      <div class="card-meta"><span class="tag-pill">${escapeHtml(r.from_tag||'—')} → ${escapeHtml(r.to_tag||'—')}</span><span class="tag-pill">${escapeHtml(r.from_area||'—')}</span></div>
+      <div class="card-meta"><span class="tag-pill">${escapeHtml(r.from_tag||'—')} → ${escapeHtml(r.to_tag||'—')}</span><span class="tag-pill">Desde ${escapeHtml(r.from_area||'—')}</span><span class="tag-pill">Hasta ${escapeHtml(r.to_area||'—')}</span></div>
       <div class="card-progress">${bars}</div>
       <div class="badge-row">
       ${photoCount ? `<span class="photo-badge">📷 ${photoCount} foto(s)</span>` : ''}
