@@ -740,7 +740,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v5.6 · 19 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v5.7 · 19 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -2969,6 +2969,7 @@ function dailyReportItems(sys, dateStr){
       out.push({ tag:r.cable||('Cable #'+r.id), nivel:'', area:r.from_area?('Área '+r.from_area):'', estado: timbradoStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Observación',r.obsPhotos]]), date:r.lastEditedAt });
     });
   }
+  if(sys === 'timbrado') return out;
   return out.sort((a,b)=> (a.date||'').localeCompare(b.date||''));
 }
 function renderDailyReport(){
