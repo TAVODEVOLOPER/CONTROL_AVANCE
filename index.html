@@ -740,7 +740,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v5.1 · 06 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v5.2 · 06 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -888,7 +888,8 @@ let state = {
     transit: { pin:'3456' },
     timbrado: { pin:'7890' }
   },
-  sheetSync: { url:'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec', enabled:true, lastSync:'' }
+  sheetSync: { url:'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec', enabled:true, lastSync:'' },
+  syncQueue: []
 };
 function emptySide(){
   return { minirutas:'', tendido:'', marca_gland:'', gland:'', fecha_gland:'', conexionado:'', fecha_conexionado:'',
@@ -2404,8 +2405,35 @@ function sheetRowPayload(sys, row){
     headers:['UID','CABLE_NUMBER','From_Tag','From_Area','Nivel','From_Minirutas','From_Tendido','From_Marca_Gland','From_Gland','From_Fecha_Gland','From_Conexionado','From_Fecha_Conexionado','From_Observacion','To_Tag','To_Area','To_Minirutas','To_Tendido','To_Marca_Gland','To_Gland','To_Fecha_Gland','To_Conexionado','To_Fecha_Conexionado','To_Observacion','FECHA_EDICION'],
     values:['cable-'+row.id, row.cable, row.from_tag, row.from_area, row.level, row.from.minirutas, row.from.tendido, row.from.marca_gland, row.from.gland, row.from.fecha_gland, row.from.conexionado, row.from.fecha_conexionado, row.from.observacion, row.to_tag, row.to_area, row.to.minirutas, row.to.tendido, row.to.marca_gland, row.to.gland, row.to.fecha_gland, row.to.conexionado, row.to.fecha_conexionado, row.to.observacion, formatDateTime(lastEdited)] };
 }
+function queueSyncRetry(sys, idVal){
+  if(!state.syncQueue) state.syncQueue = [];
+  if(!state.syncQueue.some(q => q.sys===sys && q.idVal===idVal)) state.syncQueue.push({sys, idVal});
+  scheduleSave();
+  updateSyncStatusUI();
+}
+function dequeueSyncRetry(sys, idVal){
+  if(!state.syncQueue) return;
+  state.syncQueue = state.syncQueue.filter(q => !(q.sys===sys && q.idVal===idVal));
+  scheduleSave();
+}
+async function flushSyncQueue(){
+  if(!state.syncQueue || !state.syncQueue.length) return;
+  if(typeof navigator !== 'undefined' && navigator.onLine === false) return;
+  if(!state.sheetSync.enabled || !state.sheetSync.url) return;
+  const queue = [...state.syncQueue];
+  for(const q of queue){
+    const cfg = TABLE_CONFIG[q.sys];
+    if(!cfg || !state[q.sys]) { dequeueSyncRetry(q.sys, q.idVal); continue; }
+    const row = state[q.sys].find(r => r[cfg.idField] === q.idVal);
+    if(!row){ dequeueSyncRetry(q.sys, q.idVal); continue; }
+    await pushRowToSheet(q.sys, row);
+  }
+  updateSyncStatusUI();
+}
 async function pushRowToSheet(sys, row){
   if(!state.sheetSync.enabled || !state.sheetSync.url) return;
+  const cfg = TABLE_CONFIG[sys];
+  const idVal = cfg ? row[cfg.idField] : null;
   const payload = sheetRowPayload(sys, row);
   try{
     await fetch(state.sheetSync.url, {
@@ -2413,10 +2441,12 @@ async function pushRowToSheet(sys, row){
       body: JSON.stringify({ action:'upsert', ...payload })
     });
     state.sheetSync.lastSync = new Date().toISOString();
+    if(idVal !== null) dequeueSyncRetry(sys, idVal);
     scheduleSave();
     updateSyncStatusUI();
   }catch(e){
-    showToast('No se pudo sincronizar con Google Sheets (revisa tu conexión)');
+    if(idVal !== null) queueSyncRetry(sys, idVal);
+    showToast('Sin conexión: se guardó en el celular y se subirá solo cuando vuelva la señal');
   }
 }
 async function testSheetConnection(url){
@@ -2691,8 +2721,10 @@ async function bulkSyncAll(sysFilter){
 function updateSyncStatusUI(){
   const el = document.getElementById('syncStatusNote');
   if(!el) return;
-  if(!state.sheetSync.url) el.textContent = 'Sin configurar.';
-  else el.textContent = `${state.sheetSync.enabled ? 'Activa' : 'Desactivada'} · Última sincronización: ${state.sheetSync.lastSync ? formatDateTime(state.sheetSync.lastSync) : 'nunca'}`;
+  const pending = (state.syncQueue||[]).length;
+  const pendingTxt = pending ? ` · ⏳ ${pending} cambio(s) pendiente(s) de subir (sin señal)` : '';
+  if(!state.sheetSync.url) el.textContent = 'Sin configurar.' + pendingTxt;
+  else el.textContent = `${state.sheetSync.enabled ? 'Activa' : 'Desactivada'} · Última sincronización: ${state.sheetSync.lastSync ? formatDateTime(state.sheetSync.lastSync) : 'nunca'}${pendingTxt}`;
 }
 
 document.getElementById('optExcel').addEventListener('click', ()=>{
@@ -2982,50 +3014,50 @@ async function buildDailyReportPDF(sys, dateStr, items){
   const fechaTxt = formatDateShort(dateStr+'T00:00:00');
   function drawHeader(){
     y = margin;
-    const headerBottom = y + 34;
+    const headerBottom = y + 40;
     if(logoSrc){
-      try{ doc.addImage(logoSrc, 'PNG', margin, y, 78, 14.8); }catch(e){}
+      try{ doc.addImage(logoSrc, 'PNG', margin, y, 94, 17.8); }catch(e){}
     }
-    doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(9,24,35);
-    doc.text('Informe diario', pageW/2, y+9, { align:'center' });
-    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(7,80,156);
-    doc.text(SYS[sys].label, pageW/2, y+23, { align:'center' });
-    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(60,78,94);
-    doc.text(fechaTxt, pageW-margin, y+23, { align:'right' });
+    doc.setFont('helvetica','bold'); doc.setFontSize(19); doc.setTextColor(9,24,35);
+    doc.text('Informe diario', pageW/2, y+11, { align:'center' });
+    doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(7,80,156);
+    doc.text(SYS[sys].label, pageW/2, y+28, { align:'center' });
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(60,78,94);
+    doc.text(fechaTxt, pageW-margin, y+28, { align:'right' });
     y = headerBottom;
-    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(100,110,120);
-    doc.text(`${items.length} tag(s) modificados`, margin, y); y += 10;
-    doc.setDrawColor(200,200,200); doc.line(margin, y, pageW-margin, y); y += 12;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(100,110,120);
+    doc.text(`${items.length} tag(s) modificados`, margin, y); y += 13;
+    doc.setDrawColor(200,200,200); doc.line(margin, y, pageW-margin, y); y += 15;
   }
   drawHeader();
 
   for(const it of items){
-    if(y > pageH - footerH - 90){ doc.addPage(); drawHeader(); }
-    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(9,24,35);
-    doc.text(String(it.tag||'—'), margin, y); y += 11;
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(100,110,120);
+    if(y > pageH - footerH - 110){ doc.addPage(); drawHeader(); }
+    doc.setFont('helvetica','bold'); doc.setFontSize(12.5); doc.setTextColor(9,24,35);
+    doc.text(String(it.tag||'—'), margin, y); y += 14;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(100,110,120);
     const metaLine = [it.nivel?`Nivel: ${it.nivel}`:'', it.area||'', `Estado: ${it.estado}`].filter(Boolean).join('   ·   ');
-    doc.text(metaLine, margin, y); y += 10;
+    doc.text(metaLine, margin, y); y += 13;
     if(it.cambios && it.cambios.length){
-      doc.setTextColor(50,60,70); doc.setFontSize(7.8);
+      doc.setTextColor(50,60,70); doc.setFontSize(10);
       const changesLine = it.cambios.map(c=>`${c.label}: ${c.value}`).join('   ·   ');
       const lines = doc.splitTextToSize(changesLine, pageW - margin*2 - 6);
-      if(y + lines.length*9.5 > pageH - footerH - 10){ doc.addPage(); drawHeader(); }
-      doc.text(lines, margin+3, y); y += lines.length*9.5 + 2;
+      if(y + lines.length*12.5 > pageH - footerH - 10){ doc.addPage(); drawHeader(); }
+      doc.text(lines, margin+3, y); y += lines.length*12.5 + 3;
     }
     if(it.observacion){
-      doc.setTextColor(120,91,0); doc.setFontSize(7.8);
+      doc.setTextColor(120,91,0); doc.setFontSize(10);
       const lines = doc.splitTextToSize('Obs: ' + it.observacion, pageW - margin*2);
-      if(y + lines.length*9.5 > pageH - footerH - 10){ doc.addPage(); drawHeader(); }
-      doc.text(lines, margin, y); y += lines.length*9.5 + 3;
+      if(y + lines.length*12.5 > pageH - footerH - 10){ doc.addPage(); drawHeader(); }
+      doc.text(lines, margin, y); y += lines.length*12.5 + 4;
     }
     if(it.photos && it.photos.length){
-      const imgSize = 42; const captionH = 9;
+      const imgSize = 64; const captionH = 12;
       let x = margin;
       if(y + imgSize + captionH > pageH - footerH - margin){ doc.addPage(); drawHeader(); }
       for(const p of it.photos.slice(0,8)){
         const fixed = await correctPhotoOrientation(p.src);
-        if(x + imgSize > pageW - margin){ x = margin; y += imgSize + captionH + 6; if(y + imgSize + captionH > pageH - footerH - margin){ doc.addPage(); drawHeader(); x = margin; } }
+        if(x + imgSize > pageW - margin){ x = margin; y += imgSize + captionH + 8; if(y + imgSize + captionH > pageH - footerH - margin){ doc.addPage(); drawHeader(); x = margin; } }
         if(fixed){
           try{
             const ratio = Math.min(imgSize/fixed.w, imgSize/fixed.h);
@@ -3034,20 +3066,20 @@ async function buildDailyReportPDF(sys, dateStr, items){
             doc.addImage(fixed.src, 'JPEG', dx, dy, dw, dh);
           }catch(e){ /* si una foto no se puede incrustar, se omite */ }
         }
-        doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(120,128,138);
-        doc.text(p.label, x+imgSize/2, y+imgSize+7, { align:'center' });
-        x += imgSize + 8;
+        doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(120,128,138);
+        doc.text(p.label, x+imgSize/2, y+imgSize+9, { align:'center' });
+        x += imgSize + 10;
       }
-      y += imgSize + captionH + 6;
-    } else { y += 4; }
-    doc.setDrawColor(238,238,238); doc.line(margin, y, pageW-margin, y); y += 9;
+      y += imgSize + captionH + 8;
+    } else { y += 5; }
+    doc.setDrawColor(238,238,238); doc.line(margin, y, pageW-margin, y); y += 11;
   }
 
   const pageCount = doc.internal.getNumberOfPages();
   for(let p=1; p<=pageCount; p++){
     doc.setPage(p);
     doc.setDrawColor(225,225,225); doc.line(margin, pageH-footerH, pageW-margin, pageH-footerH);
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(140,148,158);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(140,148,158);
     doc.text('BY GUSTAVO_DEVELOPER', margin, pageH-7);
     doc.text(`Página ${p} de ${pageCount}`, pageW-margin, pageH-7, { align:'right' });
   }
@@ -3142,6 +3174,11 @@ document.getElementById('btnRefreshNow').addEventListener('click', async (e)=>{
 });
 
 /* ===================== Init ===================== */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{ /* si falla el registro, la app sigue funcionando online normalmente */ });
+  });
+}
 async function init(){
   document.getElementById('landingVersion').textContent = APP_VERSION;
   document.documentElement.style.setProperty('--sys-accent', SYS.hvac.accent);
@@ -3155,6 +3192,7 @@ async function init(){
   if(saved && saved.hvac && saved.hvac.length === state.hvac.length && saved.cableado && saved.cableado.length === state.cableado.length && saved.fds && saved.fds.length === state.fds.length && saved.transit && saved.transit.length === state.transit.length && saved.timbrado && saved.timbrado.length === state.timbrado.length){
     state = saved;
     if(!state.sheetSync.url){ state.sheetSync.url = DEFAULT_SHEET_URL; state.sheetSync.enabled = true; }
+    if(!state.syncQueue) state.syncQueue = [];
     showToast('Sesión anterior recuperada');
   }
   renderAll();
@@ -3172,7 +3210,10 @@ async function init(){
     renderAll();
     populateSelects();
   }
+  await flushSyncQueue();
 }
+window.addEventListener('online', ()=>{ flushSyncQueue(); });
+setInterval(()=>{ if(typeof navigator === 'undefined' || navigator.onLine !== false) flushSyncQueue(); }, 20000);
 init().catch(function(err){
   const banner = document.getElementById('jsFailBanner');
   if(banner){
