@@ -740,7 +740,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v5.7 · 19 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v5.9 · 19 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -2831,6 +2831,10 @@ document.getElementById('importFile').addEventListener('change', (e)=>{
         const tMap = new Map(incoming.transit.map(r=>[r.id, r]));
         state.transit = state.transit.map(r => tMap.has(r.id) ? {...r, ...tMap.get(r.id), fotografiaPhotos: tMap.get(r.id).fotografiaPhotos||[], obsPhotos: tMap.get(r.id).obsPhotos||[]} : r);
       }
+      if(incoming.timbrado){
+        const tiMap = new Map(incoming.timbrado.map(r=>[r.id, r]));
+        state.timbrado = state.timbrado.map(r => tiMap.has(r.id) ? {...r, ...tiMap.get(r.id), obsPhotos: tiMap.get(r.id).obsPhotos||[]} : r);
+      }
       if(incoming.access) state.access = incoming.access;
       if(incoming.sheetSync) state.sheetSync = incoming.sheetSync;
       scheduleSave(); renderAll();
@@ -3296,8 +3300,29 @@ document.getElementById('btnRefreshNow').addEventListener('click', async (e)=>{
 /* ===================== Init ===================== */
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('./sw.js').catch(()=>{ /* si falla el registro, la app sigue funcionando online normalmente */ });
+    navigator.serviceWorker.register('./sw.js').then(reg=>{
+      // Revisa de inmediato si hay una versión nueva de la app, y de ahí en adelante cada minuto
+      // mientras la app esté abierta — así nunca hace falta borrar caché a mano para actualizar.
+      reg.update().catch(()=>{});
+      setInterval(()=>{ reg.update().catch(()=>{}); }, 60000);
+    }).catch(()=>{ /* si falla el registro, la app sigue funcionando online normalmente */ });
   });
+  // Cuando el Service Worker nuevo toma el control (porque ya se instaló una versión más
+  // reciente), recarga la página automáticamente UNA sola vez para mostrarla — el usuario
+  // ya no necesita cerrar la app ni borrar caché para ver la versión nueva.
+  let swRefreshed = false;
+  navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+    if(swRefreshed) return;
+    swRefreshed = true;
+    window.location.reload();
+  });
+}
+// Pide al navegador que NO borre automáticamente los datos guardados (fotos incluidas) por
+// presión de espacio de almacenamiento del dispositivo. El navegador puede negarlo igual,
+// pero reduce mucho el riesgo — es la causa más probable de que a veces "desaparezcan" fotos
+// sin que la app misma las haya borrado.
+if(navigator.storage && navigator.storage.persist){
+  navigator.storage.persist().catch(()=>{});
 }
 // Campos "de campo" (llenados desde la app, incluidas fotos) que SIEMPRE se deben conservar
 // de la sesión guardada, sin importar si cambió la cantidad de filas de datos maestros.

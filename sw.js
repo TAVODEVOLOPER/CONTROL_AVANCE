@@ -5,7 +5,7 @@
 // CACHE_VERSION (no es obligatorio cambiarlo en cada versión, solo si quieres forzar
 // que los celulares descarten la caché vieja de inmediato).
 
-const CACHE_VERSION = 'v5.2';
+const CACHE_VERSION = 'v5.9';
 const CACHE_NAME = 'dragados-control-' + CACHE_VERSION;
 
 const APP_SHELL = [
