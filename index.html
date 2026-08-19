@@ -740,7 +740,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v5.3 · 06 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v5.4 · 06 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -2486,7 +2486,7 @@ function applySheetRowToHvac(obj){
   const uidNum = parseInt(String(uid).replace('hvac-',''));
   const row = state.hvac.find(r=>r.uid===uidNum);
   if(!row) return false;
-  // Prellenado (datos maestros) — ahora editable a mano en Sheets y se refleja en la app
+  // Prellenado (datos maestros) — no cuenta para "editado hoy" en el informe
   if(obj.SUBCONTRACTOR !== undefined) row.subcontractor = (obj.SUBCONTRACTOR === '#N/A' ? '' : (obj.SUBCONTRACTOR || ''));
   if(obj.ITEM !== undefined && obj.ITEM !== null && obj.ITEM !== '') row.item = parseInt(obj.ITEM) || row.item;
   if(obj.TAG !== undefined) row.tag = obj.TAG || '';
@@ -2498,7 +2498,8 @@ function applySheetRowToHvac(obj){
   if(obj.ROOM_NUMBER !== undefined) row.room = obj.ROOM_NUMBER || '';
   if(obj.AREA !== undefined) row.area = obj.AREA || '';
   if(obj.LEVEL !== undefined) row.level = obj.LEVEL || '';
-  // Llenado por la app (campos editables en campo)
+  // Llenado por la app — solo tocamos la fecha de edición si algo de esto realmente cambió
+  const before = JSON.stringify([row.soporte,row.fecha,row.tagged_items,row.tierra_soporte,row.tierra_equipos,row.miniruta,row.conexionado,row.megado,row.tubing,row.observacion]);
   row.soporte = obj.SOPORTE || '';
   row.fecha = toDateOnly(obj.FECHA_EQUIPO);
   row.tagged_items = toDateOnly(obj.TAGGED_ITEMS);
@@ -2509,8 +2510,9 @@ function applySheetRowToHvac(obj){
   row.megado = obj.MEGADO || '';
   row.tubing = obj.TUBING || '';
   row.observacion = obj.OBSERVACION || '';
-  row.lastEditedAt = new Date().toISOString();
-  if(hvacStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt; } else { row.completedAt = ''; }
+  const after = JSON.stringify([row.soporte,row.fecha,row.tagged_items,row.tierra_soporte,row.tierra_equipos,row.miniruta,row.conexionado,row.megado,row.tubing,row.observacion]);
+  if(before !== after) row.lastEditedAt = new Date().toISOString();
+  if(hvacStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt || new Date().toISOString(); } else { row.completedAt = ''; }
   return true;
 }
 function applySheetRowToFds(obj){
@@ -2519,6 +2521,7 @@ function applySheetRowToFds(obj){
   const row = state.fds.find(r=>r.id===idNum);
   if(!row) return false;
   row.std_support = obj.STD_SUPPORT || obj.STD_SUPORT || obj['STD SUPPORT'] || obj['STD_SUPPORT '] || '';
+  const before = JSON.stringify([row.semana_date,row.soporte,row.equipo,row.minirutas,row.cableado,row.conexionado,row.nserie,row.observacion]);
   const fechaSoporte = toDateOnly(obj.FECHA_SOPORTE !== undefined ? obj.FECHA_SOPORTE : obj.SEMANA_DATE);
   if(fechaSoporte){
     row.semana_date = fechaSoporte;
@@ -2534,8 +2537,9 @@ function applySheetRowToFds(obj){
   row.conexionado = obj.CONEXIONADO || '';
   row.nserie = (obj.N_SERIE_EQUIPO !== undefined && obj.N_SERIE_EQUIPO !== null) ? String(obj.N_SERIE_EQUIPO) : '';
   row.observacion = obj.OBSERVACION || '';
-  row.lastEditedAt = new Date().toISOString();
-  if(fdsStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt; } else { row.completedAt = ''; }
+  const after = JSON.stringify([row.semana_date,row.soporte,row.equipo,row.minirutas,row.cableado,row.conexionado,row.nserie,row.observacion]);
+  if(before !== after) row.lastEditedAt = new Date().toISOString();
+  if(fdsStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt || new Date().toISOString(); } else { row.completedAt = ''; }
   return true;
 }
 function applySheetRowToCable(obj){
@@ -2545,18 +2549,22 @@ function applySheetRowToCable(obj){
   if(!row) return false;
   const now = new Date().toISOString();
   const g = (v)=> (v !== undefined && v !== null) ? String(v) : '';
+  const beforeFrom = JSON.stringify([row.from.minirutas,row.from.tendido,row.from.marca_gland,row.from.gland,row.from.fecha_gland,row.from.conexionado,row.from.fecha_conexionado,row.from.observacion]);
   row.from.minirutas = obj.From_Minirutas || ''; row.from.tendido = obj.From_Tendido || '';
   row.from.marca_gland = g(obj.From_Marca_Gland); row.from.gland = obj.From_Gland || '';
   row.from.fecha_gland = toDateOnly(obj.From_Fecha_Gland); row.from.conexionado = obj.From_Conexionado || '';
   row.from.fecha_conexionado = toDateOnly(obj.From_Fecha_Conexionado); row.from.observacion = obj.From_Observacion || '';
-  row.from.lastEditedAt = now;
+  const afterFrom = JSON.stringify([row.from.minirutas,row.from.tendido,row.from.marca_gland,row.from.gland,row.from.fecha_gland,row.from.conexionado,row.from.fecha_conexionado,row.from.observacion]);
+  if(beforeFrom !== afterFrom) row.from.lastEditedAt = now;
+  const beforeTo = JSON.stringify([row.to.minirutas,row.to.tendido,row.to.marca_gland,row.to.gland,row.to.fecha_gland,row.to.conexionado,row.to.fecha_conexionado,row.to.observacion]);
   row.to.minirutas = obj.To_Minirutas || ''; row.to.tendido = obj.To_Tendido || '';
   row.to.marca_gland = g(obj.To_Marca_Gland); row.to.gland = obj.To_Gland || '';
   row.to.fecha_gland = toDateOnly(obj.To_Fecha_Gland); row.to.conexionado = obj.To_Conexionado || '';
   row.to.fecha_conexionado = toDateOnly(obj.To_Fecha_Conexionado); row.to.observacion = obj.To_Observacion || '';
-  row.to.lastEditedAt = now;
-  if(sideStatus(row.from) === 'complete'){ if(!row.from.completedAt) row.from.completedAt = now; } else { row.from.completedAt = ''; }
-  if(sideStatus(row.to) === 'complete'){ if(!row.to.completedAt) row.to.completedAt = now; } else { row.to.completedAt = ''; }
+  const afterTo = JSON.stringify([row.to.minirutas,row.to.tendido,row.to.marca_gland,row.to.gland,row.to.fecha_gland,row.to.conexionado,row.to.fecha_conexionado,row.to.observacion]);
+  if(beforeTo !== afterTo) row.to.lastEditedAt = now;
+  if(sideStatus(row.from) === 'complete'){ if(!row.from.completedAt) row.from.completedAt = row.from.lastEditedAt || now; } else { row.from.completedAt = ''; }
+  if(sideStatus(row.to) === 'complete'){ if(!row.to.completedAt) row.to.completedAt = row.to.lastEditedAt || now; } else { row.to.completedAt = ''; }
   return true;
 }
 function applySheetRowToTransit(obj){
@@ -2564,6 +2572,7 @@ function applySheetRowToTransit(obj){
   const idNum = parseInt(String(uid).replace('transit-',''));
   const row = state.transit.find(r=>r.id===idNum);
   if(!row) return false;
+  const before = JSON.stringify([row.construccion,row.limpieza,row.pintura,row.cables_correcto,row.etiquetas_cables,row.identificacion_transit,row.fotografia,row.estado_final,row.observacion]);
   row.construccion = obj.CONSTRUCCION || '';
   row.limpieza = obj.LIMPIEZA || '';
   row.pintura = obj.PINTURA || '';
@@ -2573,8 +2582,9 @@ function applySheetRowToTransit(obj){
   row.fotografia = obj.FOTOGRAFIA || '';
   row.estado_final = obj.ESTADO_FINAL || '';
   row.observacion = obj.OBSERVACION || '';
-  row.lastEditedAt = new Date().toISOString();
-  if(transitStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt; } else { row.completedAt = ''; }
+  const after = JSON.stringify([row.construccion,row.limpieza,row.pintura,row.cables_correcto,row.etiquetas_cables,row.identificacion_transit,row.fotografia,row.estado_final,row.observacion]);
+  if(before !== after) row.lastEditedAt = new Date().toISOString();
+  if(transitStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt || new Date().toISOString(); } else { row.completedAt = ''; }
   return true;
 }
 function applySheetRowToTimbrado(obj){
@@ -2589,11 +2599,13 @@ function applySheetRowToTimbrado(obj){
   if(obj.To_Tag !== undefined) row.to_tag = obj.To_Tag || '';
   if(obj.To_Description !== undefined) row.to_description = obj.To_Description || '';
   if(obj.To_Area !== undefined) row.to_area = obj.To_Area || '';
+  const before = JSON.stringify([row.timbrado,row.fecha_timbrado,row.observacion]);
   row.timbrado = obj.TIMBRADO || '';
   row.fecha_timbrado = toDateOnly(obj.FECHA_TIMBRADO);
   row.observacion = obj['OBSERVACIÓN'] !== undefined ? (obj['OBSERVACIÓN']||'') : (obj.OBSERVACION || '');
-  row.lastEditedAt = new Date().toISOString();
-  if(timbradoStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt; } else { row.completedAt = ''; }
+  const after = JSON.stringify([row.timbrado,row.fecha_timbrado,row.observacion]);
+  if(before !== after) row.lastEditedAt = new Date().toISOString();
+  if(timbradoStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt || new Date().toISOString(); } else { row.completedAt = ''; }
   return true;
 }
 async function pushAccessToSheet(sys){
@@ -3093,7 +3105,7 @@ async function buildDailyReportPDF(sys, dateStr, items){
   }
 
   for(const it of items){
-    if(y > pageH - footerH - 110){ doc.addPage(); drawHeader(); }
+    if(y > pageH - footerH - 140){ doc.addPage(); drawHeader(); }
     doc.setFont('helvetica','bold'); doc.setFontSize(12.5); doc.setTextColor(9,24,35);
     doc.text(String(it.tag||'—'), margin, y); y += 14;
     doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(100,110,120);
@@ -3106,17 +3118,49 @@ async function buildDailyReportPDF(sys, dateStr, items){
       if(y + lines.length*12.5 > pageH - footerH - 10){ doc.addPage(); drawHeader(); }
       doc.text(lines, margin+3, y); y += lines.length*12.5 + 3;
     }
-    if(it.observacion){
-      doc.setTextColor(120,91,0); doc.setFontSize(10);
-      const lines = doc.splitTextToSize('Obs: ' + it.observacion, pageW - margin*2);
-      if(y + lines.length*12.5 > pageH - footerH - 10){ doc.addPage(); drawHeader(); }
-      doc.text(lines, margin, y); y += lines.length*12.5 + 4;
+
+    const allPhotos = (it.photos || []).slice(0, 10);
+    const incidentPhotos = allPhotos.filter(p => p.label === 'Observación');
+    const otherPhotos = allPhotos.filter(p => p.label !== 'Observación');
+
+    if(it.observacion || incidentPhotos.length){
+      const incImgSize = 128;
+      const hasFeatured = incidentPhotos.length > 0;
+      const textW = hasFeatured ? (pageW - margin*2 - incImgSize - 14) : (pageW - margin*2);
+      let obsLines = [];
+      doc.setFont('helvetica','normal'); doc.setFontSize(10);
+      if(it.observacion){ obsLines = doc.splitTextToSize('Obs: ' + it.observacion, textW); }
+      const textH = obsLines.length ? obsLines.length*12.5 : 0;
+      const blockH = Math.max(textH, hasFeatured ? incImgSize+16 : 0);
+      if(y + blockH > pageH - footerH - 16){ doc.addPage(); drawHeader(); }
+      if(obsLines.length){
+        doc.setTextColor(120,91,0); doc.setFontSize(10);
+        doc.text(obsLines, margin, y);
+      }
+      if(hasFeatured){
+        const featured = incidentPhotos[0];
+        const fixed = await correctPhotoOrientation(featured.src);
+        const px = pageW - margin - incImgSize;
+        if(fixed){
+          try{
+            const ratio = Math.min(incImgSize/fixed.w, incImgSize/fixed.h);
+            const dw = fixed.w*ratio, dh = fixed.h*ratio;
+            const dx = px + (incImgSize-dw)/2, dy = y + (incImgSize-dh)/2;
+            doc.addImage(fixed.src, 'JPEG', dx, dy, dw, dh);
+          }catch(e){ /* si la foto no se puede incrustar, se omite */ }
+        }
+        doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(120,128,138);
+        doc.text('Incidencia', px+incImgSize/2, y+incImgSize+11, { align:'center' });
+      }
+      y += blockH + 10;
     }
-    if(it.photos && it.photos.length){
+
+    const remainingPhotos = [...otherPhotos, ...incidentPhotos.slice(1)];
+    if(remainingPhotos.length){
       const imgSize = 64; const captionH = 12;
       let x = margin;
       if(y + imgSize + captionH > pageH - footerH - margin){ doc.addPage(); drawHeader(); }
-      for(const p of it.photos.slice(0,8)){
+      for(const p of remainingPhotos.slice(0,8)){
         const fixed = await correctPhotoOrientation(p.src);
         if(x + imgSize > pageW - margin){ x = margin; y += imgSize + captionH + 8; if(y + imgSize + captionH > pageH - footerH - margin){ doc.addPage(); drawHeader(); x = margin; } }
         if(fixed){
@@ -3131,9 +3175,9 @@ async function buildDailyReportPDF(sys, dateStr, items){
         doc.text(p.label, x+imgSize/2, y+imgSize+9, { align:'center' });
         x += imgSize + 10;
       }
-      y += imgSize + captionH + 8;
-    } else { y += 5; }
-    doc.setDrawColor(238,238,238); doc.line(margin, y, pageW-margin, y); y += 11;
+      y += imgSize + captionH + 10;
+    } else if(!it.observacion && !incidentPhotos.length){ y += 5; }
+    doc.setDrawColor(238,238,238); doc.line(margin, y, pageW-margin, y); y += 14;
   }
 
   const pageCount = doc.internal.getNumberOfPages();
