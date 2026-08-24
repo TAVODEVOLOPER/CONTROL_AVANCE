@@ -289,8 +289,10 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   .sidebar-overlay{display:none !important;}
   .sidebar-close{display:none;}
   #btnMenuOpen{display:none;}
-  body{padding-left:300px;}
-  .landing-screen{padding-left:300px;}
+  body{margin-left:300px;}
+  .landing-screen, .overlay, #jsFailBanner{left:300px; width:calc(100% - 300px);}
+  .list-wrap{max-width:960px;}
+  .app-header, .filter-bar{padding-left:32px; padding-right:32px;}
 }
 
 /* ---------- Landing / launcher screen ---------- */
@@ -332,6 +334,31 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .sidebar-label{color:#fff; font-size:14px; font-weight:500; flex:1;}
 .sidebar-lock{color:#7C90A6; flex:none;}
 .sidebar-item.active .sidebar-lock{color:#FFC905;}
+
+/* ---------- Insights panel (derecha): avance, rendimiento, gráficos ---------- */
+.insights-overlay{position:fixed; inset:0; z-index:800; background:rgba(0,0,0,.4); opacity:0; pointer-events:none; transition:opacity .22s ease;}
+.insights-overlay.open{opacity:1; pointer-events:auto;}
+.insights-panel{position:fixed; top:0; right:0; bottom:0; width:88%; max-width:340px; z-index:801; background:#fff; transform:translateX(100%); transition:transform .22s ease; display:flex; flex-direction:column; box-shadow:-2px 0 18px rgba(0,0,0,.25);}
+.insights-panel.open{transform:translateX(0);}
+.insights-header{display:flex; align-items:center; justify-content:space-between; padding:18px 16px 14px; border-bottom:1px solid var(--steel-200);}
+.insights-title{font-family:var(--font-display); font-weight:700; font-size:15px; color:var(--navy-900);}
+.insights-sub{font-size:11px; color:var(--steel-500); margin-top:2px;}
+.insights-header .sidebar-close{color:var(--steel-500);}
+.insights-body{flex:1; overflow-y:auto; padding:16px;}
+.insights-ring-row{display:flex; align-items:center; gap:14px; margin-bottom:16px;}
+.insights-ring-num{font-family:var(--font-display); font-weight:700; font-size:14px; fill:var(--navy-900);}
+.insights-ring-label{font-size:13px; font-weight:600; color:var(--navy-900);}
+.insights-ring-sub{font-size:11px; color:var(--steel-500); margin-top:2px;}
+.insights-stats-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:18px;}
+.insights-stat{border-radius:10px; padding:10px 6px; text-align:center;}
+.insights-stat .n{font-family:var(--font-display); font-weight:700; font-size:17px;}
+.insights-stat .l{font-size:10px; margin-top:2px;}
+.insights-section-label{font-size:11.5px; font-weight:700; color:var(--steel-500); text-transform:uppercase; letter-spacing:.4px; margin:0 0 10px;}
+.insights-chart-wrap{margin-bottom:20px;}
+.insights-planning-box{background:var(--steel-050); border-radius:10px; padding:12px; font-size:12px; color:var(--steel-500); line-height:1.5;}
+@media(min-width:900px){
+  .insights-overlay{display:none !important;}
+}
 </style>
 </head>
 <body>
@@ -381,6 +408,18 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   <div id="sidebarSystemsList"></div>
 </div>
 
+<div class="insights-overlay" id="insightsOverlay"></div>
+<div class="insights-panel" id="insightsPanel">
+  <div class="insights-header">
+    <div>
+      <div class="insights-title">Avance y rendimiento</div>
+      <div class="insights-sub" id="insightsSysLabel">—</div>
+    </div>
+    <button class="sidebar-close" id="btnInsightsClose"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="insights-body" id="insightsBody"></div>
+</div>
+
 <header class="app-header">
   <div class="app-header-top">
     <div class="brand-text">
@@ -402,6 +441,9 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       </button>
       <button class="icon-btn" id="btnAccessOpen" title="Accesos">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </button>
+      <button class="icon-btn" id="btnInsightsOpen" title="Avance y rendimiento">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
       </button>
       <button class="icon-btn" id="btnExportOpen" title="Exportar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -766,7 +808,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v6.2 · 24 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v6.3 · 24 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1148,7 +1190,92 @@ function switchSystem(sys){
   renderSystemTabs();
   populateSelects();
   renderAll();
+  if(document.getElementById('insightsPanel').classList.contains('open')) renderInsights();
 }
+
+/* ===================== Panel de Avance / Rendimiento (derecha) ===================== */
+function computeSysStats(sys){
+  if(sys === 'cableado'){
+    let total=0, complete=0, obs=0;
+    state.cableado.forEach(r=>{
+      ['from','to'].forEach(side=>{
+        total++;
+        if(sideStatus(r[side])==='complete') complete++;
+        if(r[side].observacion) obs++;
+      });
+    });
+    return {total, complete, obs};
+  }
+  const rows = state[sys];
+  const total = rows.length;
+  const complete = rows.filter(r=>rowStatus(sys,r)==='complete').length;
+  const obs = rows.filter(r=>hasObservation(sys,r)).length;
+  return {total, complete, obs};
+}
+function renderInsights(){
+  const sys = currentSystem;
+  document.getElementById('insightsSysLabel').textContent = SYS[sys].label;
+  const {total, complete, obs} = computeSysStats(sys);
+  const pct = total ? Math.round(complete/total*100) : 0;
+  const circumference = 2*Math.PI*30;
+  const dash = circumference * (pct/100);
+
+  const weeks = weeklySummaryRows(sys).slice(-6);
+  const maxVal = Math.max(1, ...weeks.map(w=>w.complete+w.inProgress));
+  const chartBars = weeks.map(w=>{
+    const total_w = w.complete + w.inProgress;
+    const h = Math.round((total_w/maxVal)*64);
+    const hc = total_w ? Math.round((w.complete/total_w)*h) : 0;
+    return `<div style="display:flex; flex-direction:column; align-items:center; gap:4px; flex:1;">
+      <div style="width:100%; max-width:26px; height:64px; display:flex; flex-direction:column; justify-content:flex-end; background:var(--steel-100); border-radius:4px; overflow:hidden;">
+        <div style="height:${h}px; display:flex; flex-direction:column; justify-content:flex-end;">
+          <div style="height:${hc}px; background:var(--green-600);"></div>
+          <div style="height:${h-hc}px; background:var(--steel-300);"></div>
+        </div>
+      </div>
+      <div style="font-size:8.5px; color:var(--steel-500); text-align:center; line-height:1.2;">${w.label.replace('Semana ','S')}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('insightsBody').innerHTML = `
+    <div class="insights-section-label">Avance</div>
+    <div class="insights-ring-row">
+      <svg width="72" height="72" viewBox="0 0 72 72">
+        <circle cx="36" cy="36" r="30" fill="none" stroke="var(--steel-200)" stroke-width="8"/>
+        <circle cx="36" cy="36" r="30" fill="none" stroke="var(--green-600)" stroke-width="8" stroke-linecap="round"
+          stroke-dasharray="${dash} ${circumference}" transform="rotate(-90 36 36)"/>
+        <text x="36" y="41" text-anchor="middle" class="insights-ring-num">${pct}%</text>
+      </svg>
+      <div>
+        <div class="insights-ring-label">Avance general</div>
+        <div class="insights-ring-sub">${complete} de ${total} completos</div>
+      </div>
+    </div>
+    <div class="insights-stats-grid">
+      <div class="insights-stat" style="background:var(--green-100);"><div class="n" style="color:var(--green-600);">${complete}</div><div class="l" style="color:var(--green-600);">Completos</div></div>
+      <div class="insights-stat" style="background:var(--steel-050);"><div class="n" style="color:var(--navy-900);">${total-complete}</div><div class="l" style="color:var(--steel-500);">Pendientes</div></div>
+      <div class="insights-stat" style="background:var(--red-100);"><div class="n" style="color:var(--brand-red-dark);">${obs}</div><div class="l" style="color:var(--brand-red-dark);">Observados</div></div>
+    </div>
+    <div class="insights-section-label">Rendimiento — completados por semana</div>
+    <div class="insights-chart-wrap">
+      ${weeks.length ? `<div style="display:flex; gap:6px; align-items:flex-end;">${chartBars}</div>` : `<div style="font-size:12px; color:var(--steel-500);">Todavía no hay suficientes datos para mostrar el gráfico.</div>`}
+    </div>
+    <div class="insights-section-label">Planificación</div>
+    <div class="insights-planning-box">Las metas y fechas planificadas todavía no están configuradas para este sistema. Avísame y las armamos juntos.</div>
+  `;
+}
+function openInsights(){
+  renderInsights();
+  document.getElementById('insightsOverlay').classList.add('open');
+  document.getElementById('insightsPanel').classList.add('open');
+}
+function closeInsights(){
+  document.getElementById('insightsOverlay').classList.remove('open');
+  document.getElementById('insightsPanel').classList.remove('open');
+}
+document.getElementById('btnInsightsOpen').addEventListener('click', openInsights);
+document.getElementById('btnInsightsClose').addEventListener('click', closeInsights);
+document.getElementById('insightsOverlay').addEventListener('click', closeInsights);
 
 /* ===================== Filter selects ===================== */
 function populateSelects(){
