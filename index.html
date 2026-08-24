@@ -356,8 +356,28 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .insights-section-label{font-size:11.5px; font-weight:700; color:var(--steel-500); text-transform:uppercase; letter-spacing:.4px; margin:0 0 10px;}
 .insights-chart-wrap{margin-bottom:20px;}
 .insights-planning-box{background:var(--steel-050); border-radius:10px; padding:12px; font-size:12px; color:var(--steel-500); line-height:1.5;}
+.insights-menu{padding:14px;}
+.insights-menu-btn{width:100%; display:flex; align-items:center; gap:12px; padding:14px 12px; border-radius:12px; border:1px solid var(--steel-200); background:#fff; margin-bottom:10px; text-align:left; cursor:pointer; color:var(--navy-900);}
+.insights-menu-btn svg:first-child{flex:none; color:var(--brand-blue);}
+.insights-menu-btn .t{font-size:13.5px; font-weight:700;}
+.insights-menu-btn .s{font-size:11px; color:var(--steel-500); margin-top:2px;}
+.insights-menu-btn .chev{flex:none; margin-left:auto; color:var(--steel-400);}
+.insights-back-btn{display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; color:var(--brand-blue); background:none; border:none; padding:0 0 14px; cursor:pointer;}
+.insights-notes-input{width:100%; min-height:80px; border:1px solid var(--steel-300); border-radius:10px; padding:10px; font-size:13px; font-family:inherit; resize:vertical; margin-bottom:8px;}
+.insights-notes-row{display:flex; gap:8px; margin-bottom:18px;}
+.insights-mic-btn{flex:none; width:40px; height:40px; border-radius:50%; border:1px solid var(--steel-300); background:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--steel-500);}
+.insights-mic-btn.recording{background:var(--brand-red); border-color:var(--brand-red); color:#fff; animation:pulseMic 1s infinite;}
+@keyframes pulseMic{0%,100%{box-shadow:0 0 0 0 rgba(233,33,39,.4);} 50%{box-shadow:0 0 0 8px rgba(233,33,39,0);}}
+.insights-save-btn{flex:1; border:none; border-radius:10px; background:var(--brand-blue); color:#fff; font-weight:600; font-size:13px; cursor:pointer;}
+.insights-note-item{border-bottom:1px solid var(--steel-100); padding:10px 0; font-size:12.5px; color:var(--navy-900); line-height:1.5;}
+.insights-note-date{font-size:10.5px; color:var(--steel-500); margin-bottom:3px;}
 @media(min-width:900px){
   .insights-overlay{display:none !important;}
+  .insights-open-btn{width:auto; padding:0 12px; gap:6px; border-radius:8px;}
+  .insights-open-label{font-size:12.5px; font-weight:600;}
+}
+@media(max-width:899px){
+  .insights-open-label{display:none;}
 }
 </style>
 </head>
@@ -412,12 +432,29 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 <div class="insights-panel" id="insightsPanel">
   <div class="insights-header">
     <div>
-      <div class="insights-title">Avance y rendimiento</div>
+      <div class="insights-title" id="insightsTitle">Panel</div>
       <div class="insights-sub" id="insightsSysLabel">—</div>
     </div>
     <button class="sidebar-close" id="btnInsightsClose"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
-  <div class="insights-body" id="insightsBody"></div>
+  <div class="insights-menu" id="insightsMenu">
+    <button class="insights-menu-btn" id="btnGoAvance">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+      <div><div class="t">Avance y rendimiento</div><div class="s">Estado general y ritmo semanal</div></div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chev"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <button class="insights-menu-btn" id="btnGoNotas">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>
+      <div><div class="t">Notas</div><div class="s">Escritas o dictadas por voz</div></div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chev"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <button class="insights-menu-btn" id="btnGoReport">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <div><div class="t">Generar informe</div><div class="s">PDF y Excel diario / semanal</div></div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chev"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+  <div class="insights-body" id="insightsBody" style="display:none;"></div>
 </div>
 
 <header class="app-header">
@@ -436,14 +473,15 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <button class="icon-btn" id="btnHomeOpen" title="Inicio">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       </button>
-      <button class="icon-btn" id="btnReportOpen" title="Informe semanal">
+      <button class="icon-btn" id="btnReportOpen" title="Informe semanal" style="display:none;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       </button>
       <button class="icon-btn" id="btnAccessOpen" title="Accesos">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       </button>
-      <button class="icon-btn" id="btnInsightsOpen" title="Avance y rendimiento">
+      <button class="icon-btn insights-open-btn" id="btnInsightsOpen" title="Avance y rendimiento">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+        <span class="insights-open-label">Avance</span>
       </button>
       <button class="icon-btn" id="btnExportOpen" title="Exportar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -808,7 +846,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v6.3 · 24 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v6.4 · 24 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1190,7 +1228,7 @@ function switchSystem(sys){
   renderSystemTabs();
   populateSelects();
   renderAll();
-  if(document.getElementById('insightsPanel').classList.contains('open')) renderInsights();
+  if(document.getElementById('insightsPanel').classList.contains('open')) openInsights();
 }
 
 /* ===================== Panel de Avance / Rendimiento (derecha) ===================== */
@@ -1238,6 +1276,7 @@ function renderInsights(){
   }).join('');
 
   document.getElementById('insightsBody').innerHTML = `
+    <button class="insights-back-btn" id="btnAvanceBack"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Volver</button>
     <div class="insights-section-label">Avance</div>
     <div class="insights-ring-row">
       <svg width="72" height="72" viewBox="0 0 72 72">
@@ -1264,18 +1303,131 @@ function renderInsights(){
     <div class="insights-planning-box">Las metas y fechas planificadas todavía no están configuradas para este sistema. Avísame y las armamos juntos.</div>
   `;
 }
+function showInsightsMenu(){
+  document.getElementById('insightsTitle').textContent = 'Panel';
+  document.getElementById('insightsMenu').style.display = '';
+  document.getElementById('insightsBody').style.display = 'none';
+}
 function openInsights(){
-  renderInsights();
+  document.getElementById('insightsSysLabel').textContent = SYS[currentSystem].label;
+  showInsightsMenu();
   document.getElementById('insightsOverlay').classList.add('open');
   document.getElementById('insightsPanel').classList.add('open');
 }
 function closeInsights(){
   document.getElementById('insightsOverlay').classList.remove('open');
   document.getElementById('insightsPanel').classList.remove('open');
+  if(recognitionActive) stopDictation();
 }
 document.getElementById('btnInsightsOpen').addEventListener('click', openInsights);
 document.getElementById('btnInsightsClose').addEventListener('click', closeInsights);
 document.getElementById('insightsOverlay').addEventListener('click', closeInsights);
+
+document.getElementById('btnGoAvance').addEventListener('click', ()=>{
+  document.getElementById('insightsTitle').textContent = 'Avance y rendimiento';
+  document.getElementById('insightsMenu').style.display = 'none';
+  const body = document.getElementById('insightsBody');
+  body.style.display = '';
+  renderInsights();
+  document.getElementById('btnAvanceBack').addEventListener('click', showInsightsMenu);
+});
+document.getElementById('btnGoNotas').addEventListener('click', ()=>{
+  document.getElementById('insightsTitle').textContent = 'Notas';
+  document.getElementById('insightsMenu').style.display = 'none';
+  const body = document.getElementById('insightsBody');
+  body.style.display = '';
+  renderNotesPanel();
+});
+document.getElementById('btnGoReport').addEventListener('click', ()=>{
+  closeInsights();
+  document.getElementById('btnReportOpen').click();
+});
+
+/* ---- Notas (escritas o por voz), guardadas localmente por sistema ---- */
+let recognitionActive = null;
+function renderNotesPanel(){
+  if(!state.notes) state.notes = {};
+  if(!state.notes[currentSystem]) state.notes[currentSystem] = [];
+  const notes = state.notes[currentSystem];
+  document.getElementById('insightsBody').innerHTML = `
+    <button class="insights-back-btn" id="btnNotesBack"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Volver</button>
+    <textarea class="insights-notes-input" id="notesTextarea" placeholder="Escribe una nota, o dicta con el micrófono..."></textarea>
+    <div class="insights-notes-row">
+      <button class="insights-mic-btn" id="btnNotesMic" title="Dictar por voz">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+      </button>
+      <button class="insights-save-btn" id="btnNotesSave">Guardar nota</button>
+    </div>
+    <div class="insights-section-label">Notas guardadas (${SYS[currentSystem].label})</div>
+    <div id="notesList">${notes.length ? notes.slice().reverse().map(n=>`<div class="insights-note-item"><div class="insights-note-date">${formatDateTime(n.date)}</div>${escapeHtml(n.text)}</div>`).join('') : '<div style="font-size:12px; color:var(--steel-500);">Todavía no hay notas guardadas para este sistema.</div>'}</div>
+  `;
+  document.getElementById('btnNotesBack').addEventListener('click', showInsightsMenu);
+  document.getElementById('btnNotesSave').addEventListener('click', ()=>{
+    const ta = document.getElementById('notesTextarea');
+    const text = ta.value.trim();
+    if(!text) return;
+    state.notes[currentSystem].push({ text, date: new Date().toISOString() });
+    scheduleSave();
+    showToast('Nota guardada en el celular');
+    renderNotesPanel();
+  });
+  const micBtn = document.getElementById('btnNotesMic');
+  micBtn.addEventListener('click', ()=>{
+    if(recognitionActive){ stopDictation(); return; }
+    startDictation((text)=>{
+      const ta = document.getElementById('notesTextarea');
+      ta.value = (ta.value ? ta.value + ' ' : '') + text;
+    });
+  });
+}
+function startDictation(onResult){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ showToast('Este navegador no soporta dictado por voz'); return; }
+  const rec = new SR();
+  rec.lang = 'es-ES';
+  rec.continuous = true;
+  rec.interimResults = false;
+  rec.onresult = (e)=>{
+    let text = '';
+    for(let i=e.resultIndex; i<e.results.length; i++){ text += e.results[i][0].transcript; }
+    if(text.trim()) onResult(text.trim());
+  };
+  rec.onerror = ()=>{ stopDictation(); };
+  rec.onend = ()=>{ if(recognitionActive === rec) stopDictation(); };
+  rec.start();
+  recognitionActive = rec;
+  const btn = document.getElementById('btnNotesMic');
+  if(btn) btn.classList.add('recording');
+}
+function stopDictation(){
+  if(recognitionActive){ try{ recognitionActive.stop(); }catch(e){} }
+  recognitionActive = null;
+  const btn = document.getElementById('btnNotesMic');
+  if(btn) btn.classList.remove('recording');
+}
+
+// Deslizar desde el borde derecho hacia la izquierda para abrir el panel de Avance/Notas/Informe,
+// y de izquierda a derecha sobre el propio panel para cerrarlo.
+(function(){
+  let startX = null, startY = null, tracking = false;
+  document.addEventListener('touchstart', (e)=>{
+    const t = e.touches[0];
+    const panelOpen = document.getElementById('insightsPanel').classList.contains('open');
+    if(!panelOpen && t.clientX < window.innerWidth - 24) return;
+    startX = t.clientX; startY = t.clientY; tracking = true;
+  }, {passive:true});
+  document.addEventListener('touchend', (e)=>{
+    if(!tracking || startX === null){ tracking = false; return; }
+    const t = e.changedTouches[0];
+    const dx = t.clientX - startX, dy = t.clientY - startY;
+    const panelOpen = document.getElementById('insightsPanel').classList.contains('open');
+    if(Math.abs(dx) > 50 && Math.abs(dy) < 60){
+      if(!panelOpen && dx < 0) openInsights();
+      else if(panelOpen && dx > 0) closeInsights();
+    }
+    startX = null; startY = null; tracking = false;
+  }, {passive:true});
+})();
 
 /* ===================== Filter selects ===================== */
 function populateSelects(){
@@ -3539,6 +3691,7 @@ function mergeSavedState(saved){
   if(saved.sheetSync) state.sheetSync = { ...state.sheetSync, ...saved.sheetSync };
   if(saved.access) state.access = saved.access;
   if(Array.isArray(saved.syncQueue)) state.syncQueue = saved.syncQueue;
+  if(saved.notes) state.notes = saved.notes;
 
   const idFieldOf = { hvac:'uid', fds:'id', transit:'id', timbrado:'id' };
   let mergedAny = false;
