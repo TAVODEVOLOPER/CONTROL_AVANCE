@@ -855,6 +855,13 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <label>Fecha del informe</label>
       <input type="date" class="text-input" id="reportDailyDate">
     </div>
+    <div class="report-daily-controls" id="reportWeeklyControls">
+      <label>Rango del informe (lunes a sábado por defecto)</label>
+      <div style="display:flex; gap:8px;">
+        <input type="date" class="text-input" id="reportWeeklyStart">
+        <input type="date" class="text-input" id="reportWeeklyEnd">
+      </div>
+    </div>
     <div class="sheet-body" id="reportBody"></div>
     <div class="sheet-footer">
       <button class="btn-primary" id="btnExportReport">Exportar informe (.xlsx)</button>
@@ -882,7 +889,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v7.8 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v7.9 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -3638,13 +3645,28 @@ function todayLocalISO(){
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
+function currentWeekMonToSat(){
+  const d = new Date();
+  const day = d.getDay(); // 0=domingo, 1=lunes, ... 6=sábado
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(d); monday.setDate(d.getDate() + diffToMonday);
+  const saturday = new Date(monday); saturday.setDate(monday.getDate() + 5);
+  const toISO = (dt)=> `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  return { start: toISO(monday), end: toISO(saturday) };
+}
 function openReport(){
   reportMode = 'weekly';
   document.querySelectorAll('.report-tab').forEach(t=>t.classList.toggle('active', t.dataset.reportTab==='weekly'));
   document.getElementById('reportDailyControls').style.display = 'none';
+  document.getElementById('reportWeeklyControls').style.display = '';
   document.getElementById('btnExportReport').style.display = '';
   document.getElementById('btnExportDailyPdf').style.display = '';
   if(!document.getElementById('reportDailyDate').value) document.getElementById('reportDailyDate').value = todayLocalISO();
+  if(!document.getElementById('reportWeeklyStart').value){
+    const { start, end } = currentWeekMonToSat();
+    document.getElementById('reportWeeklyStart').value = start;
+    document.getElementById('reportWeeklyEnd').value = end;
+  }
   renderReport();
   document.getElementById('reportOverlay').classList.add('open');
 }
@@ -3657,12 +3679,15 @@ document.querySelectorAll('.report-tab').forEach(tab=>{
     reportMode = tab.dataset.reportTab;
     document.querySelectorAll('.report-tab').forEach(t=>t.classList.toggle('active', t===tab));
     document.getElementById('reportDailyControls').style.display = reportMode === 'daily' ? '' : 'none';
+    document.getElementById('reportWeeklyControls').style.display = reportMode === 'weekly' ? '' : 'none';
     document.getElementById('btnExportReport').style.display = reportMode === 'weekly' ? '' : 'none';
     document.getElementById('btnExportDailyPdf').style.display = '';
     renderReport();
   });
 });
 document.getElementById('reportDailyDate').addEventListener('change', renderReport);
+document.getElementById('reportWeeklyStart').addEventListener('change', renderReport);
+document.getElementById('reportWeeklyEnd').addEventListener('change', renderReport);
 document.getElementById('btnExportReport').addEventListener('click', ()=>{
   const wb = buildWorkbook(currentSystem);
   XLSX.writeFile(wb, `${SYS[currentSystem].label}_Informe_Semanal_${dateStamp()}.xlsx`);
@@ -3815,13 +3840,11 @@ function correctPhotoOrientation(dataUrl){
     }catch(e){ resolve(null); }
   });
 }
-function drawReportSummary(doc, margin, pageW, y, sys, dateStr, isWeekly){
+function drawReportSummary(doc, margin, pageW, y, sys, dateStr, isWeekly, rangeStart, rangeEnd){
   const rows = sys === 'cableado' ? null : state[sys];
   let total, completeCount, completedInRange, obsCount;
   if(sys === 'cableado'){
     let t=0, c=0, o=0, ct=0;
-    let rangeStart = null;
-    if(isWeekly){ const d = new Date(); d.setDate(d.getDate()-6); rangeStart = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
     state.cableado.forEach(r=>{
       ['from','to'].forEach(side=>{
         const obj = r[side];
@@ -3831,7 +3854,7 @@ function drawReportSummary(doc, margin, pageW, y, sys, dateStr, isWeekly){
         if(obj.observacion) o++;
         if(isComplete){
           const editDate = obj.lastEditedAt ? obj.lastEditedAt.slice(0,10) : '';
-          if(isWeekly ? (editDate >= rangeStart) : (editDate === dateStr)) ct++;
+          if(isWeekly ? (editDate >= rangeStart && editDate <= rangeEnd) : (editDate === dateStr)) ct++;
         }
       });
     });
@@ -3841,9 +3864,7 @@ function drawReportSummary(doc, margin, pageW, y, sys, dateStr, isWeekly){
     completeCount = rows.filter(r=>timbradoStatus(r)==='complete').length;
     obsCount = rows.filter(r=>r.observacion).length;
     if(isWeekly){
-      const d = new Date(); d.setDate(d.getDate()-6);
-      const rangeStart = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      completedInRange = rows.filter(r=> r.fecha_timbrado && r.fecha_timbrado >= rangeStart && timbradoStatus(r) === 'complete').length;
+      completedInRange = rows.filter(r=> r.fecha_timbrado && r.fecha_timbrado >= rangeStart && r.fecha_timbrado <= rangeEnd && timbradoStatus(r) === 'complete').length;
     } else {
       completedInRange = rows.filter(r=> r.fecha_timbrado === dateStr && timbradoStatus(r) === 'complete').length;
     }
@@ -3853,9 +3874,7 @@ function drawReportSummary(doc, margin, pageW, y, sys, dateStr, isWeekly){
     completeCount = rows.filter(r=>statusFn(r)==='complete').length;
     obsCount = rows.filter(r=>r.observacion).length;
     if(isWeekly){
-      const d = new Date(); d.setDate(d.getDate()-6);
-      const rangeStart = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      completedInRange = rows.filter(r=> r.completedAt && r.completedAt.slice(0,10) >= rangeStart && statusFn(r) === 'complete').length;
+      completedInRange = rows.filter(r=> r.completedAt && r.completedAt.slice(0,10) >= rangeStart && r.completedAt.slice(0,10) <= rangeEnd && statusFn(r) === 'complete').length;
     } else {
       completedInRange = rows.filter(r=> r.completedAt && sameLocalDate(r.completedAt, dateStr) && statusFn(r) === 'complete').length;
     }
@@ -3908,21 +3927,28 @@ function drawReportSummary(doc, margin, pageW, y, sys, dateStr, isWeekly){
     doc.text(c.label, cx0+cardW/2, cardY+28, { align:'center' });
   });
 
-  const newY = cardY + cardH + 18;
+  const newY = cardY + cardH + 30;
   doc.setLineWidth(1); doc.setLineCap('butt');
-  doc.setDrawColor(200,200,200); doc.line(margin, newY-8, pageW-margin, newY-8);
+  doc.setDrawColor(200,200,200); doc.line(margin, newY-14, pageW-margin, newY-14);
   return newY;
 }
 async function fetchDrivePhotosForItem(sistema, uid){
   if(!state.sheetSync.url || !sistema || !uid) return [];
+  const labelByField = {
+    obsPhotos: 'Observación', photos: 'Instalación', soportePhotos: 'Soporte',
+    equipoPhotos: 'Equipo', fotografiaPhotos: 'Fotografía', conexionadoPhotos: 'Conexionado'
+  };
   try{
     const res = await fetch(`${state.sheetSync.url}?action=getPhotos&sistema=${encodeURIComponent(sistema)}&uid=${encodeURIComponent(uid)}`);
     const files = await res.json();
     if(!Array.isArray(files)) return [];
-    return files.map(f=>({ src: `data:${f.mimeType || 'image/jpeg'};base64,${f.base64}`, label:'Drive' }));
+    return files.map(f=>{
+      const fieldKey = Object.keys(labelByField).find(k => (f.name||'').startsWith(k + '_'));
+      return { src: `data:${f.mimeType || 'image/jpeg'};base64,${f.base64}`, label: fieldKey ? labelByField[fieldKey] : 'Observación' };
+    });
   }catch(e){ return []; }
 }
-async function buildDailyReportPDF(sys, dateStr, items, titleOverride, dateLabelOverride){
+async function buildDailyReportPDF(sys, dateStr, items, titleOverride, dateLabelOverride, rangeStart, rangeEnd){
   if(!window.jspdf || !window.jspdf.jsPDF){
     showToast('No se pudo cargar el generador de PDF. Revisa tu conexión a internet e intenta de nuevo.');
     return;
@@ -3958,7 +3984,7 @@ async function buildDailyReportPDF(sys, dateStr, items, titleOverride, dateLabel
     doc.setDrawColor(200,200,200); doc.line(margin, y, pageW-margin, y); y += 20;
   }
   drawHeader();
-  y = drawReportSummary(doc, margin, pageW, y, sys, dateStr, !!dateLabelOverride);
+  y = drawReportSummary(doc, margin, pageW, y, sys, dateStr, !!dateLabelOverride, rangeStart, rangeEnd);
 
   for(const it of items){
     // Si no hay fotos guardadas en ESTE celular pero sabemos que hay fotos en Drive
@@ -3985,7 +4011,7 @@ async function buildDailyReportPDF(sys, dateStr, items, titleOverride, dateLabel
     const otherPhotos = allPhotos.filter(p => p.label !== 'Observación');
 
     if(it.observacion || incidentPhotos.length){
-      const incImgSize = 128;
+      const incImgSize = 218;
       const hasFeatured = incidentPhotos.length > 0;
       const padX = 10, padTop = 8, lineH = 12.5;
       let obsLines = [];
@@ -4059,24 +4085,29 @@ async function buildDailyReportPDF(sys, dateStr, items, titleOverride, dateLabel
   doc.save(`Informe_${titleOverride ? 'Semanal' : 'Diario'}_${SYS[sys].label}_${dateStr}.pdf`);
   showToast('PDF descargado');
 }
-function weeklyReportItems(sys){
+function weeklyReportItems(sys, startStr, endStr){
   const out = [];
-  const today = new Date();
-  for(let i=0; i<7; i++){
-    const d = new Date(today); d.setDate(d.getDate()-i);
+  const start = new Date(startStr + 'T00:00:00');
+  const end = new Date(endStr + 'T00:00:00');
+  for(let d = new Date(start); d <= end; d.setDate(d.getDate()+1)){
     const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     out.push(...dailyReportItems(sys, dateStr));
   }
   return out;
 }
+function getWeeklyRange(){
+  const startEl = document.getElementById('reportWeeklyStart');
+  const endEl = document.getElementById('reportWeeklyEnd');
+  if(startEl.value && endEl.value) return { start: startEl.value, end: endEl.value };
+  return currentWeekMonToSat();
+}
 async function buildWeeklyReportPDF(sys){
-  const items = weeklyReportItems(sys);
-  if(items.length === 0){ showToast('No hay registros modificados en los últimos 7 días'); return; }
-  const today = new Date();
-  const weekAgo = new Date(today); weekAgo.setDate(weekAgo.getDate()-6);
-  const dateLabel = `${formatDateShort(weekAgo.toISOString())} — ${formatDateShort(today.toISOString())}`;
-  const dateStrForFile = todayLocalISO();
-  await buildDailyReportPDF(sys, dateStrForFile, items, 'Informe semanal', dateLabel);
+  const { start, end } = getWeeklyRange();
+  const items = weeklyReportItems(sys, start, end);
+  if(items.length === 0){ showToast('No hay registros modificados en ese rango de fechas'); return; }
+  const dateLabel = `${formatDateShort(start+'T00:00:00')} — ${formatDateShort(end+'T00:00:00')}`;
+  const dateStrForFile = end;
+  await buildDailyReportPDF(sys, dateStrForFile, items, 'Informe semanal', dateLabel, start, end);
 }
 
 /* ===================== Landing / launcher screen ===================== */
