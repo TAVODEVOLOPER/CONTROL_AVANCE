@@ -155,7 +155,7 @@ input,select,button,textarea{font-family:inherit;font-size:16px;}
 .fab-export:active{background:var(--navy-700);}
 
 /* ---------- Overlay / Sheet ---------- */
-.overlay{position:fixed; inset:0; background:rgba(9,24,35,.55); z-index:100; display:none; align-items:flex-end; justify-content:center;}
+.overlay{position:fixed; inset:0; background:rgba(9,24,35,.55); z-index:900; display:none; align-items:flex-end; justify-content:center;}
 .overlay.open{display:flex;}
 .sheet{background:#fff; width:100%; max-width:560px; border-radius:16px 16px 0 0; max-height:92vh; display:flex; flex-direction:column; animation:slideup .22s ease;}
 @keyframes slideup{from{transform:translateY(30px); opacity:0;} to{transform:translateY(0); opacity:1;}}
@@ -875,7 +875,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v7.1 · 25 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v7.2 · 25 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
