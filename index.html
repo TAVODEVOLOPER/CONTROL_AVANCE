@@ -875,7 +875,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v6.9 · 25 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v7.0 · 25 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -2947,28 +2947,28 @@ function buildWorkbook(sys){
 function sheetRowPayload(sys, row){
   if(sys === 'hvac'){
     return { sheet:'HVAC', uid:'hvac-'+row.uid,
-      headers:['UID','SUBCONTRACTOR','ITEM','TAG','DESCRIPTION','ELEV.','STD SUPPORT','FIXING','HOOK UP','ROOM_NUMBER','AREA','LEVEL','SOPORTE','FECHA_EQUIPO','TAGGED_ITEMS','TIERRA SOPORTE','TIERRA EQUIPOS','MINIRUTA','CONEXIONADO','MEGADO','TUBING','OBSERVACION','FECHA_EDICION','FOTOS_LINK'],
-      values:['hvac-'+row.uid, row.subcontractor, row.item, row.tag, row.description, row.elev, row.std_support, row.fixing, row.hook_up, row.room, row.area, row.level, row.soporte, row.fecha, row.tagged_items, row.tierra_soporte, row.tierra_equipos, row.miniruta, row.conexionado, row.megado, row.tubing, row.observacion, formatDateTime(row.lastEditedAt), row.fotosLink||''] };
+      headers:['UID','SUBCONTRACTOR','ITEM','TAG','DESCRIPTION','ELEV.','STD SUPPORT','FIXING','HOOK UP','ROOM_NUMBER','AREA','LEVEL','SOPORTE','FECHA_EQUIPO','TAGGED_ITEMS','TIERRA SOPORTE','TIERRA EQUIPOS','MINIRUTA','CONEXIONADO','MEGADO','TUBING','OBSERVACION','FECHA_EDICION'],
+      values:['hvac-'+row.uid, row.subcontractor, row.item, row.tag, row.description, row.elev, row.std_support, row.fixing, row.hook_up, row.room, row.area, row.level, row.soporte, row.fecha, row.tagged_items, row.tierra_soporte, row.tierra_equipos, row.miniruta, row.conexionado, row.megado, row.tubing, row.observacion, formatDateTime(row.lastEditedAt)] };
   }
   if(sys === 'fds'){
     return { sheet:'FDS', uid:'fds-'+row.id,
-      headers:['UID','ITEM','TAG_EQUIPOS','STD_SUPPORT','NIVEL','FECHA_SOPORTE','SOPORTE','EQUIPO','MINI_RUTA','CABLEADO','CONEXIONADO','N_SERIE_EQUIPO','OBSERVACION','FECHA_EDICION','FOTOS_LINK'],
-      values:['fds-'+row.id, row.item, row.tag, row.std_support, row.level, row.semana_date, row.soporte, row.equipo, row.minirutas, row.cableado, row.conexionado, row.nserie, row.observacion, formatDateTime(row.lastEditedAt), row.fotosLink||''] };
+      headers:['UID','ITEM','TAG_EQUIPOS','STD_SUPPORT','NIVEL','FECHA_SOPORTE','SOPORTE','EQUIPO','MINI_RUTA','CABLEADO','CONEXIONADO','N_SERIE_EQUIPO','OBSERVACION','FECHA_EDICION'],
+      values:['fds-'+row.id, row.item, row.tag, row.std_support, row.level, row.semana_date, row.soporte, row.equipo, row.minirutas, row.cableado, row.conexionado, row.nserie, row.observacion, formatDateTime(row.lastEditedAt)] };
   }
   if(sys === 'transit'){
     return { sheet:'TRANSIT', uid:'transit-'+row.id,
-      headers:['UID','REV','INSTALLER','TAG','HOLE_NAME','LEVEL','TYPE','PROFILE','SYSTEM','FRAME_TYPE','DESCRIPTION','FRAME_MATERIAL','ROOM','CONSTRUCCION','LIMPIEZA','PINTURA','CABLES_CORRECTO','ETIQUETAS_CABLES','IDENTIFICACION_TRANSIT','FOTOGRAFIA','ESTADO_FINAL','OBSERVACION','FECHA_EDICION','FOTOS_LINK'],
-      values:['transit-'+row.id, row.rev, row.installer, row.tag, row.hole_name, row.level, row.type, row.profile, row.system, row.frame_type, row.description, row.frame_material, row.room, row.construccion, row.limpieza, row.pintura, row.cables_correcto, row.etiquetas_cables, row.identificacion_transit, row.fotografia, row.estado_final, row.observacion, formatDateTime(row.lastEditedAt), row.fotosLink||''] };
+      headers:['UID','REV','INSTALLER','TAG','HOLE_NAME','LEVEL','TYPE','PROFILE','SYSTEM','FRAME_TYPE','DESCRIPTION','FRAME_MATERIAL','ROOM','CONSTRUCCION','LIMPIEZA','PINTURA','CABLES_CORRECTO','ETIQUETAS_CABLES','IDENTIFICACION_TRANSIT','FOTOGRAFIA','ESTADO_FINAL','OBSERVACION','FECHA_EDICION'],
+      values:['transit-'+row.id, row.rev, row.installer, row.tag, row.hole_name, row.level, row.type, row.profile, row.system, row.frame_type, row.description, row.frame_material, row.room, row.construccion, row.limpieza, row.pintura, row.cables_correcto, row.etiquetas_cables, row.identificacion_transit, row.fotografia, row.estado_final, row.observacion, formatDateTime(row.lastEditedAt)] };
   }
   if(sys === 'timbrado'){
     return { sheet:'TIMBRADO', uid:'timbrado-'+row.id,
-      headers:['UID','CABLE_NUMBER','From_Tag','From_Description','From_Area','To_Tag','To_Description','To_Area','TIMBRADO','FECHA_TIMBRADO','OBSERVACIÓN','FECHA_EDICION','FOTOS_LINK'],
-      values:['timbrado-'+row.id, row.cable, row.from_tag, row.from_description, row.from_area, row.to_tag, row.to_description, row.to_area, row.timbrado, row.fecha_timbrado, row.observacion, formatDateTime(row.lastEditedAt), row.fotosLink||''] };
+      headers:['UID','CABLE_NUMBER','From_Tag','From_Description','From_Area','To_Tag','To_Description','To_Area','TIMBRADO','FECHA_TIMBRADO','OBSERVACIÓN','FECHA_EDICION'],
+      values:['timbrado-'+row.id, row.cable, row.from_tag, row.from_description, row.from_area, row.to_tag, row.to_description, row.to_area, row.timbrado, row.fecha_timbrado, row.observacion, formatDateTime(row.lastEditedAt)] };
   }
   const lastEdited = [row.from.lastEditedAt, row.to.lastEditedAt].filter(Boolean).sort().pop();
   return { sheet:'CONEXIONADO', uid:'cable-'+row.id,
-    headers:['UID','CABLE_NUMBER','From_Tag','From_Area','Nivel','From_Minirutas','From_Tendido','From_Marca_Gland','From_Gland','From_Fecha_Gland','From_Conexionado','From_Fecha_Conexionado','From_Observacion','From_Fotos_Link','To_Tag','To_Area','To_Minirutas','To_Tendido','To_Marca_Gland','To_Gland','To_Fecha_Gland','To_Conexionado','To_Fecha_Conexionado','To_Observacion','To_Fotos_Link','FECHA_EDICION'],
-    values:['cable-'+row.id, row.cable, row.from_tag, row.from_area, row.level, row.from.minirutas, row.from.tendido, row.from.marca_gland, row.from.gland, row.from.fecha_gland, row.from.conexionado, row.from.fecha_conexionado, row.from.observacion, row.from.fotosLink||'', row.to_tag, row.to_area, row.to.minirutas, row.to.tendido, row.to.marca_gland, row.to.gland, row.to.fecha_gland, row.to.conexionado, row.to.fecha_conexionado, row.to.observacion, row.to.fotosLink||'', formatDateTime(lastEdited)] };
+    headers:['UID','CABLE_NUMBER','From_Tag','From_Area','Nivel','From_Minirutas','From_Tendido','From_Marca_Gland','From_Gland','From_Fecha_Gland','From_Conexionado','From_Fecha_Conexionado','From_Observacion','To_Tag','To_Area','To_Minirutas','To_Tendido','To_Marca_Gland','To_Gland','To_Fecha_Gland','To_Conexionado','To_Fecha_Conexionado','To_Observacion','FECHA_EDICION'],
+    values:['cable-'+row.id, row.cable, row.from_tag, row.from_area, row.level, row.from.minirutas, row.from.tendido, row.from.marca_gland, row.from.gland, row.from.fecha_gland, row.from.conexionado, row.from.fecha_conexionado, row.from.observacion, row.to_tag, row.to_area, row.to.minirutas, row.to.tendido, row.to.marca_gland, row.to.gland, row.to.fecha_gland, row.to.conexionado, row.to.fecha_conexionado, row.to.observacion, formatDateTime(lastEdited)] };
 }
 function queueSyncRetry(sys, idVal){
   if(!state.syncQueue) state.syncQueue = [];
