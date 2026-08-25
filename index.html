@@ -882,7 +882,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v7.7 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v7.8 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1436,7 +1436,11 @@ function renderDocsPanel(){
       Subir PDF
       <input type="file" accept="application/pdf" id="docsFileInput">
     </label>
-    <div class="upload-progress-bar" id="docsUploadBar" style="width:100%; margin:-10px 0 16px;"><div class="fill"></div></div>
+    <button class="doc-upload-label" id="btnSyncDocsFolder" style="border-style:solid; background:#fff; margin-top:-8px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Sincronizar desde Drive
+    </button>
+    <div class="upload-progress-bar" id="docsUploadBar" style="width:100%; margin:8px 0 16px;"><div class="fill"></div></div>
     <div class="insights-section-label">Documentos de ${SYS[insightsActiveSys].label} (${docs.length})</div>
     <div id="docsList">${docs.length ? docs.map(d=>`
       <a class="doc-item" href="${d.url}" target="_blank" rel="noopener">
@@ -1449,6 +1453,26 @@ function renderDocsPanel(){
     insightsActiveSys = e.target.value;
     renderDocsPanel();
     pullDocumentsFromSheet(true).then(ok=>{ if(ok) renderDocsPanel(); });
+  });
+  document.getElementById('btnSyncDocsFolder').addEventListener('click', async ()=>{
+    if(!state.sheetSync.url) return;
+    const bar = document.getElementById('docsUploadBar');
+    if(bar) bar.classList.add('active');
+    showToast('Revisando la carpeta de Drive...');
+    try{
+      await fetch(state.sheetSync.url, {
+        method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({ action:'syncDocsFolder', sistema: SYS[insightsActiveSys].label })
+      });
+      await new Promise(r=>setTimeout(r, 3000));
+      await pullDocumentsFromSheet(true);
+      if(bar) bar.classList.remove('active');
+      showToast('Listo — documentos actualizados desde Drive');
+      renderDocsPanel();
+    }catch(e){
+      if(bar) bar.classList.remove('active');
+      showToast('No se pudo sincronizar — revisa tu conexión');
+    }
   });
   document.getElementById('docsFileInput').addEventListener('change', async (e)=>{
     const file = e.target.files[0];
@@ -3791,13 +3815,52 @@ function correctPhotoOrientation(dataUrl){
     }catch(e){ resolve(null); }
   });
 }
-function drawTimbradoSummary(doc, margin, pageW, y, dateStr){
-  const rows = state.timbrado;
-  const total = rows.length;
-  const completeCount = rows.filter(r=>timbradoStatus(r)==='complete').length;
+function drawReportSummary(doc, margin, pageW, y, sys, dateStr, isWeekly){
+  const rows = sys === 'cableado' ? null : state[sys];
+  let total, completeCount, completedInRange, obsCount;
+  if(sys === 'cableado'){
+    let t=0, c=0, o=0, ct=0;
+    let rangeStart = null;
+    if(isWeekly){ const d = new Date(); d.setDate(d.getDate()-6); rangeStart = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+    state.cableado.forEach(r=>{
+      ['from','to'].forEach(side=>{
+        const obj = r[side];
+        t++;
+        const isComplete = sideStatus(obj)==='complete';
+        if(isComplete) c++;
+        if(obj.observacion) o++;
+        if(isComplete){
+          const editDate = obj.lastEditedAt ? obj.lastEditedAt.slice(0,10) : '';
+          if(isWeekly ? (editDate >= rangeStart) : (editDate === dateStr)) ct++;
+        }
+      });
+    });
+    total=t; completeCount=c; obsCount=o; completedInRange=ct;
+  } else if(sys === 'timbrado'){
+    total = rows.length;
+    completeCount = rows.filter(r=>timbradoStatus(r)==='complete').length;
+    obsCount = rows.filter(r=>r.observacion).length;
+    if(isWeekly){
+      const d = new Date(); d.setDate(d.getDate()-6);
+      const rangeStart = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      completedInRange = rows.filter(r=> r.fecha_timbrado && r.fecha_timbrado >= rangeStart && timbradoStatus(r) === 'complete').length;
+    } else {
+      completedInRange = rows.filter(r=> r.fecha_timbrado === dateStr && timbradoStatus(r) === 'complete').length;
+    }
+  } else {
+    const statusFn = sys==='hvac'?hvacStatus : sys==='fds'?fdsStatus : transitStatus;
+    total = rows.length;
+    completeCount = rows.filter(r=>statusFn(r)==='complete').length;
+    obsCount = rows.filter(r=>r.observacion).length;
+    if(isWeekly){
+      const d = new Date(); d.setDate(d.getDate()-6);
+      const rangeStart = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      completedInRange = rows.filter(r=> r.completedAt && r.completedAt.slice(0,10) >= rangeStart && statusFn(r) === 'complete').length;
+    } else {
+      completedInRange = rows.filter(r=> r.completedAt && sameLocalDate(r.completedAt, dateStr) && statusFn(r) === 'complete').length;
+    }
+  }
   const pct = total ? Math.round(completeCount/total*100) : 0;
-  const completedToday = rows.filter(r=> r.fecha_timbrado === dateStr && timbradoStatus(r) === 'complete').length;
-  const obsCount = rows.filter(r=>r.observacion).length;
 
   const ringR = 30, ringLW = 8;
   const ringCx = margin + ringR + 4, ringCy = y + ringR + 4;
@@ -3822,16 +3885,16 @@ function drawTimbradoSummary(doc, margin, pageW, y, dateStr){
 
   const textX = ringCx + ringR + 16;
   doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(9,24,35);
-  doc.text(`Avance general ${SYS.timbrado.label}`, textX, ringCy - 4);
+  doc.text(`Avance general ${SYS[sys].label}`, textX, ringCy - 4);
   doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(100,110,120);
-  doc.text(`${completeCount} de ${total} cables completos`, textX, ringCy + 10);
+  doc.text(`${completeCount} de ${total} completos`, textX, ringCy + 10);
 
   const cardY = y + ringR*2 + 26;
   const cardGap = 8;
   const cardW = (pageW - margin*2 - cardGap*2) / 3;
   const cardH = 36;
   const cards = [
-    { n: completedToday, label: 'Completados hoy', bg:[237,245,252], fg:[7,80,156] },
+    { n: completedInRange, label: isWeekly ? 'Completados esta semana' : 'Completados hoy', bg:[237,245,252], fg:[7,80,156] },
     { n: completeCount, label: 'Completados total', bg:[227,245,236], fg:[30,142,90] },
     { n: obsCount, label: 'Observaciones', bg:[252,228,228], fg:[184,18,25] }
   ];
@@ -3895,9 +3958,7 @@ async function buildDailyReportPDF(sys, dateStr, items, titleOverride, dateLabel
     doc.setDrawColor(200,200,200); doc.line(margin, y, pageW-margin, y); y += 20;
   }
   drawHeader();
-  if(sys === 'timbrado' && !dateLabelOverride){
-    y = drawTimbradoSummary(doc, margin, pageW, y, dateStr);
-  }
+  y = drawReportSummary(doc, margin, pageW, y, sys, dateStr, !!dateLabelOverride);
 
   for(const it of items){
     // Si no hay fotos guardadas en ESTE celular pero sabemos que hay fotos en Drive
