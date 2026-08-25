@@ -202,6 +202,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .incident-block{background:var(--warn-100); border:1.5px solid #F0D68A; border-radius:12px; padding:14px; margin-top:10px;}
 .incident-title{display:flex; align-items:center; gap:7px; font-family:var(--font-display); font-weight:600; font-size:12.5px; color:var(--brand-yellow-dark); margin-bottom:10px;}
 .last-edited-note{font-size:11px; color:var(--steel-500); margin-top:3px; font-family:var(--font-mono);}
+.drive-link-note{font-size:11px; color:var(--brand-blue); margin-top:3px; font-weight:600; display:inline-block; text-decoration:none;}
 
 .sheet-footer{padding:12px 18px calc(14px + env(safe-area-inset-bottom)); border-top:1px solid var(--steel-200); display:flex; gap:10px;}
 .btn-primary{flex:1; background:var(--navy-900); color:#fff; border:none; border-radius:10px; padding:13px; font-weight:600; font-size:14.5px;}
@@ -369,6 +370,12 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .insights-note-priority-tag{display:inline-block; font-size:9.5px; font-weight:700; color:var(--brand-red-dark); background:var(--red-100); padding:1px 6px; border-radius:6px; margin-bottom:3px;}
 .insights-sys-select{width:100%; padding:9px 10px; border-radius:8px; border:1px solid var(--steel-300); font-size:13px; margin-bottom:14px; background:#fff;}
 .insights-priority-row{display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:12.5px; color:var(--navy-900);}
+.doc-item{display:flex; align-items:center; gap:10px; padding:10px 8px; border-bottom:1px solid var(--steel-100); text-decoration:none; color:var(--navy-900);}
+.doc-item svg{flex:none; color:var(--brand-red);}
+.doc-item .name{font-size:13px; font-weight:600;}
+.doc-item .date{font-size:10.5px; color:var(--steel-500); margin-top:1px;}
+.doc-upload-label{display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:12px; border-radius:10px; border:1.5px dashed var(--steel-300); background:var(--steel-050); color:var(--steel-600); font-size:12.5px; font-weight:600; cursor:pointer; margin-bottom:16px;}
+.doc-upload-label input{display:none;}
 @media(min-width:900px){
   .insights-overlay{display:none !important;}
   .insights-open-btn{width:auto; padding:0 12px; gap:6px; border-radius:8px;}
@@ -470,6 +477,11 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <div><div class="t">Exportar datos</div><div class="s">Excel, fotos (.zip) o copia de seguridad</div></div>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chev"><polyline points="9 18 15 12 9 6"/></svg>
     </button>
+    <button class="insights-menu-btn" id="btnGoDocs">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <div><div class="t">Documentos</div><div class="s">Manuales y PDF por sistema</div></div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chev"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
   </div>
   <div class="insights-body" id="insightsBody" style="display:none;"></div>
 </div>
@@ -563,7 +575,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <div><h2 id="hvacDetailTag">-</h2><div class="sub" id="hvacDetailSub">-</div><div class="last-edited-note" id="hvacLastEdited"></div></div>
+      <div><h2 id="hvacDetailTag">-</h2><div class="sub" id="hvacDetailSub">-</div><div class="last-edited-note" id="hvacLastEdited"></div><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="hvacDriveLink" style="display:none;">📁 Ver fotos en Drive</a></div>
       <button class="sheet-close" id="hvacCloseDetail1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="sheet-body">
@@ -596,7 +608,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <div><h2 id="cableDetailTag">-</h2><div class="sub" id="cableDetailSub">-</div><div class="last-edited-note" id="cableLastEdited"></div></div>
+      <div><h2 id="cableDetailTag">-</h2><div class="sub" id="cableDetailSub">-</div><div class="last-edited-note" id="cableLastEdited"></div><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="cableFromDriveLink" style="display:none;">📁 Fotos Desde (Drive)</a> <a href="#" target="_blank" rel="noopener" class="drive-link-note" id="cableToDriveLink" style="display:none;">📁 Fotos Hasta (Drive)</a></div>
       <button class="sheet-close" id="cableCloseDetail1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="sheet-body" id="cableSheetBody"></div>
@@ -609,7 +621,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <div><h2 id="fdsDetailTag">-</h2><div class="sub" id="fdsDetailSub">-</div><div class="last-edited-note" id="fdsLastEdited"></div></div>
+      <div><h2 id="fdsDetailTag">-</h2><div class="sub" id="fdsDetailSub">-</div><div class="last-edited-note" id="fdsLastEdited"></div><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="fdsDriveLink" style="display:none;">📁 Ver fotos en Drive</a></div>
       <button class="sheet-close" id="fdsCloseDetail1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="sheet-body">
@@ -648,7 +660,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <div><h2 id="transitDetailTag">-</h2><div class="sub" id="transitDetailSub">-</div><div class="last-edited-note" id="transitLastEdited"></div></div>
+      <div><h2 id="transitDetailTag">-</h2><div class="sub" id="transitDetailSub">-</div><div class="last-edited-note" id="transitLastEdited"></div><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="transitDriveLink" style="display:none;">📁 Ver fotos en Drive</a></div>
       <button class="sheet-close" id="transitCloseDetail1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="sheet-body">
@@ -680,7 +692,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <div><h2 id="timbradoDetailTag">-</h2><div class="sub" id="timbradoDetailSub">-</div><div class="last-edited-note" id="timbradoLastEdited"></div></div>
+      <div><h2 id="timbradoDetailTag">-</h2><div class="sub" id="timbradoDetailSub">-</div><div class="last-edited-note" id="timbradoLastEdited"></div><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="timbradoDriveLink" style="display:none;">📁 Ver fotos en Drive</a></div>
       <button class="sheet-close" id="timbradoCloseDetail1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="sheet-body">
@@ -863,7 +875,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v6.7 · 25 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v6.8 · 25 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -971,7 +983,7 @@ let state = {
     uid:r.uid, item:r.item, tag:r.tag, elev:r.elev, std_support:r.std_support, fixing:r.fixing,
     hook_up:r.hook_up, room:r.room, area:r.area, level:r.level, subcontractor:r.subcontractor||'', description:r.description||'',
     soporte:'', fecha:'', tagged_items:'', tierra_soporte:'', tierra_equipos:'', miniruta:'', conexionado:'', megado:'', tubing:'',
-    photos:[], observacion:'', obsPhotos:[], lastEditedAt:'', completedAt:''
+    photos:[], observacion:'', obsPhotos:[], lastEditedAt:'', completedAt:'', fotosLink:''
   })),
   cableado: CABLE_RAW.map(r => ({
     id:r.id, cable:r.cable, from_tag:r.from_tag, from_area:r.from_area, level:r.level, to_tag:r.to_tag, to_area:r.to_area,
@@ -986,7 +998,7 @@ let state = {
     minirutas:r.minirutas || '', cableado:r.cableado || '', conexionado:r.conexionado || '',
     nserie:r.nserie || '',
     observacion:r.observacion || '', obsPhotos:[],
-    lastEditedAt:'', completedAt:''
+    lastEditedAt:'', completedAt:'', fotosLink:''
   })),
   transit: TRANSIT_RAW.map(r => ({
     id:r.id, rev:r.rev, installer:r.installer, tag:r.tag, hole_name:r.hole_name, level:r.level,
@@ -996,13 +1008,13 @@ let state = {
     identificacion_transit:'', fotografia:'', fotografiaPhotos:[],
     estado_final:'',
     observacion:'', obsPhotos:[],
-    lastEditedAt:'', completedAt:''
+    lastEditedAt:'', completedAt:'', fotosLink:''
   })),
   timbrado: TIMBRADO_RAW.map(r => ({
     id:r.id, cable:r.cable, from_tag:r.from_tag, from_description:r.from_description, from_area:r.from_area,
     to_tag:r.to_tag, to_description:r.to_description, to_area:r.to_area,
     timbrado:'', fecha_timbrado:'', observacion:'', obsPhotos:[],
-    lastEditedAt:'', completedAt:''
+    lastEditedAt:'', completedAt:'', fotosLink:''
   })),
   access: {
     hvac: { pin:'1234' },
@@ -1016,7 +1028,7 @@ let state = {
 };
 function emptySide(){
   return { minirutas:'', tendido:'', marca_gland:'', gland:'', fecha_gland:'', conexionado:'', fecha_conexionado:'',
-    conexionadoPhotos:[], observacion:'', obsPhotos:[], lastEditedAt:'', completedAt:'' };
+    conexionadoPhotos:[], observacion:'', obsPhotos:[], lastEditedAt:'', completedAt:'', fotosLink:'' };
 }
 
 let filters = {
@@ -1395,6 +1407,102 @@ document.getElementById('btnGoExport').addEventListener('click', ()=>{
   closeInsights();
   document.getElementById('btnExportOpen').click();
 });
+
+/* ---- Documentos (PDF por sistema, guardados en Google Drive) ---- */
+document.getElementById('btnGoDocs').addEventListener('click', ()=>{
+  document.getElementById('insightsTitle').textContent = 'Documentos';
+  document.getElementById('insightsMenu').style.display = 'none';
+  const body = document.getElementById('insightsBody');
+  body.style.display = '';
+  renderDocsPanel();
+  pullDocumentsFromSheet(true).then(ok=>{ if(ok) renderDocsPanel(); });
+});
+function renderDocsPanel(){
+  if(!state.documents) state.documents = {};
+  if(!state.documents[insightsActiveSys]) state.documents[insightsActiveSys] = [];
+  const docs = state.documents[insightsActiveSys];
+  document.getElementById('insightsBody').innerHTML = `
+    <button class="insights-back-btn" id="btnDocsBack"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Volver</button>
+    ${sysSelectHtml('docsSysSelect')}
+    <label class="doc-upload-label" id="docsUploadLabel">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Subir PDF
+      <input type="file" accept="application/pdf" id="docsFileInput">
+    </label>
+    <div class="insights-section-label">Documentos de ${SYS[insightsActiveSys].label} (${docs.length})</div>
+    <div id="docsList">${docs.length ? docs.map(d=>`
+      <a class="doc-item" href="${d.url}" target="_blank" rel="noopener">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <div><div class="name">${escapeHtml(d.nombre)}</div><div class="date">Actualizado: ${formatDateTime(d.date)}</div></div>
+      </a>`).join('') : '<div style="font-size:12px; color:var(--steel-500);">Todavía no hay documentos para este sistema.</div>'}</div>
+  `;
+  document.getElementById('btnDocsBack').addEventListener('click', showInsightsMenu);
+  document.getElementById('docsSysSelect').addEventListener('change', (e)=>{
+    insightsActiveSys = e.target.value;
+    renderDocsPanel();
+    pullDocumentsFromSheet(true).then(ok=>{ if(ok) renderDocsPanel(); });
+  });
+  document.getElementById('docsFileInput').addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    if(file.type !== 'application/pdf'){ showToast('Solo se pueden subir archivos PDF'); e.target.value=''; return; }
+    const sys = insightsActiveSys;
+    const nombre = file.name.replace(/\.pdf$/i, '');
+    showToast('Subiendo documento...');
+    const reader = new FileReader();
+    reader.onload = async ()=>{
+      const base64 = reader.result.split(',')[1];
+      const ok = await uploadDocToSheet(sys, nombre, file.name, base64);
+      showToast(ok ? 'Documento subido' : 'No se pudo subir — revisa tu conexión');
+      if(ok) renderDocsPanel();
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  });
+}
+async function uploadDocToSheet(sys, nombre, filename, base64){
+  if(!state.sheetSync.url) return false;
+  try{
+    const res = await fetch(state.sheetSync.url, {
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'uploadDoc', sistema: SYS[sys].label, nombre, filename, base64, mimeType:'application/pdf' })
+    });
+    const json = await res.json();
+    if(json && json.ok){
+      if(!state.documents) state.documents = {};
+      if(!state.documents[sys]) state.documents[sys] = [];
+      const idx = state.documents[sys].findIndex(d=>d.uid===json.uid);
+      const entry = { uid: json.uid, nombre, url: json.url, date: new Date().toISOString() };
+      if(idx >= 0) state.documents[sys][idx] = entry; else state.documents[sys].push(entry);
+      scheduleSave();
+      return true;
+    }
+    return false;
+  }catch(e){ return false; }
+}
+async function pullDocumentsFromSheet(silent){
+  if(!state.sheetSync.url) return false;
+  try{
+    const res = await fetch(`${state.sheetSync.url}?sheet=${encodeURIComponent('DOCUMENTOS')}`, { method:'GET' });
+    const rows = await res.json();
+    if(!state.documents) state.documents = {};
+    const sysByLabel = {};
+    Object.keys(SYS).forEach(k=> sysByLabel[SYS[k].label] = k);
+    let changed = false;
+    rows.forEach(obj=>{
+      const uid = obj.UID; if(!uid) return;
+      const sysKey = sysByLabel[obj.SISTEMA] || obj.SISTEMA;
+      if(!SYS[sysKey]) return;
+      if(!state.documents[sysKey]) state.documents[sysKey] = [];
+      const entry = { uid, nombre: obj.NOMBRE || '', url: obj.URL || '', date: parseSheetEditDate(obj.FECHA) || new Date().toISOString() };
+      const idx = state.documents[sysKey].findIndex(d=>d.uid===uid);
+      if(idx >= 0) state.documents[sysKey][idx] = entry; else state.documents[sysKey].push(entry);
+      changed = true;
+    });
+    if(changed) scheduleSave();
+    return true;
+  }catch(e){ return false; }
+}
 
 /* ---- Notas (escritas o por voz), guardadas localmente por sistema ---- */
 let recognitionActive = null;
@@ -2240,6 +2348,7 @@ function openDetailHvac(id){
   document.getElementById('hvacDetailTag').textContent = row.tag || ('Ítem #'+row.item);
   document.getElementById('hvacDetailSub').textContent = `Ítem #${row.item} · ${row.level||'—'} · Área ${row.area||'—'} · Room ${row.room||'—'}`;
   document.getElementById('hvacLastEdited').textContent = row.lastEditedAt ? `Última edición: ${formatDateTime(row.lastEditedAt)}` : 'Aún sin editar';
+  { const dl = document.getElementById('hvacDriveLink'); if(row.fotosLink){ dl.href = row.fotosLink; dl.style.display = 'inline-block'; } else { dl.style.display = 'none'; } }
   document.getElementById('hvacInfoGrid').innerHTML = `
     <div class="info-cell"><div class="lbl">Elevación</div><div class="val">${escapeHtml(orDash(row.elev))}</div></div>
     <div class="info-cell"><div class="lbl">Std support</div><div class="val">${escapeHtml(orDash(row.std_support))}</div></div>
@@ -2396,6 +2505,8 @@ function openDetailCable(id){
   document.getElementById('cableDetailSub').textContent = `${row.level||'—'} · ${row.from_tag||'—'} → ${row.to_tag||'—'}`;
   const lastEdited = [row.from.lastEditedAt, row.to.lastEditedAt].filter(Boolean).sort().pop();
   document.getElementById('cableLastEdited').textContent = lastEdited ? `Última edición: ${formatDateTime(lastEdited)}` : 'Aún sin editar';
+  { const dl = document.getElementById('cableFromDriveLink'); if(row.from.fotosLink){ dl.href = row.from.fotosLink; dl.style.display = 'inline-block'; } else { dl.style.display = 'none'; } }
+  { const dl = document.getElementById('cableToDriveLink'); if(row.to.fotosLink){ dl.href = row.to.fotosLink; dl.style.display = 'inline-block'; } else { dl.style.display = 'none'; } }
   document.getElementById('cableInfoGrid').innerHTML = `
     <div class="info-cell"><div class="lbl">Nivel</div><div class="val">${escapeHtml(orDash(row.level))}</div></div>
     <div class="info-cell"><div class="lbl">Cable</div><div class="val">${escapeHtml(orDash(row.cable))}</div></div>
@@ -2453,6 +2564,7 @@ function openDetailFds(id){
   document.getElementById('fdsDetailTag').textContent = row.tag || ('Ítem #'+row.item);
   document.getElementById('fdsDetailSub').textContent = `Ítem #${row.item} · ${row.level||'—'}`;
   document.getElementById('fdsLastEdited').textContent = row.lastEditedAt ? `Última edición: ${formatDateTime(row.lastEditedAt)}` : 'Aún sin editar';
+  { const dl = document.getElementById('fdsDriveLink'); if(row.fotosLink){ dl.href = row.fotosLink; dl.style.display = 'inline-block'; } else { dl.style.display = 'none'; } }
   document.getElementById('fdsInfoGrid').innerHTML = `
     <div class="info-cell"><div class="lbl">Tag equipo</div><div class="val">${escapeHtml(orDash(row.tag))}</div></div>
     <div class="info-cell"><div class="lbl">Nivel</div><div class="val">${escapeHtml(orDash(row.level))}</div></div>
@@ -2533,6 +2645,7 @@ function openDetailTransit(id){
   document.getElementById('transitDetailTag').textContent = row.tag || ('Ítem #'+row.id);
   document.getElementById('transitDetailSub').textContent = `${row.level||'—'} · Room ${row.room||'—'}`;
   document.getElementById('transitLastEdited').textContent = row.lastEditedAt ? `Última edición: ${formatDateTime(row.lastEditedAt)}` : 'Aún sin editar';
+  { const dl = document.getElementById('transitDriveLink'); if(row.fotosLink){ dl.href = row.fotosLink; dl.style.display = 'inline-block'; } else { dl.style.display = 'none'; } }
   document.getElementById('transitInfoGrid').innerHTML = `
     <div class="info-cell"><div class="lbl">Hole name</div><div class="val">${escapeHtml(orDash(row.hole_name))}</div></div>
     <div class="info-cell"><div class="lbl">Type</div><div class="val">${escapeHtml(orDash(row.type))}</div></div>
@@ -2615,6 +2728,7 @@ function openDetailTimbrado(id){
   document.getElementById('timbradoDetailTag').textContent = row.cable || ('Cable #'+row.id);
   document.getElementById('timbradoDetailSub').textContent = `${row.from_tag||'—'} → ${row.to_tag||'—'}`;
   document.getElementById('timbradoLastEdited').textContent = row.lastEditedAt ? `Última edición: ${formatDateTime(row.lastEditedAt)}` : 'Aún sin editar';
+  { const dl = document.getElementById('timbradoDriveLink'); if(row.fotosLink){ dl.href = row.fotosLink; dl.style.display = 'inline-block'; } else { dl.style.display = 'none'; } }
   document.getElementById('timbradoInfoGrid').innerHTML = `
     <div class="info-cell"><div class="lbl">Desde</div><div class="val">${escapeHtml(orDash(row.from_tag))}</div></div>
     <div class="info-cell"><div class="lbl">Descripción desde</div><div class="val">${escapeHtml(orDash(row.from_description))}</div></div>
@@ -2840,28 +2954,28 @@ function buildWorkbook(sys){
 function sheetRowPayload(sys, row){
   if(sys === 'hvac'){
     return { sheet:'HVAC', uid:'hvac-'+row.uid,
-      headers:['UID','SUBCONTRACTOR','ITEM','TAG','DESCRIPTION','ELEV.','STD SUPPORT','FIXING','HOOK UP','ROOM_NUMBER','AREA','LEVEL','SOPORTE','FECHA_EQUIPO','TAGGED_ITEMS','TIERRA SOPORTE','TIERRA EQUIPOS','MINIRUTA','CONEXIONADO','MEGADO','TUBING','OBSERVACION','FECHA_EDICION'],
-      values:['hvac-'+row.uid, row.subcontractor, row.item, row.tag, row.description, row.elev, row.std_support, row.fixing, row.hook_up, row.room, row.area, row.level, row.soporte, row.fecha, row.tagged_items, row.tierra_soporte, row.tierra_equipos, row.miniruta, row.conexionado, row.megado, row.tubing, row.observacion, formatDateTime(row.lastEditedAt)] };
+      headers:['UID','SUBCONTRACTOR','ITEM','TAG','DESCRIPTION','ELEV.','STD SUPPORT','FIXING','HOOK UP','ROOM_NUMBER','AREA','LEVEL','SOPORTE','FECHA_EQUIPO','TAGGED_ITEMS','TIERRA SOPORTE','TIERRA EQUIPOS','MINIRUTA','CONEXIONADO','MEGADO','TUBING','OBSERVACION','FECHA_EDICION','FOTOS_LINK'],
+      values:['hvac-'+row.uid, row.subcontractor, row.item, row.tag, row.description, row.elev, row.std_support, row.fixing, row.hook_up, row.room, row.area, row.level, row.soporte, row.fecha, row.tagged_items, row.tierra_soporte, row.tierra_equipos, row.miniruta, row.conexionado, row.megado, row.tubing, row.observacion, formatDateTime(row.lastEditedAt), row.fotosLink||''] };
   }
   if(sys === 'fds'){
     return { sheet:'FDS', uid:'fds-'+row.id,
-      headers:['UID','ITEM','TAG_EQUIPOS','STD_SUPPORT','NIVEL','FECHA_SOPORTE','SOPORTE','EQUIPO','MINI_RUTA','CABLEADO','CONEXIONADO','N_SERIE_EQUIPO','OBSERVACION','FECHA_EDICION'],
-      values:['fds-'+row.id, row.item, row.tag, row.std_support, row.level, row.semana_date, row.soporte, row.equipo, row.minirutas, row.cableado, row.conexionado, row.nserie, row.observacion, formatDateTime(row.lastEditedAt)] };
+      headers:['UID','ITEM','TAG_EQUIPOS','STD_SUPPORT','NIVEL','FECHA_SOPORTE','SOPORTE','EQUIPO','MINI_RUTA','CABLEADO','CONEXIONADO','N_SERIE_EQUIPO','OBSERVACION','FECHA_EDICION','FOTOS_LINK'],
+      values:['fds-'+row.id, row.item, row.tag, row.std_support, row.level, row.semana_date, row.soporte, row.equipo, row.minirutas, row.cableado, row.conexionado, row.nserie, row.observacion, formatDateTime(row.lastEditedAt), row.fotosLink||''] };
   }
   if(sys === 'transit'){
     return { sheet:'TRANSIT', uid:'transit-'+row.id,
-      headers:['UID','REV','INSTALLER','TAG','HOLE_NAME','LEVEL','TYPE','PROFILE','SYSTEM','FRAME_TYPE','DESCRIPTION','FRAME_MATERIAL','ROOM','CONSTRUCCION','LIMPIEZA','PINTURA','CABLES_CORRECTO','ETIQUETAS_CABLES','IDENTIFICACION_TRANSIT','FOTOGRAFIA','ESTADO_FINAL','OBSERVACION','FECHA_EDICION'],
-      values:['transit-'+row.id, row.rev, row.installer, row.tag, row.hole_name, row.level, row.type, row.profile, row.system, row.frame_type, row.description, row.frame_material, row.room, row.construccion, row.limpieza, row.pintura, row.cables_correcto, row.etiquetas_cables, row.identificacion_transit, row.fotografia, row.estado_final, row.observacion, formatDateTime(row.lastEditedAt)] };
+      headers:['UID','REV','INSTALLER','TAG','HOLE_NAME','LEVEL','TYPE','PROFILE','SYSTEM','FRAME_TYPE','DESCRIPTION','FRAME_MATERIAL','ROOM','CONSTRUCCION','LIMPIEZA','PINTURA','CABLES_CORRECTO','ETIQUETAS_CABLES','IDENTIFICACION_TRANSIT','FOTOGRAFIA','ESTADO_FINAL','OBSERVACION','FECHA_EDICION','FOTOS_LINK'],
+      values:['transit-'+row.id, row.rev, row.installer, row.tag, row.hole_name, row.level, row.type, row.profile, row.system, row.frame_type, row.description, row.frame_material, row.room, row.construccion, row.limpieza, row.pintura, row.cables_correcto, row.etiquetas_cables, row.identificacion_transit, row.fotografia, row.estado_final, row.observacion, formatDateTime(row.lastEditedAt), row.fotosLink||''] };
   }
   if(sys === 'timbrado'){
     return { sheet:'TIMBRADO', uid:'timbrado-'+row.id,
-      headers:['UID','CABLE_NUMBER','From_Tag','From_Description','From_Area','To_Tag','To_Description','To_Area','TIMBRADO','FECHA_TIMBRADO','OBSERVACIÓN','FECHA_EDICION'],
-      values:['timbrado-'+row.id, row.cable, row.from_tag, row.from_description, row.from_area, row.to_tag, row.to_description, row.to_area, row.timbrado, row.fecha_timbrado, row.observacion, formatDateTime(row.lastEditedAt)] };
+      headers:['UID','CABLE_NUMBER','From_Tag','From_Description','From_Area','To_Tag','To_Description','To_Area','TIMBRADO','FECHA_TIMBRADO','OBSERVACIÓN','FECHA_EDICION','FOTOS_LINK'],
+      values:['timbrado-'+row.id, row.cable, row.from_tag, row.from_description, row.from_area, row.to_tag, row.to_description, row.to_area, row.timbrado, row.fecha_timbrado, row.observacion, formatDateTime(row.lastEditedAt), row.fotosLink||''] };
   }
   const lastEdited = [row.from.lastEditedAt, row.to.lastEditedAt].filter(Boolean).sort().pop();
   return { sheet:'CONEXIONADO', uid:'cable-'+row.id,
-    headers:['UID','CABLE_NUMBER','From_Tag','From_Area','Nivel','From_Minirutas','From_Tendido','From_Marca_Gland','From_Gland','From_Fecha_Gland','From_Conexionado','From_Fecha_Conexionado','From_Observacion','To_Tag','To_Area','To_Minirutas','To_Tendido','To_Marca_Gland','To_Gland','To_Fecha_Gland','To_Conexionado','To_Fecha_Conexionado','To_Observacion','FECHA_EDICION'],
-    values:['cable-'+row.id, row.cable, row.from_tag, row.from_area, row.level, row.from.minirutas, row.from.tendido, row.from.marca_gland, row.from.gland, row.from.fecha_gland, row.from.conexionado, row.from.fecha_conexionado, row.from.observacion, row.to_tag, row.to_area, row.to.minirutas, row.to.tendido, row.to.marca_gland, row.to.gland, row.to.fecha_gland, row.to.conexionado, row.to.fecha_conexionado, row.to.observacion, formatDateTime(lastEdited)] };
+    headers:['UID','CABLE_NUMBER','From_Tag','From_Area','Nivel','From_Minirutas','From_Tendido','From_Marca_Gland','From_Gland','From_Fecha_Gland','From_Conexionado','From_Fecha_Conexionado','From_Observacion','From_Fotos_Link','To_Tag','To_Area','To_Minirutas','To_Tendido','To_Marca_Gland','To_Gland','To_Fecha_Gland','To_Conexionado','To_Fecha_Conexionado','To_Observacion','To_Fotos_Link','FECHA_EDICION'],
+    values:['cable-'+row.id, row.cable, row.from_tag, row.from_area, row.level, row.from.minirutas, row.from.tendido, row.from.marca_gland, row.from.gland, row.from.fecha_gland, row.from.conexionado, row.from.fecha_conexionado, row.from.observacion, row.from.fotosLink||'', row.to_tag, row.to_area, row.to.minirutas, row.to.tendido, row.to.marca_gland, row.to.gland, row.to.fecha_gland, row.to.conexionado, row.to.fecha_conexionado, row.to.observacion, row.to.fotosLink||'', formatDateTime(lastEdited)] };
 }
 function queueSyncRetry(sys, idVal){
   if(!state.syncQueue) state.syncQueue = [];
@@ -2902,10 +3016,74 @@ async function pushRowToSheet(sys, row){
     if(idVal !== null) dequeueSyncRetry(sys, idVal);
     scheduleSave();
     updateSyncStatusUI();
+    syncPhotosToDrive(sys, row); // en segundo plano, no bloquea el guardado
   }catch(e){
     if(idVal !== null) queueSyncRetry(sys, idVal);
     showToast('Sin conexión: se guardó en el celular y se subirá solo cuando vuelva la señal');
   }
+}
+// Sube a Google Drive las fotos que todavía no se hayan subido de esta fila (no bloquea al usuario).
+// Cada Tag/registro tiene su propia carpeta en Drive; el enlace queda guardado en row.fotosLink
+// y se sincroniza a Sheets en la próxima vez que se guarde la fila (columna FOTOS_LINK).
+const PHOTO_FIELDS_BY_SYS = {
+  hvac: ['photos','obsPhotos'],
+  fds: ['soportePhotos','equipoPhotos','obsPhotos'],
+  transit: ['fotografiaPhotos','obsPhotos'],
+  timbrado: ['obsPhotos']
+};
+async function uploadOnePhotoToDrive(sistema, uid, base64DataUrl, filename){
+  if(!state.sheetSync.url) return null;
+  const base64 = base64DataUrl.includes(',') ? base64DataUrl.split(',')[1] : base64DataUrl;
+  try{
+    const res = await fetch(state.sheetSync.url, {
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'uploadPhoto', sistema, uid: String(uid), base64, mimeType:'image/jpeg', filename })
+    });
+    const json = await res.json();
+    return (json && json.ok) ? json.url : null;
+  }catch(e){ return null; }
+}
+async function syncPhotosToDrive(sys, row){
+  if(!state.sheetSync.enabled || !state.sheetSync.url) return;
+  if(sys === 'cableado'){
+    await syncCableSidePhotosToDrive(row, 'from');
+    await syncCableSidePhotosToDrive(row, 'to');
+    return;
+  }
+  const cfg = TABLE_CONFIG[sys];
+  const uid = row[cfg.idField];
+  const fields = PHOTO_FIELDS_BY_SYS[sys] || [];
+  if(!row._driveUploaded) row._driveUploaded = {};
+  let gotLink = false;
+  for(const f of fields){
+    const arr = row[f] || [];
+    const already = row._driveUploaded[f] || 0;
+    if(already >= arr.length) continue;
+    for(let i=already; i<arr.length; i++){
+      const url = await uploadOnePhotoToDrive(SYS[sys].label, uid, arr[i], `${f}_${Date.now()}_${i}.jpg`);
+      if(url){ row.fotosLink = url; gotLink = true; }
+    }
+    row._driveUploaded[f] = arr.length;
+  }
+  if(gotLink){ scheduleSave(); pushRowToSheet(sys, row); }
+}
+async function syncCableSidePhotosToDrive(row, side){
+  const obj = row[side];
+  const uid = row.id + '-' + side;
+  const fields = ['conexionadoPhotos','obsPhotos'];
+  if(!obj._driveUploaded) obj._driveUploaded = {};
+  let gotLink = false;
+  for(const f of fields){
+    const arr = obj[f] || [];
+    const already = obj._driveUploaded[f] || 0;
+    if(already >= arr.length) continue;
+    for(let i=already; i<arr.length; i++){
+      const url = await uploadOnePhotoToDrive(SYS.cableado.label, uid, arr[i], `${f}_${Date.now()}_${i}.jpg`);
+      if(url){ obj.fotosLink = url; gotLink = true; }
+    }
+    obj._driveUploaded[f] = arr.length;
+  }
+  if(gotLink){ scheduleSave(); pushRowToSheet('cableado', row); }
 }
 async function pushNoteToSheet(sys, note){
   if(!state.sheetSync.enabled || !state.sheetSync.url) return;
@@ -3017,6 +3195,7 @@ function applySheetRowToHvac(obj){
   row.observacion = obj.OBSERVACION || '';
   const after = JSON.stringify([row.soporte,row.fecha,row.tagged_items,row.tierra_soporte,row.tierra_equipos,row.miniruta,row.conexionado,row.megado,row.tubing,row.observacion]);
   if(before !== after) row.lastEditedAt = parseSheetEditDate(obj.FECHA_EDICION) || new Date().toISOString();
+  if(obj.FOTOS_LINK) row.fotosLink = obj.FOTOS_LINK;
   if(hvacStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt || new Date().toISOString(); } else { row.completedAt = ''; }
   return true;
 }
@@ -3044,6 +3223,7 @@ function applySheetRowToFds(obj){
   row.observacion = obj.OBSERVACION || '';
   const after = JSON.stringify([row.semana_date,row.soporte,row.equipo,row.minirutas,row.cableado,row.conexionado,row.nserie,row.observacion]);
   if(before !== after) row.lastEditedAt = parseSheetEditDate(obj.FECHA_EDICION) || new Date().toISOString();
+  if(obj.FOTOS_LINK) row.fotosLink = obj.FOTOS_LINK;
   if(fdsStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt || new Date().toISOString(); } else { row.completedAt = ''; }
   return true;
 }
@@ -3068,6 +3248,8 @@ function applySheetRowToCable(obj){
   row.to.fecha_conexionado = toDateOnly(obj.To_Fecha_Conexionado); row.to.observacion = obj.To_Observacion || '';
   const afterTo = JSON.stringify([row.to.minirutas,row.to.tendido,row.to.marca_gland,row.to.gland,row.to.fecha_gland,row.to.conexionado,row.to.fecha_conexionado,row.to.observacion]);
   if(beforeTo !== afterTo) row.to.lastEditedAt = parseSheetEditDate(obj.FECHA_EDICION) || now;
+  if(obj.From_Fotos_Link) row.from.fotosLink = obj.From_Fotos_Link;
+  if(obj.To_Fotos_Link) row.to.fotosLink = obj.To_Fotos_Link;
   if(sideStatus(row.from) === 'complete'){ if(!row.from.completedAt) row.from.completedAt = row.from.lastEditedAt || now; } else { row.from.completedAt = ''; }
   if(sideStatus(row.to) === 'complete'){ if(!row.to.completedAt) row.to.completedAt = row.to.lastEditedAt || now; } else { row.to.completedAt = ''; }
   return true;
@@ -3089,6 +3271,7 @@ function applySheetRowToTransit(obj){
   row.observacion = obj.OBSERVACION || '';
   const after = JSON.stringify([row.construccion,row.limpieza,row.pintura,row.cables_correcto,row.etiquetas_cables,row.identificacion_transit,row.fotografia,row.estado_final,row.observacion]);
   if(before !== after) row.lastEditedAt = parseSheetEditDate(obj.FECHA_EDICION) || new Date().toISOString();
+  if(obj.FOTOS_LINK) row.fotosLink = obj.FOTOS_LINK;
   if(transitStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt || new Date().toISOString(); } else { row.completedAt = ''; }
   return true;
 }
@@ -3110,6 +3293,7 @@ function applySheetRowToTimbrado(obj){
   row.observacion = obj['OBSERVACIÓN'] !== undefined ? (obj['OBSERVACIÓN']||'') : (obj.OBSERVACION || '');
   const after = JSON.stringify([row.timbrado,row.fecha_timbrado,row.observacion]);
   if(before !== after) row.lastEditedAt = parseSheetEditDate(obj.FECHA_EDICION) || new Date().toISOString();
+  if(obj.FOTOS_LINK) row.fotosLink = obj.FOTOS_LINK;
   if(timbradoStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt || new Date().toISOString(); } else { row.completedAt = ''; }
   return true;
 }
@@ -3839,6 +4023,7 @@ function mergeSavedState(saved){
   if(saved.access) state.access = saved.access;
   if(Array.isArray(saved.syncQueue)) state.syncQueue = saved.syncQueue;
   if(saved.notes) state.notes = saved.notes;
+  if(saved.documents) state.documents = saved.documents;
 
   const idFieldOf = { hvac:'uid', fds:'id', transit:'id', timbrado:'id' };
   let mergedAny = false;
@@ -3892,6 +4077,7 @@ async function init(){
     }
     await pullAccessFromSheet(true);
     await pullNotesFromSheet(true);
+    await pullDocumentsFromSheet(true);
     renderAll();
     populateSelects();
   }
