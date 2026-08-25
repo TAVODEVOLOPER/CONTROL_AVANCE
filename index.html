@@ -895,7 +895,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v8.0 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v8.2 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1402,6 +1402,10 @@ function showInsightsMenu(){
   document.getElementById('insightsBody').style.display = 'none';
 }
 function openInsights(){
+  if(!isUnlocked(currentSystem) && !accessPanelUnlocked){
+    requestSysUnlock(currentSystem, openInsights);
+    return;
+  }
   insightsActiveSys = currentSystem;
   document.getElementById('insightsSysLabel').textContent = SYS[currentSystem].label;
   showInsightsMenu();
@@ -2459,9 +2463,9 @@ function openDetailHvac(id){
 }
 function setupHvacPhotoGrids(row){
   const pg = document.getElementById('hvacPhotoGrid');
-  renderPhotoGrid(pg, row.photos, (idx)=>{ row.photos.splice(idx,1); setupHvacPhotoGrids(row); });
+  renderPhotoGrid(pg, row.photos, (idx)=>{ deleteAndResyncPhotos('hvac', row, 'photos', row.photos, idx, ()=>setupHvacPhotoGrids(row)); });
   const og = document.getElementById('hvacObsPhotoGrid');
-  renderPhotoGrid(og, row.obsPhotos, (idx)=>{ row.obsPhotos.splice(idx,1); setupHvacPhotoGrids(row); });
+  renderPhotoGrid(og, row.obsPhotos, (idx)=>{ deleteAndResyncPhotos('hvac', row, 'obsPhotos', row.obsPhotos, idx, ()=>setupHvacPhotoGrids(row)); });
 }
 wirePhotoInput(document.getElementById('hvacPhotoInput'), document.getElementById('hvacPhotoGrid'),
   ()=> state.hvac.find(r=>r.uid===currentDetailItem).photos,
@@ -2577,9 +2581,9 @@ function refreshCablePhotoGrids(){
   ['from','to'].forEach(side=>{
     const obj = row[side];
     const cg = document.getElementById(`cable${cap(side)}ConPhotoGrid`);
-    renderPhotoGrid(cg, obj.conexionadoPhotos, (idx)=>{ obj.conexionadoPhotos.splice(idx,1); refreshCablePhotoGrids(); });
+    renderPhotoGrid(cg, obj.conexionadoPhotos, (idx)=>{ deleteAndResyncPhotos('cableado', row, 'conexionadoPhotos', obj.conexionadoPhotos, idx, refreshCablePhotoGrids, side); });
     const og = document.getElementById(`cable${cap(side)}ObsPhotoGrid`);
-    renderPhotoGrid(og, obj.obsPhotos, (idx)=>{ obj.obsPhotos.splice(idx,1); refreshCablePhotoGrids(); });
+    renderPhotoGrid(og, obj.obsPhotos, (idx)=>{ deleteAndResyncPhotos('cableado', row, 'obsPhotos', obj.obsPhotos, idx, refreshCablePhotoGrids, side); });
   });
 }
 
@@ -2673,9 +2677,9 @@ function openDetailFds(id){
 function refreshFdsPhotoGrids(){
   const row = state.fds.find(r=>r.id===currentDetailItem);
   if(!row) return;
-  renderPhotoGrid(document.getElementById('fdsSoportePhotoGrid'), row.soportePhotos, (idx)=>{ row.soportePhotos.splice(idx,1); refreshFdsPhotoGrids(); });
-  renderPhotoGrid(document.getElementById('fdsEquipoPhotoGrid'), row.equipoPhotos, (idx)=>{ row.equipoPhotos.splice(idx,1); refreshFdsPhotoGrids(); });
-  renderPhotoGrid(document.getElementById('fdsObsPhotoGrid'), row.obsPhotos, (idx)=>{ row.obsPhotos.splice(idx,1); refreshFdsPhotoGrids(); });
+  renderPhotoGrid(document.getElementById('fdsSoportePhotoGrid'), row.soportePhotos, (idx)=>{ deleteAndResyncPhotos('fds', row, 'soportePhotos', row.soportePhotos, idx, refreshFdsPhotoGrids); });
+  renderPhotoGrid(document.getElementById('fdsEquipoPhotoGrid'), row.equipoPhotos, (idx)=>{ deleteAndResyncPhotos('fds', row, 'equipoPhotos', row.equipoPhotos, idx, refreshFdsPhotoGrids); });
+  renderPhotoGrid(document.getElementById('fdsObsPhotoGrid'), row.obsPhotos, (idx)=>{ deleteAndResyncPhotos('fds', row, 'obsPhotos', row.obsPhotos, idx, refreshFdsPhotoGrids); });
 }
 wirePhotoInput(document.getElementById('fdsSoportePhotoInput'), document.getElementById('fdsSoportePhotoGrid'),
   ()=> state.fds.find(r=>r.id===currentDetailItem).soportePhotos, ()=> refreshFdsPhotoGrids());
@@ -2758,8 +2762,8 @@ function openDetailTransit(id){
 function refreshTransitPhotoGrids(){
   const row = state.transit.find(r=>r.id===currentDetailItem);
   if(!row) return;
-  renderPhotoGrid(document.getElementById('transitFotografiaPhotoGrid'), row.fotografiaPhotos, (idx)=>{ row.fotografiaPhotos.splice(idx,1); refreshTransitPhotoGrids(); });
-  renderPhotoGrid(document.getElementById('transitObsPhotoGrid'), row.obsPhotos, (idx)=>{ row.obsPhotos.splice(idx,1); refreshTransitPhotoGrids(); });
+  renderPhotoGrid(document.getElementById('transitFotografiaPhotoGrid'), row.fotografiaPhotos, (idx)=>{ deleteAndResyncPhotos('transit', row, 'fotografiaPhotos', row.fotografiaPhotos, idx, refreshTransitPhotoGrids); });
+  renderPhotoGrid(document.getElementById('transitObsPhotoGrid'), row.obsPhotos, (idx)=>{ deleteAndResyncPhotos('transit', row, 'obsPhotos', row.obsPhotos, idx, refreshTransitPhotoGrids); });
 }
 wirePhotoInput(document.getElementById('transitFotografiaPhotoInput'), document.getElementById('transitFotografiaPhotoGrid'),
   ()=> state.transit.find(r=>r.id===currentDetailItem).fotografiaPhotos, ()=> refreshTransitPhotoGrids());
@@ -2835,7 +2839,7 @@ function openDetailTimbrado(id){
 function refreshTimbradoPhotoGrids(){
   const row = state.timbrado.find(r=>r.id===currentDetailItem);
   if(!row) return;
-  renderPhotoGrid(document.getElementById('timbradoObsPhotoGrid'), row.obsPhotos, (idx)=>{ row.obsPhotos.splice(idx,1); refreshTimbradoPhotoGrids(); });
+  renderPhotoGrid(document.getElementById('timbradoObsPhotoGrid'), row.obsPhotos, (idx)=>{ deleteAndResyncPhotos('timbrado', row, 'obsPhotos', row.obsPhotos, idx, refreshTimbradoPhotoGrids); });
 }
 wirePhotoInput(document.getElementById('timbradoObsPhotoInput'), document.getElementById('timbradoObsPhotoGrid'),
   ()=> state.timbrado.find(r=>r.id===currentDetailItem).obsPhotos, ()=> refreshTimbradoPhotoGrids());
@@ -3117,6 +3121,37 @@ const PHOTO_FIELDS_BY_SYS = {
   transit: ['fotografiaPhotos','obsPhotos'],
   timbrado: ['obsPhotos']
 };
+// Borra una foto que el usuario quitó localmente, también de Drive: primero le pide al
+// Apps Script que borre todas las fotos de ese campo en esa carpeta, y luego vuelve a
+// subir las que hayan quedado — así Drive queda igual que lo que ve la app.
+async function deleteAndResyncPhotos(sys, row, fieldName, arr, idx, afterFn, sideName){
+  arr.splice(idx, 1);
+  afterFn();
+  scheduleSave();
+  if(!state.sheetSync.url) return;
+  let sistemaLabel, uidVal, payload, linkColumn;
+  if(sys === 'cableado'){
+    sistemaLabel = SYS.cableado.label;
+    uidVal = row.id + '-' + sideName;
+    payload = sheetRowPayload('cableado', row);
+    linkColumn = sideName === 'from' ? 'From_Fotos_Link' : 'To_Fotos_Link';
+  } else {
+    sistemaLabel = SYS[sys].label;
+    const cfg = TABLE_CONFIG[sys];
+    uidVal = row[cfg.idField];
+    payload = sheetRowPayload(sys, row);
+    linkColumn = 'FOTOS_LINK';
+  }
+  try{
+    await fetch(state.sheetSync.url, {
+      method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'deleteFieldPhotos', sistema: sistemaLabel, uid: String(uidVal), prefix: fieldName })
+    });
+  }catch(e){ /* si falla, la próxima sincronización de fotos lo reintenta igual */ }
+  for(let i=0; i<arr.length; i++){
+    await uploadOnePhotoToDrive(sistemaLabel, uidVal, arr[i], `${fieldName}_${Date.now()}_${i}.jpg`, payload.sheet, payload.uid, linkColumn);
+  }
+}
 async function uploadOnePhotoToDrive(sistema, uid, base64DataUrl, filename, sheetName, sheetUid, linkColumn){
   if(!state.sheetSync.url) return false;
   const base64 = base64DataUrl.includes(',') ? base64DataUrl.split(',')[1] : base64DataUrl;
