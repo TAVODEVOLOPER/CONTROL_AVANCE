@@ -875,7 +875,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v6.8 · 25 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v6.9 · 25 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1463,21 +1463,14 @@ function renderDocsPanel(){
 async function uploadDocToSheet(sys, nombre, filename, base64){
   if(!state.sheetSync.url) return false;
   try{
-    const res = await fetch(state.sheetSync.url, {
-      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+    await fetch(state.sheetSync.url, {
+      method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify({ action:'uploadDoc', sistema: SYS[sys].label, nombre, filename, base64, mimeType:'application/pdf' })
     });
-    const json = await res.json();
-    if(json && json.ok){
-      if(!state.documents) state.documents = {};
-      if(!state.documents[sys]) state.documents[sys] = [];
-      const idx = state.documents[sys].findIndex(d=>d.uid===json.uid);
-      const entry = { uid: json.uid, nombre, url: json.url, date: new Date().toISOString() };
-      if(idx >= 0) state.documents[sys][idx] = entry; else state.documents[sys].push(entry);
-      scheduleSave();
-      return true;
-    }
-    return false;
+    // El Apps Script ya registró el documento en la pestaña DOCUMENTOS; lo traemos de vuelta.
+    await new Promise(r=>setTimeout(r, 3000));
+    await pullDocumentsFromSheet(true);
+    return true;
   }catch(e){ return false; }
 }
 async function pullDocumentsFromSheet(silent){
@@ -3031,17 +3024,17 @@ const PHOTO_FIELDS_BY_SYS = {
   transit: ['fotografiaPhotos','obsPhotos'],
   timbrado: ['obsPhotos']
 };
-async function uploadOnePhotoToDrive(sistema, uid, base64DataUrl, filename){
-  if(!state.sheetSync.url) return null;
+async function uploadOnePhotoToDrive(sistema, uid, base64DataUrl, filename, sheetName, sheetUid, linkColumn){
+  if(!state.sheetSync.url) return false;
   const base64 = base64DataUrl.includes(',') ? base64DataUrl.split(',')[1] : base64DataUrl;
   try{
-    const res = await fetch(state.sheetSync.url, {
-      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ action:'uploadPhoto', sistema, uid: String(uid), base64, mimeType:'image/jpeg', filename })
+    await fetch(state.sheetSync.url, {
+      method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'uploadPhoto', sistema, uid: String(uid), base64, mimeType:'image/jpeg', filename,
+        sheet: sheetName, sheetUid, linkColumn })
     });
-    const json = await res.json();
-    return (json && json.ok) ? json.url : null;
-  }catch(e){ return null; }
+    return true;
+  }catch(e){ return false; }
 }
 async function syncPhotosToDrive(sys, row){
   if(!state.sheetSync.enabled || !state.sheetSync.url) return;
@@ -3052,38 +3045,56 @@ async function syncPhotosToDrive(sys, row){
   }
   const cfg = TABLE_CONFIG[sys];
   const uid = row[cfg.idField];
+  const payload = sheetRowPayload(sys, row);
   const fields = PHOTO_FIELDS_BY_SYS[sys] || [];
   if(!row._driveUploaded) row._driveUploaded = {};
-  let gotLink = false;
+  let uploadedAny = false;
   for(const f of fields){
     const arr = row[f] || [];
     const already = row._driveUploaded[f] || 0;
     if(already >= arr.length) continue;
     for(let i=already; i<arr.length; i++){
-      const url = await uploadOnePhotoToDrive(SYS[sys].label, uid, arr[i], `${f}_${Date.now()}_${i}.jpg`);
-      if(url){ row.fotosLink = url; gotLink = true; }
+      const ok = await uploadOnePhotoToDrive(SYS[sys].label, uid, arr[i], `${f}_${Date.now()}_${i}.jpg`, payload.sheet, payload.uid, 'FOTOS_LINK');
+      if(ok) uploadedAny = true;
     }
     row._driveUploaded[f] = arr.length;
   }
-  if(gotLink){ scheduleSave(); pushRowToSheet(sys, row); }
+  if(uploadedAny){
+    scheduleSave();
+    // El Apps Script ya escribió el enlace directo en Sheets; lo traemos de vuelta
+    // unos segundos después para mostrarlo en la app sin depender de leer la respuesta del POST.
+    setTimeout(()=> pullFromSheet(sys, true).then(()=>{ if(currentDetailItem===uid) refreshOpenDetailDriveLink(sys); }), 4000);
+  }
 }
 async function syncCableSidePhotosToDrive(row, side){
   const obj = row[side];
   const uid = row.id + '-' + side;
+  const payload = sheetRowPayload('cableado', row);
+  const linkColumn = side === 'from' ? 'From_Fotos_Link' : 'To_Fotos_Link';
   const fields = ['conexionadoPhotos','obsPhotos'];
   if(!obj._driveUploaded) obj._driveUploaded = {};
-  let gotLink = false;
+  let uploadedAny = false;
   for(const f of fields){
     const arr = obj[f] || [];
     const already = obj._driveUploaded[f] || 0;
     if(already >= arr.length) continue;
     for(let i=already; i<arr.length; i++){
-      const url = await uploadOnePhotoToDrive(SYS.cableado.label, uid, arr[i], `${f}_${Date.now()}_${i}.jpg`);
-      if(url){ obj.fotosLink = url; gotLink = true; }
+      const ok = await uploadOnePhotoToDrive(SYS.cableado.label, uid, arr[i], `${f}_${Date.now()}_${i}.jpg`, payload.sheet, payload.uid, linkColumn);
+      if(ok) uploadedAny = true;
     }
     obj._driveUploaded[f] = arr.length;
   }
-  if(gotLink){ scheduleSave(); pushRowToSheet('cableado', row); }
+  if(uploadedAny){
+    scheduleSave();
+    setTimeout(()=> pullFromSheet('cableado', true).then(()=>{ if(currentDetailItem===row.id) refreshOpenDetailDriveLink('cableado'); }), 4000);
+  }
+}
+function refreshOpenDetailDriveLink(sys){
+  if(sys==='hvac') openDetailHvac(currentDetailItem);
+  else if(sys==='fds') openDetailFds(currentDetailItem);
+  else if(sys==='transit') openDetailTransit(currentDetailItem);
+  else if(sys==='timbrado') openDetailTimbrado(currentDetailItem);
+  else if(sys==='cableado') openDetailCable(currentDetailItem);
 }
 async function pushNoteToSheet(sys, note){
   if(!state.sheetSync.enabled || !state.sheetSync.url) return;
