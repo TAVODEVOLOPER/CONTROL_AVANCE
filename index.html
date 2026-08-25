@@ -145,6 +145,7 @@ input,select,button,textarea{font-family:inherit;font-size:16px;}
 .card-progress i.on-yellow{background:var(--warn-500);}
 .badge-row{display:flex; gap:10px; flex-wrap:wrap;}
 .photo-badge{display:flex; align-items:center; gap:3px; font-size:11px; color:var(--ink-600); margin-top:6px;}
+.drive-badge{display:flex; align-items:center; gap:3px; font-size:11px; color:var(--brand-blue); margin-top:6px; font-weight:600;}
 .obs-badge{display:flex; align-items:center; gap:3px; font-size:11px; color:var(--brand-red-dark); margin-top:6px; font-weight:600;}
 
 .empty-state{text-align:center; padding:60px 20px; color:var(--steel-500);}
@@ -203,6 +204,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .incident-title{display:flex; align-items:center; gap:7px; font-family:var(--font-display); font-weight:600; font-size:12.5px; color:var(--brand-yellow-dark); margin-bottom:10px;}
 .last-edited-note{font-size:11px; color:var(--steel-500); margin-top:3px; font-family:var(--font-mono);}
 .drive-link-note{font-size:11px; color:var(--brand-blue); margin-top:3px; font-weight:600; display:inline-block; text-decoration:none;}
+.drive-link-row{margin-bottom:8px;}
 .upload-progress-bar{height:3px; width:140px; background:var(--steel-150); border-radius:2px; overflow:hidden; margin-top:5px; display:none;}
 .upload-progress-bar.active{display:block;}
 .upload-progress-bar .fill{height:100%; width:35%; background:var(--brand-blue); border-radius:2px; animation:progressSlide 1.1s ease-in-out infinite;}
@@ -579,7 +581,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <div><h2 id="hvacDetailTag">-</h2><div class="sub" id="hvacDetailSub">-</div><div class="last-edited-note" id="hvacLastEdited"></div><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="hvacDriveLink" style="display:none;">📁 Ver fotos en Drive</a><div class="upload-progress-bar" id="hvacUploadBar"><div class="fill"></div></div></div>
+      <div><h2 id="hvacDetailTag">-</h2><div class="sub" id="hvacDetailSub">-</div><div class="last-edited-note" id="hvacLastEdited"></div></div>
       <button class="sheet-close" id="hvacCloseDetail1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="sheet-body">
@@ -600,7 +602,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <div class="incident-block">
         <div class="incident-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Observación / Incidencia</div>
         <div class="field-group" style="margin-bottom:10px;"><label>Motivo por el que no se avanzó <span class="field-legend">(opcional)</span></label><textarea class="text-input" id="hvacObservacion" rows="3" placeholder="Ej: falta de material, acceso bloqueado, equipo dañado..."></textarea></div>
-        <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="photo-grid" id="hvacObsPhotoGrid"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="hvacObsPhotoInput"></label></div></div>
+        <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="drive-link-row"><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="hvacDriveLink" style="display:none;">📁 Ver fotos en Drive</a><div class="upload-progress-bar" id="hvacUploadBar"><div class="fill"></div></div></div><div class="photo-grid" id="hvacObsPhotoGrid"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="hvacObsPhotoInput"></label></div></div>
       </div>
     </div>
     <div class="sheet-footer"><button class="btn-ghost" id="hvacCloseDetail2">Cerrar</button><button class="btn-primary" id="hvacSaveDetail">Guardar cambios</button></div>
@@ -612,7 +614,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <div><h2 id="cableDetailTag">-</h2><div class="sub" id="cableDetailSub">-</div><div class="last-edited-note" id="cableLastEdited"></div><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="cableFromDriveLink" style="display:none;">📁 Fotos Desde (Drive)</a> <a href="#" target="_blank" rel="noopener" class="drive-link-note" id="cableToDriveLink" style="display:none;">📁 Fotos Hasta (Drive)</a><div class="upload-progress-bar" id="cableadoUploadBar"><div class="fill"></div></div></div>
+      <div><h2 id="cableDetailTag">-</h2><div class="sub" id="cableDetailSub">-</div><div class="last-edited-note" id="cableLastEdited"></div></div>
       <button class="sheet-close" id="cableCloseDetail1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="sheet-body" id="cableSheetBody"></div>
@@ -625,7 +627,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <div><h2 id="fdsDetailTag">-</h2><div class="sub" id="fdsDetailSub">-</div><div class="last-edited-note" id="fdsLastEdited"></div><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="fdsDriveLink" style="display:none;">📁 Ver fotos en Drive</a><div class="upload-progress-bar" id="fdsUploadBar"><div class="fill"></div></div></div>
+      <div><h2 id="fdsDetailTag">-</h2><div class="sub" id="fdsDetailSub">-</div><div class="last-edited-note" id="fdsLastEdited"></div></div>
       <button class="sheet-close" id="fdsCloseDetail1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="sheet-body">
@@ -652,7 +654,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <div class="incident-block">
         <div class="incident-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Observación / Incidencia</div>
         <div class="field-group" style="margin-bottom:10px;"><label>Motivo por el que no se avanzó <span class="field-legend">(opcional)</span></label><textarea class="text-input" id="fdsObservacion" rows="3" placeholder="Ej: falta de material, detector dañado..."></textarea></div>
-        <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="photo-grid" id="fdsObsPhotoGrid"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="fdsObsPhotoInput"></label></div></div>
+        <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="drive-link-row"><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="fdsDriveLink" style="display:none;">📁 Ver fotos en Drive</a><div class="upload-progress-bar" id="fdsUploadBar"><div class="fill"></div></div></div><div class="photo-grid" id="fdsObsPhotoGrid"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="fdsObsPhotoInput"></label></div></div>
       </div>
     </div>
     <div class="sheet-footer"><button class="btn-ghost" id="fdsCloseDetail2">Cerrar</button><button class="btn-primary" id="fdsSaveDetail">Guardar cambios</button></div>
@@ -664,7 +666,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <div><h2 id="transitDetailTag">-</h2><div class="sub" id="transitDetailSub">-</div><div class="last-edited-note" id="transitLastEdited"></div><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="transitDriveLink" style="display:none;">📁 Ver fotos en Drive</a><div class="upload-progress-bar" id="transitUploadBar"><div class="fill"></div></div></div>
+      <div><h2 id="transitDetailTag">-</h2><div class="sub" id="transitDetailSub">-</div><div class="last-edited-note" id="transitLastEdited"></div></div>
       <button class="sheet-close" id="transitCloseDetail1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="sheet-body">
@@ -684,7 +686,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <div class="incident-block">
         <div class="incident-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Observación / Incidencia</div>
         <div class="field-group" style="margin-bottom:10px;"><label>Motivo por el que no se avanzó <span class="field-legend">(opcional)</span></label><textarea class="text-input" id="transitObservacion" rows="3" placeholder="Ej: falta de material, acceso bloqueado..."></textarea></div>
-        <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="photo-grid" id="transitObsPhotoGrid" style="display:none;"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="transitObsPhotoInput"></label></div></div>
+        <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="drive-link-row"><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="transitDriveLink" style="display:none;">📁 Ver fotos en Drive</a><div class="upload-progress-bar" id="transitUploadBar"><div class="fill"></div></div></div><div class="photo-grid" id="transitObsPhotoGrid" style="display:none;"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="transitObsPhotoInput"></label></div></div>
       </div>
     </div>
     <div class="sheet-footer"><button class="btn-ghost" id="transitCloseDetail2">Cerrar</button><button class="btn-primary" id="transitSaveDetail">Guardar cambios</button></div>
@@ -696,7 +698,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <div><h2 id="timbradoDetailTag">-</h2><div class="sub" id="timbradoDetailSub">-</div><div class="last-edited-note" id="timbradoLastEdited"></div><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="timbradoDriveLink" style="display:none;">📁 Ver fotos en Drive</a><div class="upload-progress-bar" id="timbradoUploadBar"><div class="fill"></div></div></div>
+      <div><h2 id="timbradoDetailTag">-</h2><div class="sub" id="timbradoDetailSub">-</div><div class="last-edited-note" id="timbradoLastEdited"></div></div>
       <button class="sheet-close" id="timbradoCloseDetail1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="sheet-body">
@@ -706,7 +708,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <div class="incident-block">
         <div class="incident-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Observación / Incidencia</div>
         <div class="field-group" style="margin-bottom:10px;"><label>Motivo por el que no se avanzó <span class="field-legend">(opcional)</span></label><textarea class="text-input" id="timbradoObservacion" rows="3" placeholder="Ej: falta acceso, cable dañado..."></textarea></div>
-        <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="photo-grid" id="timbradoObsPhotoGrid"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="timbradoObsPhotoInput"></label></div></div>
+        <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="drive-link-row"><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="timbradoDriveLink" style="display:none;">📁 Ver fotos en Drive</a><div class="upload-progress-bar" id="timbradoUploadBar"><div class="fill"></div></div></div><div class="photo-grid" id="timbradoObsPhotoGrid"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="timbradoObsPhotoInput"></label></div></div>
       </div>
     </div>
     <div class="sheet-footer"><button class="btn-ghost" id="timbradoCloseDetail2">Cerrar</button><button class="btn-primary" id="timbradoSaveDetail">Guardar cambios</button></div>
@@ -880,7 +882,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v7.4 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v7.7 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1733,6 +1735,7 @@ function cardTemplateHvac(r){
       <div class="card-progress">${bars}</div>
       <div class="badge-row">
       ${r.photos.length ? `<span class="photo-badge">📷 ${r.photos.length} foto(s)</span>` : ''}
+      ${r.fotosLink ? `<span class="drive-badge">☁️ En Drive</span>` : ''}
       ${r.observacion ? `<span class="obs-badge">⚠ Con observación</span>` : ''}
       </div>
     </div>
@@ -1754,6 +1757,7 @@ function cardTemplateCable(r){
       <div class="card-progress">${bars}</div>
       <div class="badge-row">
       ${hasPhotos ? `<span class="photo-badge">📷 ${hasPhotos} foto(s)</span>` : ''}
+      ${(r.from.fotosLink || r.to.fotosLink) ? `<span class="drive-badge">☁️ En Drive</span>` : ''}
       ${hasObs ? `<span class="obs-badge">⚠ Con observación</span>` : ''}
       </div>
     </div>
@@ -1771,6 +1775,7 @@ function cardTemplateTimbrado(r){
       <div class="card-progress">${bars}</div>
       <div class="badge-row">
       ${photoCount ? `<span class="photo-badge">📷 ${photoCount} foto(s)</span>` : ''}
+      ${r.fotosLink ? `<span class="drive-badge">☁️ En Drive</span>` : ''}
       ${r.observacion ? `<span class="obs-badge">⚠ Con observación</span>` : ''}
       </div>
     </div>
@@ -1790,6 +1795,7 @@ function cardTemplateFds(r){
       <div class="card-progress">${bars}</div>
       <div class="badge-row">
       ${photoCount ? `<span class="photo-badge">📷 ${photoCount} foto(s)</span>` : ''}
+      ${r.fotosLink ? `<span class="drive-badge">☁️ En Drive</span>` : ''}
       ${r.observacion ? `<span class="obs-badge">⚠ Con observación</span>` : ''}
       </div>
     </div>
@@ -1807,6 +1813,7 @@ function cardTemplateTransit(r){
       <div class="card-progress">${bars}</div>
       <div class="badge-row">
       ${photoCount ? `<span class="photo-badge">📷 ${photoCount} foto(s)</span>` : ''}
+      ${r.fotosLink ? `<span class="drive-badge">☁️ En Drive</span>` : ''}
       ${r.observacion ? `<span class="obs-badge">⚠ Con observación</span>` : ''}
       </div>
     </div>
@@ -2438,7 +2445,7 @@ function sideFieldsHtml(prefix, tagLabel){
     <div class="incident-block">
       <div class="incident-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Observación / Incidencia</div>
       <div class="field-group" style="margin-bottom:10px;"><label>Motivo por el que no se avanzó <span class="field-legend">(opcional)</span></label><textarea class="text-input" id="cable${cap(prefix)}Observacion" rows="2" placeholder="Ej: falta de material, gland dañado..."></textarea></div>
-      <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="photo-grid" id="cable${cap(prefix)}ObsPhotoGrid"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="cable${cap(prefix)}ObsPhotoInput"></label></div></div>
+      <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="drive-link-row"><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="cable${cap(prefix)}DriveLink" style="display:none;">📁 Ver fotos en Drive</a><div class="upload-progress-bar" id="cable${cap(prefix)}UploadBar"><div class="fill"></div></div></div><div class="photo-grid" id="cable${cap(prefix)}ObsPhotoGrid"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="cable${cap(prefix)}ObsPhotoInput"></label></div></div>
     </div>
   </div>`;
 }
@@ -3076,8 +3083,8 @@ async function syncPhotosToDrive(sys, row){
     setUploadBarActive(sys, false);
   }
 }
-function setUploadBarActive(sys, active){
-  const bar = document.getElementById((sys==='cableado' ? 'cableado' : sys) + 'UploadBar');
+function setUploadBarActive(sys, active, barIdOverride){
+  const bar = document.getElementById(barIdOverride || (sys + 'UploadBar'));
   if(bar) bar.classList.toggle('active', active);
 }
 async function syncCableSidePhotosToDrive(row, side){
@@ -3085,10 +3092,11 @@ async function syncCableSidePhotosToDrive(row, side){
   const uid = row.id + '-' + side;
   const payload = sheetRowPayload('cableado', row);
   const linkColumn = side === 'from' ? 'From_Fotos_Link' : 'To_Fotos_Link';
+  const barId = 'cable' + cap(side) + 'UploadBar';
   const fields = ['conexionadoPhotos','obsPhotos'];
   let uploadedAny = false;
   const isOpen = currentDetailItem === row.id;
-  if(isOpen) setUploadBarActive('cableado', true);
+  if(isOpen) setUploadBarActive(null, true, barId);
   for(const f of fields){
     const arr = obj[f] || [];
     for(let i=0; i<arr.length; i++){
@@ -3101,11 +3109,12 @@ async function syncCableSidePhotosToDrive(row, side){
       if(currentDetailItem===row.id){ refreshOpenDetailDriveLink('cableado'); }
     }), 4000);
   } else if(isOpen){
-    setUploadBarActive('cableado', false);
+    setUploadBarActive(null, false, barId);
   }
 }
 function refreshOpenDetailDriveLink(sys){
-  setUploadBarActive(sys, false);
+  if(sys === 'cableado'){ setUploadBarActive(null, false, 'cableFromUploadBar'); setUploadBarActive(null, false, 'cableToUploadBar'); }
+  else setUploadBarActive(sys, false);
   if(sys==='hvac') openDetailHvac(currentDetailItem);
   else if(sys==='fds') openDetailFds(currentDetailItem);
   else if(sys==='transit') openDetailTransit(currentDetailItem);
@@ -3146,6 +3155,7 @@ async function pullNotesFromSheet(silent){
     if(!state.notes) state.notes = {};
     const sysByLabel = {};
     Object.keys(SYS).forEach(k=> sysByLabel[SYS[k].label] = k);
+    const idsInSheet = new Set();
     let added = 0, removed = 0;
     rows.forEach(obj=>{
       const id = obj.UID; if(!id) return;
@@ -3154,17 +3164,32 @@ async function pullNotesFromSheet(silent){
       if(!state.notes[sysKey]) state.notes[sysKey] = [];
       const text = obj.TEXTO || '';
       if(!text){
-        // Nota borrada en otro celular (texto vacío = borrado) — quitarla si la teníamos localmente
+        // Compatibilidad con notas borradas "en blanco" (versiones antiguas) — quitarla si la teníamos
         const before = state.notes[sysKey].length;
         state.notes[sysKey] = state.notes[sysKey].filter(n=>n.id!==id);
         if(state.notes[sysKey].length !== before) removed++;
         return;
       }
+      idsInSheet.add(sysKey + '|' + id);
       const exists = state.notes[sysKey].some(n=>n.id===id);
       if(exists) return;
       const parsedDate = parseSheetEditDate(obj.FECHA);
       state.notes[sysKey].push({ id, text, date: parsedDate || new Date().toISOString(), priority: obj.PRIORIDAD === 'SI' });
       added++;
+    });
+    // Reconciliación: si una nota local ya no aparece EN ABSOLUTO en la hoja (se borró
+    // de verdad, con deleteRow, desde otro equipo), se quita también aquí — pero solo si
+    // tiene más de un minuto de antigüedad, para no borrar por error una nota recién
+    // creada en este mismo celular que todavía no terminó de subirse.
+    const cutoff = Date.now() - 60000;
+    Object.keys(state.notes).forEach(sysKey=>{
+      const before = state.notes[sysKey].length;
+      state.notes[sysKey] = state.notes[sysKey].filter(n=>{
+        if(idsInSheet.has(sysKey + '|' + n.id)) return true;
+        const isOld = new Date(n.date).getTime() < cutoff;
+        return !isOld;
+      });
+      removed += before - state.notes[sysKey].length;
     });
     if(added || removed) scheduleSave();
     return true;
@@ -3594,7 +3619,7 @@ function openReport(){
   document.querySelectorAll('.report-tab').forEach(t=>t.classList.toggle('active', t.dataset.reportTab==='weekly'));
   document.getElementById('reportDailyControls').style.display = 'none';
   document.getElementById('btnExportReport').style.display = '';
-  document.getElementById('btnExportDailyPdf').style.display = 'none';
+  document.getElementById('btnExportDailyPdf').style.display = '';
   if(!document.getElementById('reportDailyDate').value) document.getElementById('reportDailyDate').value = todayLocalISO();
   renderReport();
   document.getElementById('reportOverlay').classList.add('open');
@@ -3609,7 +3634,7 @@ document.querySelectorAll('.report-tab').forEach(tab=>{
     document.querySelectorAll('.report-tab').forEach(t=>t.classList.toggle('active', t===tab));
     document.getElementById('reportDailyControls').style.display = reportMode === 'daily' ? '' : 'none';
     document.getElementById('btnExportReport').style.display = reportMode === 'weekly' ? '' : 'none';
-    document.getElementById('btnExportDailyPdf').style.display = reportMode === 'daily' ? '' : 'none';
+    document.getElementById('btnExportDailyPdf').style.display = '';
     renderReport();
   });
 });
@@ -3621,6 +3646,10 @@ document.getElementById('btnExportReport').addEventListener('click', ()=>{
 });
 document.getElementById('btnExportDailyPdf').addEventListener('click', ()=>{
   const sys = currentSystem;
+  if(reportMode === 'weekly'){
+    buildWeeklyReportPDF(sys);
+    return;
+  }
   const dateStr = document.getElementById('reportDailyDate').value || todayLocalISO();
   const items = dailyReportItems(sys, dateStr);
   if(items.length === 0){ showToast('No hay registros modificados en esa fecha'); return; }
@@ -3677,14 +3706,14 @@ function dailyReportItems(sys, dateStr){
       if(!sameLocalDate(r.lastEditedAt, dateStr)) return;
       const cambios = fieldChanges([['Soporte',r.soporte],['Fecha equipo',r.fecha],['Tagged items',r.tagged_items],['Tierra soporte',r.tierra_soporte],['Tierra equipos',r.tierra_equipos],['Miniruta',r.miniruta],['Conexionado',r.conexionado],['Megado',r.megado],['Tubing',r.tubing]]);
       if(cambios.length === 0) return;
-      out.push({ tag:r.tag||('Ítem #'+r.item), nivel:r.level, area:r.area?('Área '+r.area):'', estado: hvacStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Instalación',r.photos],['Observación',r.obsPhotos]]), date:r.lastEditedAt });
+      out.push({ tag:r.tag||('Ítem #'+r.item), nivel:r.level, area:r.area?('Área '+r.area):'', estado: hvacStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Instalación',r.photos],['Observación',r.obsPhotos]]), date:r.lastEditedAt, sistema:SYS.hvac.label, uid:r.uid, fotosLink:r.fotosLink });
     });
   } else if(sys === 'fds'){
     state.fds.forEach(r=>{
       if(!sameLocalDate(r.lastEditedAt, dateStr)) return;
       const cambios = fieldChanges([['Semana',r.semana],['Soporte',r.soporte],['Equipo',r.equipo],['Mini ruta',r.minirutas],['Cableado',r.cableado],['Conexionado',r.conexionado],['N° Serie',r.nserie]]);
       if(cambios.length === 0) return;
-      out.push({ tag:r.tag||('Ítem #'+r.item), nivel:r.level, area:'', estado: fdsStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Soporte',r.soportePhotos],['Equipo',r.equipoPhotos],['Observación',r.obsPhotos]]), date:r.lastEditedAt });
+      out.push({ tag:r.tag||('Ítem #'+r.item), nivel:r.level, area:'', estado: fdsStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Soporte',r.soportePhotos],['Equipo',r.equipoPhotos],['Observación',r.obsPhotos]]), date:r.lastEditedAt, sistema:SYS.fds.label, uid:r.id, fotosLink:r.fotosLink });
     });
   } else if(sys === 'cableado'){
     state.cableado.forEach(r=>{
@@ -3693,7 +3722,7 @@ function dailyReportItems(sys, dateStr){
         if(!sameLocalDate(obj.lastEditedAt, dateStr)) return;
         const cambios = fieldChanges([['Minirutas',obj.minirutas],['Tendido',obj.tendido],['Marca Gland',obj.marca_gland],['Gland',obj.gland],['Fecha Gland',obj.fecha_gland],['Conexionado',obj.conexionado],['Fecha Conexionado',obj.fecha_conexionado]]);
         if(cambios.length === 0) return;
-        out.push({ tag:`${r.cable} (${side==='from'?r.from_tag:r.to_tag} · ${side.toUpperCase()})`, nivel:r.level, area: (side==='from'?r.from_area:r.to_area) ? ('Área '+(side==='from'?r.from_area:r.to_area)) : '', estado: sideStatus(obj)==='complete'?'Completo':'Pendiente', observacion:obj.observacion, cambios, photos:labeledPhotos([['Conexionado',obj.conexionadoPhotos],['Observación',obj.obsPhotos]]), date:obj.lastEditedAt });
+        out.push({ tag:`${r.cable} (${side==='from'?r.from_tag:r.to_tag} · ${side.toUpperCase()})`, nivel:r.level, area: (side==='from'?r.from_area:r.to_area) ? ('Área '+(side==='from'?r.from_area:r.to_area)) : '', estado: sideStatus(obj)==='complete'?'Completo':'Pendiente', observacion:obj.observacion, cambios, photos:labeledPhotos([['Conexionado',obj.conexionadoPhotos],['Observación',obj.obsPhotos]]), date:obj.lastEditedAt, sistema:SYS.cableado.label, uid:r.id+'-'+side, fotosLink:obj.fotosLink });
       });
     });
   } else if(sys === 'transit'){
@@ -3701,14 +3730,14 @@ function dailyReportItems(sys, dateStr){
       if(!sameLocalDate(r.lastEditedAt, dateStr)) return;
       const cambios = fieldChanges([['Construcción',r.construccion],['Limpieza',r.limpieza],['Pintura',r.pintura],['Cables correcto',r.cables_correcto],['Etiquetas cables',r.etiquetas_cables],['Identificación transit',r.identificacion_transit],['Fotografía',r.fotografia],['Estado final',r.estado_final]]);
       if(cambios.length === 0) return;
-      out.push({ tag:r.tag||('Ítem #'+r.id), nivel:r.level, area:r.room?('Room '+r.room):'', estado: transitStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Fotografía',r.fotografiaPhotos],['Observación',r.obsPhotos]]), date:r.lastEditedAt });
+      out.push({ tag:r.tag||('Ítem #'+r.id), nivel:r.level, area:r.room?('Room '+r.room):'', estado: transitStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Fotografía',r.fotografiaPhotos],['Observación',r.obsPhotos]]), date:r.lastEditedAt, sistema:SYS.transit.label, uid:r.id, fotosLink:r.fotosLink });
     });
   } else if(sys === 'timbrado'){
     state.timbrado.forEach(r=>{
       if(r.fecha_timbrado !== dateStr) return;
       const cambios = fieldChanges([['Timbrado',r.timbrado],['Fecha timbrado',r.fecha_timbrado]]);
       if(cambios.length === 0) return;
-      out.push({ tag:r.cable||('Cable #'+r.id), nivel:'', area:r.from_area?('Área '+r.from_area):'', estado: timbradoStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Observación',r.obsPhotos]]), date:r.lastEditedAt });
+      out.push({ tag:r.cable||('Cable #'+r.id), nivel:'', area:r.from_area?('Área '+r.from_area):'', estado: timbradoStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Observación',r.obsPhotos]]), date:r.lastEditedAt, sistema:SYS.timbrado.label, uid:r.id, fotosLink:r.fotosLink });
     });
   }
   if(sys === 'timbrado') return out;
@@ -3821,12 +3850,21 @@ function drawTimbradoSummary(doc, margin, pageW, y, dateStr){
   doc.setDrawColor(200,200,200); doc.line(margin, newY-8, pageW-margin, newY-8);
   return newY;
 }
-async function buildDailyReportPDF(sys, dateStr, items){
+async function fetchDrivePhotosForItem(sistema, uid){
+  if(!state.sheetSync.url || !sistema || !uid) return [];
+  try{
+    const res = await fetch(`${state.sheetSync.url}?action=getPhotos&sistema=${encodeURIComponent(sistema)}&uid=${encodeURIComponent(uid)}`);
+    const files = await res.json();
+    if(!Array.isArray(files)) return [];
+    return files.map(f=>({ src: `data:${f.mimeType || 'image/jpeg'};base64,${f.base64}`, label:'Drive' }));
+  }catch(e){ return []; }
+}
+async function buildDailyReportPDF(sys, dateStr, items, titleOverride, dateLabelOverride){
   if(!window.jspdf || !window.jspdf.jsPDF){
     showToast('No se pudo cargar el generador de PDF. Revisa tu conexión a internet e intenta de nuevo.');
     return;
   }
-  showToast('Generando PDF...');
+  showToast('Generando PDF, trayendo fotos de Drive si hace falta...');
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit:'pt', format:'a4' });
   const pageW = doc.internal.pageSize.getWidth();
@@ -3835,9 +3873,10 @@ async function buildDailyReportPDF(sys, dateStr, items){
   const footerH = 18;
   let y = margin;
 
+  const reportTitle = titleOverride || 'Informe diario';
   const logoImg = document.querySelector('.masthead img');
   const logoSrc = logoImg ? logoImg.getAttribute('src') : null;
-  const fechaTxt = formatDateShort(dateStr+'T00:00:00');
+  const fechaTxt = dateLabelOverride || formatDateShort(dateStr+'T00:00:00');
   function drawHeader(){
     y = margin;
     const headerBottom = y + 40;
@@ -3845,7 +3884,7 @@ async function buildDailyReportPDF(sys, dateStr, items){
       try{ doc.addImage(logoSrc, 'PNG', margin, y, 94, 17.8); }catch(e){}
     }
     doc.setFont('helvetica','bold'); doc.setFontSize(19); doc.setTextColor(9,24,35);
-    doc.text('Informe diario', pageW/2, y+11, { align:'center' });
+    doc.text(reportTitle, pageW/2, y+11, { align:'center' });
     doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(7,80,156);
     doc.text(SYS[sys].label, pageW/2, y+28, { align:'center' });
     doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(60,78,94);
@@ -3856,11 +3895,16 @@ async function buildDailyReportPDF(sys, dateStr, items){
     doc.setDrawColor(200,200,200); doc.line(margin, y, pageW-margin, y); y += 20;
   }
   drawHeader();
-  if(sys === 'timbrado'){
+  if(sys === 'timbrado' && !dateLabelOverride){
     y = drawTimbradoSummary(doc, margin, pageW, y, dateStr);
   }
 
   for(const it of items){
+    // Si no hay fotos guardadas en ESTE celular pero sabemos que hay fotos en Drive
+    // para este Tag, las traemos ahora para poder incrustarlas en el PDF.
+    if((!it.photos || it.photos.length === 0) && it.fotosLink){
+      it.photos = await fetchDrivePhotosForItem(it.sistema, it.uid);
+    }
     if(y > pageH - footerH - 140){ doc.addPage(); drawHeader(); }
     doc.setFont('helvetica','bold'); doc.setFontSize(12.5); doc.setTextColor(9,24,35);
     doc.text(String(it.tag||'—'), margin, y); y += 14;
@@ -3951,8 +3995,27 @@ async function buildDailyReportPDF(sys, dateStr, items){
     doc.text(`Página ${p} de ${pageCount}`, pageW-margin, pageH-7, { align:'right' });
   }
 
-  doc.save(`Informe_Diario_${SYS[sys].label}_${dateStr}.pdf`);
+  doc.save(`Informe_${titleOverride ? 'Semanal' : 'Diario'}_${SYS[sys].label}_${dateStr}.pdf`);
   showToast('PDF descargado');
+}
+function weeklyReportItems(sys){
+  const out = [];
+  const today = new Date();
+  for(let i=0; i<7; i++){
+    const d = new Date(today); d.setDate(d.getDate()-i);
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    out.push(...dailyReportItems(sys, dateStr));
+  }
+  return out;
+}
+async function buildWeeklyReportPDF(sys){
+  const items = weeklyReportItems(sys);
+  if(items.length === 0){ showToast('No hay registros modificados en los últimos 7 días'); return; }
+  const today = new Date();
+  const weekAgo = new Date(today); weekAgo.setDate(weekAgo.getDate()-6);
+  const dateLabel = `${formatDateShort(weekAgo.toISOString())} — ${formatDateShort(today.toISOString())}`;
+  const dateStrForFile = todayLocalISO();
+  await buildDailyReportPDF(sys, dateStrForFile, items, 'Informe semanal', dateLabel);
 }
 
 /* ===================== Landing / launcher screen ===================== */
