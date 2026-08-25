@@ -203,6 +203,10 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .incident-title{display:flex; align-items:center; gap:7px; font-family:var(--font-display); font-weight:600; font-size:12.5px; color:var(--brand-yellow-dark); margin-bottom:10px;}
 .last-edited-note{font-size:11px; color:var(--steel-500); margin-top:3px; font-family:var(--font-mono);}
 .drive-link-note{font-size:11px; color:var(--brand-blue); margin-top:3px; font-weight:600; display:inline-block; text-decoration:none;}
+.upload-progress-bar{height:3px; width:140px; background:var(--steel-150); border-radius:2px; overflow:hidden; margin-top:5px; display:none;}
+.upload-progress-bar.active{display:block;}
+.upload-progress-bar .fill{height:100%; width:35%; background:var(--brand-blue); border-radius:2px; animation:progressSlide 1.1s ease-in-out infinite;}
+@keyframes progressSlide{0%{transform:translateX(-120%);} 100%{transform:translateX(380%);}}
 
 .sheet-footer{padding:12px 18px calc(14px + env(safe-area-inset-bottom)); border-top:1px solid var(--steel-200); display:flex; gap:10px;}
 .btn-primary{flex:1; background:var(--navy-900); color:#fff; border:none; border-radius:10px; padding:13px; font-weight:600; font-size:14.5px;}
@@ -575,7 +579,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <div><h2 id="hvacDetailTag">-</h2><div class="sub" id="hvacDetailSub">-</div><div class="last-edited-note" id="hvacLastEdited"></div><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="hvacDriveLink" style="display:none;">📁 Ver fotos en Drive</a></div>
+      <div><h2 id="hvacDetailTag">-</h2><div class="sub" id="hvacDetailSub">-</div><div class="last-edited-note" id="hvacLastEdited"></div><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="hvacDriveLink" style="display:none;">📁 Ver fotos en Drive</a><div class="upload-progress-bar" id="hvacUploadBar"><div class="fill"></div></div></div>
       <button class="sheet-close" id="hvacCloseDetail1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="sheet-body">
@@ -608,7 +612,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <div><h2 id="cableDetailTag">-</h2><div class="sub" id="cableDetailSub">-</div><div class="last-edited-note" id="cableLastEdited"></div><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="cableFromDriveLink" style="display:none;">📁 Fotos Desde (Drive)</a> <a href="#" target="_blank" rel="noopener" class="drive-link-note" id="cableToDriveLink" style="display:none;">📁 Fotos Hasta (Drive)</a></div>
+      <div><h2 id="cableDetailTag">-</h2><div class="sub" id="cableDetailSub">-</div><div class="last-edited-note" id="cableLastEdited"></div><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="cableFromDriveLink" style="display:none;">📁 Fotos Desde (Drive)</a> <a href="#" target="_blank" rel="noopener" class="drive-link-note" id="cableToDriveLink" style="display:none;">📁 Fotos Hasta (Drive)</a><div class="upload-progress-bar" id="cableadoUploadBar"><div class="fill"></div></div></div>
       <button class="sheet-close" id="cableCloseDetail1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="sheet-body" id="cableSheetBody"></div>
@@ -621,7 +625,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <div><h2 id="fdsDetailTag">-</h2><div class="sub" id="fdsDetailSub">-</div><div class="last-edited-note" id="fdsLastEdited"></div><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="fdsDriveLink" style="display:none;">📁 Ver fotos en Drive</a></div>
+      <div><h2 id="fdsDetailTag">-</h2><div class="sub" id="fdsDetailSub">-</div><div class="last-edited-note" id="fdsLastEdited"></div><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="fdsDriveLink" style="display:none;">📁 Ver fotos en Drive</a><div class="upload-progress-bar" id="fdsUploadBar"><div class="fill"></div></div></div>
       <button class="sheet-close" id="fdsCloseDetail1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="sheet-body">
@@ -660,7 +664,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <div><h2 id="transitDetailTag">-</h2><div class="sub" id="transitDetailSub">-</div><div class="last-edited-note" id="transitLastEdited"></div><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="transitDriveLink" style="display:none;">📁 Ver fotos en Drive</a></div>
+      <div><h2 id="transitDetailTag">-</h2><div class="sub" id="transitDetailSub">-</div><div class="last-edited-note" id="transitLastEdited"></div><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="transitDriveLink" style="display:none;">📁 Ver fotos en Drive</a><div class="upload-progress-bar" id="transitUploadBar"><div class="fill"></div></div></div>
       <button class="sheet-close" id="transitCloseDetail1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="sheet-body">
@@ -692,7 +696,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <div><h2 id="timbradoDetailTag">-</h2><div class="sub" id="timbradoDetailSub">-</div><div class="last-edited-note" id="timbradoLastEdited"></div><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="timbradoDriveLink" style="display:none;">📁 Ver fotos en Drive</a></div>
+      <div><h2 id="timbradoDetailTag">-</h2><div class="sub" id="timbradoDetailSub">-</div><div class="last-edited-note" id="timbradoLastEdited"></div><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="timbradoDriveLink" style="display:none;">📁 Ver fotos en Drive</a><div class="upload-progress-bar" id="timbradoUploadBar"><div class="fill"></div></div></div>
       <button class="sheet-close" id="timbradoCloseDetail1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="sheet-body">
@@ -876,7 +880,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v7.3 · 25 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v7.4 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1430,6 +1434,7 @@ function renderDocsPanel(){
       Subir PDF
       <input type="file" accept="application/pdf" id="docsFileInput">
     </label>
+    <div class="upload-progress-bar" id="docsUploadBar" style="width:100%; margin:-10px 0 16px;"><div class="fill"></div></div>
     <div class="insights-section-label">Documentos de ${SYS[insightsActiveSys].label} (${docs.length})</div>
     <div id="docsList">${docs.length ? docs.map(d=>`
       <a class="doc-item" href="${d.url}" target="_blank" rel="noopener">
@@ -1449,11 +1454,14 @@ function renderDocsPanel(){
     if(file.type !== 'application/pdf'){ showToast('Solo se pueden subir archivos PDF'); e.target.value=''; return; }
     const sys = insightsActiveSys;
     const nombre = file.name.replace(/\.pdf$/i, '');
+    const bar = document.getElementById('docsUploadBar');
+    if(bar) bar.classList.add('active');
     showToast('Subiendo documento...');
     const reader = new FileReader();
     reader.onload = async ()=>{
       const base64 = reader.result.split(',')[1];
       const ok = await uploadDocToSheet(sys, nombre, file.name, base64);
+      if(bar) bar.classList.remove('active');
       showToast(ok ? 'Documento subido' : 'No se pudo subir — revisa tu conexión');
       if(ok) renderDocsPanel();
     };
@@ -3049,6 +3057,8 @@ async function syncPhotosToDrive(sys, row){
   const payload = sheetRowPayload(sys, row);
   const fields = PHOTO_FIELDS_BY_SYS[sys] || [];
   let uploadedAny = false;
+  const isOpen = currentDetailItem === uid;
+  if(isOpen) setUploadBarActive(sys, true);
   for(const f of fields){
     const arr = row[f] || [];
     for(let i=0; i<arr.length; i++){
@@ -3059,8 +3069,16 @@ async function syncPhotosToDrive(sys, row){
   if(uploadedAny){
     // El Apps Script ya escribió el enlace directo en Sheets; lo traemos de vuelta
     // unos segundos después para mostrarlo en la app sin depender de leer la respuesta del POST.
-    setTimeout(()=> pullFromSheet(sys, true).then(()=>{ if(currentDetailItem===uid) refreshOpenDetailDriveLink(sys); }), 4000);
+    setTimeout(()=> pullFromSheet(sys, true).then(()=>{
+      if(currentDetailItem===uid){ refreshOpenDetailDriveLink(sys); }
+    }), 4000);
+  } else if(isOpen){
+    setUploadBarActive(sys, false);
   }
+}
+function setUploadBarActive(sys, active){
+  const bar = document.getElementById((sys==='cableado' ? 'cableado' : sys) + 'UploadBar');
+  if(bar) bar.classList.toggle('active', active);
 }
 async function syncCableSidePhotosToDrive(row, side){
   const obj = row[side];
@@ -3069,6 +3087,8 @@ async function syncCableSidePhotosToDrive(row, side){
   const linkColumn = side === 'from' ? 'From_Fotos_Link' : 'To_Fotos_Link';
   const fields = ['conexionadoPhotos','obsPhotos'];
   let uploadedAny = false;
+  const isOpen = currentDetailItem === row.id;
+  if(isOpen) setUploadBarActive('cableado', true);
   for(const f of fields){
     const arr = obj[f] || [];
     for(let i=0; i<arr.length; i++){
@@ -3077,10 +3097,15 @@ async function syncCableSidePhotosToDrive(row, side){
     }
   }
   if(uploadedAny){
-    setTimeout(()=> pullFromSheet('cableado', true).then(()=>{ if(currentDetailItem===row.id) refreshOpenDetailDriveLink('cableado'); }), 4000);
+    setTimeout(()=> pullFromSheet('cableado', true).then(()=>{
+      if(currentDetailItem===row.id){ refreshOpenDetailDriveLink('cableado'); }
+    }), 4000);
+  } else if(isOpen){
+    setUploadBarActive('cableado', false);
   }
 }
 function refreshOpenDetailDriveLink(sys){
+  setUploadBarActive(sys, false);
   if(sys==='hvac') openDetailHvac(currentDetailItem);
   else if(sys==='fds') openDetailFds(currentDetailItem);
   else if(sys==='transit') openDetailTransit(currentDetailItem);
