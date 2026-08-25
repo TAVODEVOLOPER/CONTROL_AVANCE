@@ -325,6 +325,9 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .sidebar-header-sub{color:#8CA3BC; font-size:10.5px; margin-top:2px;}
 .sidebar-close{background:none; border:none; color:#fff; padding:4px;}
 .sidebar-section-label{color:#5E7690; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin:6px 0 8px;}
+.sidebar-admin-row{margin-top:auto; padding-top:14px; border-top:1px solid rgba(255,255,255,.1);}
+.sidebar-admin-btn{width:100%; display:flex; align-items:center; gap:9px; padding:11px 12px; border-radius:9px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.05); color:#fff; font-size:13px; font-weight:600; cursor:pointer;}
+.sidebar-admin-btn.unlocked{border-color:#FFC905; color:#FFC905; background:rgba(255,201,5,.1);}
 .sidebar-item{display:flex; align-items:center; gap:10px; padding:12px 10px; border-radius:9px; margin-bottom:2px;}
 .sidebar-item.active{background:rgba(255,255,255,.1);}
 .sidebar-dot{width:10px; height:10px; border-radius:3px; flex:none;}
@@ -459,6 +462,12 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   </div>
   <div class="sidebar-section-label">Sistemas</div>
   <div id="sidebarSystemsList"></div>
+  <div class="sidebar-admin-row">
+    <button class="sidebar-admin-btn" id="btnSidebarAdminMode">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/></svg>
+      Modo Administrador
+    </button>
+  </div>
 </div>
 
 <div class="insights-overlay" id="insightsOverlay"></div>
@@ -897,7 +906,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v8.3 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v8.4 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1233,6 +1242,7 @@ function renderSystemTabs(){
       switchSystem(item.dataset.sys);
     });
   });
+  updateAdminModeButton();
 }
 function openSidebar(){
   renderSystemTabs();
@@ -1603,7 +1613,7 @@ function renderNotesPanel(){
       <input type="checkbox" id="notesPriorityCheck" ${editingNote && editingNote.priority ? 'checked' : ''}>
       <label for="notesPriorityCheck">Marcar como recordatorio prioritario (avisa al entrar al sistema)</label>
     </div>
-    <div class="photo-grid" id="notesPhotoGrid" style="margin-bottom:10px;"><label class="photo-add brand-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir foto<input type="file" accept="image/*" id="notesPhotoInput"></label></div>
+    <div class="photo-grid" id="notesPhotoGrid" style="margin-bottom:10px;"><label class="photo-add brand-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="notesPhotoInput"></label></div>
     <div class="insights-notes-row">
       <button class="insights-mic-btn" id="btnNotesMic" title="Dictar por voz">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
@@ -1650,6 +1660,7 @@ function renderNotesPanel(){
       editingNote.text = text;
       editingNote.priority = priority;
       editingNote.photos = notesDraftPhotos.slice();
+      editingNote.date = new Date().toISOString();
       note = editingNote;
       notesEditingId = null;
     } else {
@@ -2208,12 +2219,39 @@ document.getElementById('btnAccessOpen').addEventListener('click', ()=>{
 });
 document.getElementById('btnCloseMasterPw').addEventListener('click', ()=> document.getElementById('masterPwOverlay').classList.remove('open'));
 document.getElementById('masterPwOverlay').addEventListener('click', (e)=>{ if(e.target.id==='masterPwOverlay') document.getElementById('masterPwOverlay').classList.remove('open'); });
+let masterPwIntent = 'accesos'; // 'accesos' | 'unlockAll'
+function unlockAllSystems(){
+  SYS_ORDER.forEach(s=> unlockedSystems.add(s));
+  accessPanelUnlocked = true;
+  renderSystemTabs();
+  updateAdminModeButton();
+  showToast('Modo Administrador activado — todos los sistemas desbloqueados');
+}
+function updateAdminModeButton(){
+  const btn = document.getElementById('btnSidebarAdminMode');
+  if(!btn) return;
+  const allUnlocked = SYS_ORDER.every(s=>unlockedSystems.has(s));
+  btn.classList.toggle('unlocked', allUnlocked);
+  btn.lastChild.textContent = allUnlocked ? ' Administrador activo' : ' Modo Administrador';
+}
+document.getElementById('btnSidebarAdminMode').addEventListener('click', ()=>{
+  if(SYS_ORDER.every(s=>unlockedSystems.has(s))){
+    showToast('El Modo Administrador ya está activo');
+    return;
+  }
+  masterPwIntent = 'unlockAll';
+  document.getElementById('masterPwInput').value = '';
+  document.getElementById('masterPwErr').textContent = '';
+  document.getElementById('masterPwOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('masterPwInput').focus(), 200);
+  refreshBiometricUnlockButton();
+});
 function confirmMasterPw(){
   const val = document.getElementById('masterPwInput').value;
   if(val === MASTER_PASSWORD){
     accessPanelUnlocked = true;
     document.getElementById('masterPwOverlay').classList.remove('open');
-    openAccessSheet();
+    if(masterPwIntent === 'unlockAll') unlockAllSystems(); else openAccessSheet();
   } else {
     document.getElementById('masterPwErr').textContent = 'Contraseña incorrecta.';
   }
@@ -2340,7 +2378,7 @@ document.getElementById('btnBiometricUnlock').addEventListener('click', async ()
   if(ok){
     accessPanelUnlocked = true;
     document.getElementById('masterPwOverlay').classList.remove('open');
-    openAccessSheet();
+    if(masterPwIntent === 'unlockAll') unlockAllSystems(); else openAccessSheet();
   } else {
     document.getElementById('masterPwErr').textContent = 'No se pudo verificar la huella / Face ID.';
   }
@@ -3188,14 +3226,14 @@ async function deleteAndResyncPhotos(sys, row, fieldName, arr, idx, afterFn, sid
     await uploadOnePhotoToDrive(sistemaLabel, uidVal, arr[i], `${fieldName}_${Date.now()}_${i}.jpg`, payload.sheet, payload.uid, linkColumn);
   }
 }
-async function uploadOnePhotoToDrive(sistema, uid, base64DataUrl, filename, sheetName, sheetUid, linkColumn){
+async function uploadOnePhotoToDrive(sistema, uid, base64DataUrl, filename, sheetName, sheetUid, linkColumn, directLink){
   if(!state.sheetSync.url) return false;
   const base64 = base64DataUrl.includes(',') ? base64DataUrl.split(',')[1] : base64DataUrl;
   try{
     await fetch(state.sheetSync.url, {
       method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify({ action:'uploadPhoto', sistema, uid: String(uid), base64, mimeType:'image/jpeg', filename,
-        sheet: sheetName, sheetUid, linkColumn })
+        sheet: sheetName, sheetUid, linkColumn, directLink: !!directLink })
     });
     return true;
   }catch(e){ return false; }
@@ -3287,9 +3325,11 @@ async function pushNoteToSheet(sys, note){
 async function syncNotePhotosToDrive(sys, note){
   if(!state.sheetSync.enabled || !state.sheetSync.url) return;
   if(!note.photos || !note.photos.length) return;
+  const sistemaLabel = SYS[sys] ? SYS[sys].label : sys;
+  const uidVal = 'nota-' + note.id;
   let uploadedAny = false;
   for(let i=0; i<note.photos.length; i++){
-    const ok = await uploadOnePhotoToDrive('NOTAS', note.id, note.photos[i], `foto_${Date.now()}_${i}.jpg`, 'NOTAS', note.id, 'FOTOS_LINK');
+    const ok = await uploadOnePhotoToDrive(sistemaLabel, uidVal, note.photos[i], `foto_${Date.now()}_${i}.jpg`, 'NOTAS', note.id, 'FOTOS_LINK', true);
     if(ok) uploadedAny = true;
   }
   if(uploadedAny){
@@ -3335,12 +3375,13 @@ async function pullNotesFromSheet(silent){
       if(existing){
         const priorityVal = obj.PRIORIDAD === 'SI';
         const linkVal = obj.FOTOS_LINK || '';
-        if(existing.text !== text || existing.priority !== priorityVal || existing.fotosLink !== linkVal){
+        const recentlyEditedLocally = (Date.now() - new Date(existing.date).getTime()) < 60000;
+        if(!recentlyEditedLocally && (existing.text !== text || existing.priority !== priorityVal)){
           existing.text = text;
           existing.priority = priorityVal;
-          existing.fotosLink = linkVal;
           added++;
         }
+        if(linkVal && existing.fotosLink !== linkVal){ existing.fotosLink = linkVal; added++; }
         return;
       }
       const parsedDate = parseSheetEditDate(obj.FECHA);
