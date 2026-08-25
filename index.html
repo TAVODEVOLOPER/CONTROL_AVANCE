@@ -875,7 +875,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v7.0 · 25 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v7.1 · 25 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -3047,20 +3047,15 @@ async function syncPhotosToDrive(sys, row){
   const uid = row[cfg.idField];
   const payload = sheetRowPayload(sys, row);
   const fields = PHOTO_FIELDS_BY_SYS[sys] || [];
-  if(!row._driveUploaded) row._driveUploaded = {};
   let uploadedAny = false;
   for(const f of fields){
     const arr = row[f] || [];
-    const already = row._driveUploaded[f] || 0;
-    if(already >= arr.length) continue;
-    for(let i=already; i<arr.length; i++){
+    for(let i=0; i<arr.length; i++){
       const ok = await uploadOnePhotoToDrive(SYS[sys].label, uid, arr[i], `${f}_${Date.now()}_${i}.jpg`, payload.sheet, payload.uid, 'FOTOS_LINK');
       if(ok) uploadedAny = true;
     }
-    row._driveUploaded[f] = arr.length;
   }
   if(uploadedAny){
-    scheduleSave();
     // El Apps Script ya escribió el enlace directo en Sheets; lo traemos de vuelta
     // unos segundos después para mostrarlo en la app sin depender de leer la respuesta del POST.
     setTimeout(()=> pullFromSheet(sys, true).then(()=>{ if(currentDetailItem===uid) refreshOpenDetailDriveLink(sys); }), 4000);
@@ -3072,20 +3067,15 @@ async function syncCableSidePhotosToDrive(row, side){
   const payload = sheetRowPayload('cableado', row);
   const linkColumn = side === 'from' ? 'From_Fotos_Link' : 'To_Fotos_Link';
   const fields = ['conexionadoPhotos','obsPhotos'];
-  if(!obj._driveUploaded) obj._driveUploaded = {};
   let uploadedAny = false;
   for(const f of fields){
     const arr = obj[f] || [];
-    const already = obj._driveUploaded[f] || 0;
-    if(already >= arr.length) continue;
-    for(let i=already; i<arr.length; i++){
+    for(let i=0; i<arr.length; i++){
       const ok = await uploadOnePhotoToDrive(SYS.cableado.label, uid, arr[i], `${f}_${Date.now()}_${i}.jpg`, payload.sheet, payload.uid, linkColumn);
       if(ok) uploadedAny = true;
     }
-    obj._driveUploaded[f] = arr.length;
   }
   if(uploadedAny){
-    scheduleSave();
     setTimeout(()=> pullFromSheet('cableado', true).then(()=>{ if(currentDetailItem===row.id) refreshOpenDetailDriveLink('cableado'); }), 4000);
   }
 }
