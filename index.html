@@ -906,7 +906,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v8.4 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v8.5 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -3312,9 +3312,8 @@ async function pushNoteToSheet(sys, note){
   try{
     await fetch(state.sheetSync.url, {
       method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ action:'upsert', sheet:'NOTAS', uid: note.id,
-        headers:['UID','SISTEMA','TEXTO','PRIORIDAD','FECHA','FOTOS_LINK'],
-        values:[note.id, SYS[sys] ? SYS[sys].label : sys, note.text, note.priority ? 'SI' : 'NO', formatDateTime(note.date), note.fotosLink||''] })
+      body: JSON.stringify({ action:'upsertFields', sheet:'NOTAS', uid: note.id,
+        fields: { SISTEMA: SYS[sys] ? SYS[sys].label : sys, TEXTO: note.text, PRIORIDAD: note.priority ? 'SI' : 'NO', FECHA: formatDateTime(note.date) } })
     });
     state.sheetSync.lastSync = new Date().toISOString();
     scheduleSave();
