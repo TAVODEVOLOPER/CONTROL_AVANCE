@@ -372,6 +372,12 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .obs-mic-btn.recording{background:var(--brand-red); border-color:var(--brand-red); color:#fff; animation:pulseMic 1s infinite;}
 .insights-note-item.priority{border-left:3px solid var(--brand-red); background:var(--red-100); padding-left:8px; border-bottom:none; border-radius:0 6px 6px 0; margin-bottom:6px;}
 .insights-note-item{position:relative; padding-right:24px;}
+.note-photo-row{display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;}
+.note-photo-thumb{width:52px; height:52px; object-fit:cover; border-radius:6px; border:1px solid var(--steel-200);}
+.reminder-banner{position:fixed; top:-60px; left:0; right:0; z-index:850; background:#FFF3CD; color:#8A6300; padding:12px 16px; display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600; box-shadow:0 4px 14px rgba(0,0,0,.15); transition:top .3s ease;}
+.reminder-banner.show{top:0;}
+.reminder-banner button{border:none; background:rgba(138,99,0,.12); color:#8A6300; padding:6px 12px; border-radius:7px; font-weight:700; font-size:12.5px; flex:none;}
+@media(min-width:900px){ .reminder-banner{left:300px;} }
 .insights-note-del{position:absolute; top:8px; right:0; background:none; border:none; color:var(--steel-400); cursor:pointer; padding:2px;}
 .insights-note-priority-tag{display:inline-block; font-size:9.5px; font-weight:700; color:var(--brand-red-dark); background:var(--red-100); padding:1px 6px; border-radius:6px; margin-bottom:3px;}
 .insights-sys-select{width:100%; padding:9px 10px; border-radius:8px; border:1px solid var(--steel-300); font-size:13px; margin-bottom:14px; background:#fff;}
@@ -889,7 +895,7 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v7.9 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v8.0 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1273,6 +1279,40 @@ function switchSystem(sys){
   populateSelects();
   renderAll();
   if(document.getElementById('insightsPanel').classList.contains('open')) openInsights();
+  checkPriorityReminders(sys);
+}
+function checkPriorityReminders(sys){
+  if(!state.notes || !state.notes[sys]) return;
+  const priorityNotes = state.notes[sys].filter(n=>n.priority);
+  if(priorityNotes.length === 0){ hideReminderBanner(); return; }
+  showReminderBanner(sys, priorityNotes);
+}
+function showReminderBanner(sys, notes){
+  let banner = document.getElementById('reminderBanner');
+  if(!banner){
+    banner = document.createElement('div');
+    banner.id = 'reminderBanner';
+    banner.className = 'reminder-banner';
+    document.body.appendChild(banner);
+  }
+  banner.innerHTML = `
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span style="flex:1;">${notes.length} recordatorio(s) prioritario(s) en ${SYS[sys].label}</span>
+    <button id="btnViewReminders">Ver</button>
+    <button id="btnDismissReminder" title="Cerrar">✕</button>
+  `;
+  banner.classList.add('show');
+  document.getElementById('btnViewReminders').addEventListener('click', ()=>{
+    hideReminderBanner();
+    insightsActiveSys = sys;
+    openInsights();
+    document.getElementById('btnGoNotas').click();
+  });
+  document.getElementById('btnDismissReminder').addEventListener('click', hideReminderBanner);
+}
+function hideReminderBanner(){
+  const banner = document.getElementById('reminderBanner');
+  if(banner) banner.classList.remove('show');
 }
 
 /* ===================== Panel de Avance / Rendimiento (derecha) ===================== */
@@ -1551,8 +1591,9 @@ function renderNotesPanel(){
     <textarea class="insights-notes-input" id="notesTextarea" placeholder="Escribe una nota, o dicta con el micrófono..."></textarea>
     <div class="insights-priority-row">
       <input type="checkbox" id="notesPriorityCheck">
-      <label for="notesPriorityCheck">Marcar como recordatorio prioritario</label>
+      <label for="notesPriorityCheck">Marcar como recordatorio prioritario (avisa al entrar al sistema)</label>
     </div>
+    <div class="photo-grid" id="notesPhotoGrid" style="margin-bottom:10px;"><label class="photo-add brand-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir foto<input type="file" accept="image/*" id="notesPhotoInput"></label></div>
     <div class="insights-notes-row">
       <button class="insights-mic-btn" id="btnNotesMic" title="Dictar por voz">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
@@ -1565,8 +1606,10 @@ function renderNotesPanel(){
         <button class="insights-note-del" data-del="${n.id}" title="Borrar nota">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
         </button>
-        ${n.priority ? '<span class="insights-note-priority-tag">PRIORIDAD</span><br>' : ''}
+        ${n.priority ? '<span class="insights-note-priority-tag">RECORDATORIO</span><br>' : ''}
         <div class="insights-note-date">${formatDateTime(n.date)}</div>${escapeHtml(n.text)}
+        ${(n.photos && n.photos.length) ? `<div class="note-photo-row">${n.photos.map(p=>`<img src="${p}" class="note-photo-thumb">`).join('')}</div>` : ''}
+        ${n.fotosLink ? `<a href="${n.fotosLink}" target="_blank" rel="noopener" class="drive-link-note" style="display:inline-block; margin-top:4px;">📁 Ver fotos en Drive</a>` : ''}
       </div>`).join('') : '<div style="font-size:12px; color:var(--steel-500);">Todavía no hay notas guardadas para este sistema.</div>'}</div>
   `;
   document.getElementById('btnNotesBack').addEventListener('click', showInsightsMenu);
@@ -1574,15 +1617,18 @@ function renderNotesPanel(){
     insightsActiveSys = e.target.value;
     renderNotesPanel();
   });
+  let notesDraftPhotos = [];
+  wirePhotoInput(document.getElementById('notesPhotoInput'), document.getElementById('notesPhotoGrid'), ()=> notesDraftPhotos, ()=>{});
   document.getElementById('btnNotesSave').addEventListener('click', ()=>{
     const ta = document.getElementById('notesTextarea');
     const text = ta.value.trim();
     if(!text) return;
     const priority = document.getElementById('notesPriorityCheck').checked;
-    const note = { id: 'note-' + Date.now() + '-' + Math.random().toString(36).slice(2,7), text, date: new Date().toISOString(), priority };
+    const note = { id: 'note-' + Date.now() + '-' + Math.random().toString(36).slice(2,7), text, date: new Date().toISOString(), priority, photos: notesDraftPhotos.slice() };
     state.notes[insightsActiveSys].push(note);
     scheduleSave();
     pushNoteToSheet(insightsActiveSys, note);
+    syncNotePhotosToDrive(insightsActiveSys, note);
     showToast('Nota guardada y sincronizada');
     renderNotesPanel();
   });
@@ -3158,13 +3204,25 @@ async function pushNoteToSheet(sys, note){
     await fetch(state.sheetSync.url, {
       method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify({ action:'upsert', sheet:'NOTAS', uid: note.id,
-        headers:['UID','SISTEMA','TEXTO','PRIORIDAD','FECHA'],
-        values:[note.id, SYS[sys] ? SYS[sys].label : sys, note.text, note.priority ? 'SI' : 'NO', formatDateTime(note.date)] })
+        headers:['UID','SISTEMA','TEXTO','PRIORIDAD','FECHA','FOTOS_LINK'],
+        values:[note.id, SYS[sys] ? SYS[sys].label : sys, note.text, note.priority ? 'SI' : 'NO', formatDateTime(note.date), note.fotosLink||''] })
     });
     state.sheetSync.lastSync = new Date().toISOString();
     scheduleSave();
   }catch(e){
     showToast('Sin conexión: la nota se guardó en el celular y se subirá cuando vuelva la señal');
+  }
+}
+async function syncNotePhotosToDrive(sys, note){
+  if(!state.sheetSync.enabled || !state.sheetSync.url) return;
+  if(!note.photos || !note.photos.length) return;
+  let uploadedAny = false;
+  for(let i=0; i<note.photos.length; i++){
+    const ok = await uploadOnePhotoToDrive('NOTAS', note.id, note.photos[i], `foto_${Date.now()}_${i}.jpg`, 'NOTAS', note.id, 'FOTOS_LINK');
+    if(ok) uploadedAny = true;
+  }
+  if(uploadedAny){
+    setTimeout(()=> pullNotesFromSheet(true).then(ok=>{ if(ok && document.getElementById('notesList')) renderNotesPanel(); }), 4000);
   }
 }
 async function deleteNoteFromSheet(id){
@@ -3202,10 +3260,13 @@ async function pullNotesFromSheet(silent){
         return;
       }
       idsInSheet.add(sysKey + '|' + id);
-      const exists = state.notes[sysKey].some(n=>n.id===id);
-      if(exists) return;
+      const existing = state.notes[sysKey].find(n=>n.id===id);
+      if(existing){
+        if(obj.FOTOS_LINK && existing.fotosLink !== obj.FOTOS_LINK){ existing.fotosLink = obj.FOTOS_LINK; added++; }
+        return;
+      }
       const parsedDate = parseSheetEditDate(obj.FECHA);
-      state.notes[sysKey].push({ id, text, date: parsedDate || new Date().toISOString(), priority: obj.PRIORIDAD === 'SI' });
+      state.notes[sysKey].push({ id, text, date: parsedDate || new Date().toISOString(), priority: obj.PRIORIDAD === 'SI', fotosLink: obj.FOTOS_LINK || '' });
       added++;
     });
     // Reconciliación: si una nota local ya no aparece EN ABSOLUTO en la hoja (se borró
