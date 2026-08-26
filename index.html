@@ -393,6 +393,18 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .doc-item .date{font-size:10.5px; color:var(--steel-500); margin-top:1px;}
 .doc-upload-label{display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:12px; border-radius:10px; border:1.5px dashed var(--steel-300); background:var(--steel-050); color:var(--steel-600); font-size:12.5px; font-weight:600; cursor:pointer; margin-bottom:16px;}
 .doc-upload-label input{display:none;}
+.rest-item{border-left:3px solid var(--steel-300); background:var(--steel-050); border-radius:0 8px 8px 0; padding:10px 12px; margin-bottom:10px; font-size:12.5px;}
+.rest-item-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;}
+.rest-cat-tag{font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px;}
+.rest-estado-tag{font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--steel-200); color:var(--steel-600);}
+.rest-estado-tag.liberada{background:var(--green-100); color:var(--green-600);}
+.rest-tag-name{font-weight:700; color:var(--navy-900); margin-bottom:3px;}
+.rest-desc{color:var(--ink-700); margin-bottom:4px; line-height:1.4;}
+.rest-accion, .rest-frente{color:var(--steel-600); font-size:11.5px; margin-bottom:2px;}
+.rest-actions{display:flex; gap:8px; margin-top:8px;}
+.rest-btn-liberar{border:none; background:var(--green-100); color:var(--green-600); font-size:11px; font-weight:700; padding:5px 10px; border-radius:7px; cursor:pointer;}
+.rest-btn-del{border:none; background:var(--red-100); color:var(--brand-red-dark); font-size:11px; font-weight:700; padding:5px 10px; border-radius:7px; cursor:pointer;}
+.rest-quick-btn{flex:none; width:44px; font-size:17px; padding:0;}
 @media(min-width:900px){
   .insights-overlay{display:none !important;}
   .insights-open-btn{width:auto; padding:0 12px; gap:6px; border-radius:8px;}
@@ -503,6 +515,11 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
     <button class="insights-menu-btn" id="btnGoDocs">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       <div><div class="t">Documentos</div><div class="s">Manuales y PDF por sistema</div></div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chev"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <button class="insights-menu-btn" id="btnGoRestricciones">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+      <div><div class="t">Restricciones</div><div class="s">Bloqueos MAT / INT / PRE / DOC</div></div>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chev"><polyline points="9 18 15 12 9 6"/></svg>
     </button>
   </div>
@@ -622,7 +639,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
         <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="drive-link-row"><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="hvacDriveLink" style="display:none;">📁 Ver fotos en Drive</a><div class="upload-progress-bar" id="hvacUploadBar"><div class="fill"></div></div></div><div class="photo-grid" id="hvacObsPhotoGrid"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="hvacObsPhotoInput"></label></div></div>
       </div>
     </div>
-    <div class="sheet-footer"><button class="btn-ghost" id="hvacCloseDetail2">Cerrar</button><button class="btn-primary" id="hvacSaveDetail">Guardar cambios</button></div>
+    <div class="sheet-footer"><button class="btn-ghost rest-quick-btn" id="btnRestHvac" title="Registrar restricción">⚠</button><button class="btn-ghost" id="hvacCloseDetail2">Cerrar</button><button class="btn-primary" id="hvacSaveDetail">Guardar cambios</button></div>
   </div>
 </div>
 
@@ -635,7 +652,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <button class="sheet-close" id="cableCloseDetail1"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="sheet-body" id="cableSheetBody"></div>
-    <div class="sheet-footer"><button class="btn-ghost" id="cableCloseDetail2">Cerrar</button><button class="btn-primary" id="cableSaveDetail">Guardar cambios</button></div>
+    <div class="sheet-footer"><button class="btn-ghost rest-quick-btn" id="btnRestCable" title="Registrar restricción">⚠</button><button class="btn-ghost" id="cableCloseDetail2">Cerrar</button><button class="btn-primary" id="cableSaveDetail">Guardar cambios</button></div>
   </div>
 </div>
 
@@ -674,7 +691,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
         <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="drive-link-row"><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="fdsDriveLink" style="display:none;">📁 Ver fotos en Drive</a><div class="upload-progress-bar" id="fdsUploadBar"><div class="fill"></div></div></div><div class="photo-grid" id="fdsObsPhotoGrid"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="fdsObsPhotoInput"></label></div></div>
       </div>
     </div>
-    <div class="sheet-footer"><button class="btn-ghost" id="fdsCloseDetail2">Cerrar</button><button class="btn-primary" id="fdsSaveDetail">Guardar cambios</button></div>
+    <div class="sheet-footer"><button class="btn-ghost rest-quick-btn" id="btnRestFds" title="Registrar restricción">⚠</button><button class="btn-ghost" id="fdsCloseDetail2">Cerrar</button><button class="btn-primary" id="fdsSaveDetail">Guardar cambios</button></div>
   </div>
 </div>
 
@@ -706,7 +723,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
         <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="drive-link-row"><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="transitDriveLink" style="display:none;">📁 Ver fotos en Drive</a><div class="upload-progress-bar" id="transitUploadBar"><div class="fill"></div></div></div><div class="photo-grid" id="transitObsPhotoGrid" style="display:none;"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="transitObsPhotoInput"></label></div></div>
       </div>
     </div>
-    <div class="sheet-footer"><button class="btn-ghost" id="transitCloseDetail2">Cerrar</button><button class="btn-primary" id="transitSaveDetail">Guardar cambios</button></div>
+    <div class="sheet-footer"><button class="btn-ghost rest-quick-btn" id="btnRestTransit" title="Registrar restricción">⚠</button><button class="btn-ghost" id="transitCloseDetail2">Cerrar</button><button class="btn-primary" id="transitSaveDetail">Guardar cambios</button></div>
   </div>
 </div>
 
@@ -728,7 +745,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
         <div class="field-group" style="margin-bottom:0;"><label>Foto de incidencia</label><div class="drive-link-row"><a href="#" target="_blank" rel="noopener" class="drive-link-note" id="timbradoDriveLink" style="display:none;">📁 Ver fotos en Drive</a><div class="upload-progress-bar" id="timbradoUploadBar"><div class="fill"></div></div></div><div class="photo-grid" id="timbradoObsPhotoGrid"><label class="photo-add incident"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="timbradoObsPhotoInput"></label></div></div>
       </div>
     </div>
-    <div class="sheet-footer"><button class="btn-ghost" id="timbradoCloseDetail2">Cerrar</button><button class="btn-primary" id="timbradoSaveDetail">Guardar cambios</button></div>
+    <div class="sheet-footer"><button class="btn-ghost rest-quick-btn" id="btnRestTimbrado" title="Registrar restricción">⚠</button><button class="btn-ghost" id="timbradoCloseDetail2">Cerrar</button><button class="btn-primary" id="timbradoSaveDetail">Guardar cambios</button></div>
   </div>
 </div>
 
@@ -906,7 +923,19 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
-const APP_VERSION = 'v8.5 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+// Clave secreta que el Apps Script exige en cada petición — cámbiala aquí Y en el Apps Script
+// (deben ser IDÉNTICAS en los dos lados). No detiene a alguien que lea este código fuente,
+// pero bloquea bots y peticiones automáticas que encuentren la URL del Apps Script sin pasar
+// por la app.
+const APP_SECRET = 'DRAGADOS-2026-CAMBIA-ESTO';
+function sheetUrl(queryString){
+  const sep = queryString.includes('?') ? '&' : '?';
+  return `${state.sheetSync.url}${queryString}${sep}key=${encodeURIComponent(APP_SECRET)}`;
+}
+function sheetPostBody(obj){
+  return JSON.stringify({ ...obj, key: APP_SECRET });
+}
+const APP_VERSION = 'v9.1 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1346,17 +1375,79 @@ function computeSysStats(sys){
   const obs = rows.filter(r=>hasObservation(sys,r)).length;
   return {total, complete, obs};
 }
+// ===================== Reglas de crédito (avance ponderado) =====================
+// Cada campo existente pesa un % dentro del 100% del Tag. No se inventan campos
+// nuevos — se usan los que ya se cargan en campo hoy. SI = crédito completo,
+// TEMPORAL/PROVISIONAL = medio crédito (avanzado pero no cerrado del todo).
+const CREDIT_WEIGHTS = {
+  hvac: { soporte:25, miniruta:20, conexionado:25, megado:15, tubing:15 },
+  fds: { soporte:20, equipo:20, minirutas:20, cableado:20, conexionado:20 },
+  cableado: { minirutas:20, tendido:20, gland:20, conexionado:40 }, // aplica por lado (Desde/Hasta)
+  transit: { construccion:15, limpieza:14, pintura:14, etiquetas_cables:14, identificacion_transit:14, fotografia:14, estado_final:15 },
+  timbrado: { timbrado:100 }
+};
+function weightedFieldCredit(val, weight){
+  if(val === 'SI') return weight;
+  if(val === 'TEMPORAL' || val === 'PROVISIONAL') return weight * 0.5;
+  return 0;
+}
+function weightedProgress(sys, row){
+  const weights = CREDIT_WEIGHTS[sys];
+  if(!weights) return 0;
+  let total = 0;
+  Object.keys(weights).forEach(f=>{ total += weightedFieldCredit(row[f], weights[f]); });
+  return Math.round(total);
+}
+function weightedProgressCable(row){
+  const w = CREDIT_WEIGHTS.cableado;
+  let fromTotal = 0, toTotal = 0;
+  Object.keys(w).forEach(f=>{
+    fromTotal += weightedFieldCredit(row.from[f], w[f]);
+    toTotal += weightedFieldCredit(row.to[f], w[f]);
+  });
+  return { from: Math.round(fromTotal), to: Math.round(toTotal) };
+}
+// Avance ponderado promedio de todo un sistema (0-100), en vez de solo contar "completos".
+function weightedSystemAverage(sys, rows){
+  if(sys === 'cableado'){
+    let sum = 0, n = 0;
+    rows.forEach(r=>{ const wp = weightedProgressCable(r); sum += wp.from + wp.to; n += 2; });
+    return n ? Math.round(sum/n) : 0;
+  }
+  if(!rows.length) return 0;
+  const sum = rows.reduce((acc,r)=> acc + weightedProgress(sys, r), 0);
+  return Math.round(sum / rows.length);
+}
 let insightsActiveSys = 'hvac';
 function sysSelectHtml(id){
   return `<select class="insights-sys-select" id="${id}">${SYS_ORDER.map(s=>`<option value="${s}" ${s===insightsActiveSys?'selected':''}>${SYS[s].label}</option>`).join('')}</select>`;
 }
+let insightsGroupBy = 'general'; // 'general' | 'level' | 'area'
+function rowsForSys(sys){ return sys==='cableado' ? state.cableado : state[sys]; }
+function groupOptionsForSys(sys){
+  const opts = [{ v:'general', l:'General' }];
+  if(sys==='hvac' || sys==='fds' || sys==='transit' || sys==='cableado') opts.push({ v:'level', l:'Por Nivel' });
+  if(SYS[sys].hasArea) opts.push({ v:'area', l:'Por Área' });
+  return opts;
+}
+function groupValueOf(sys, row, groupBy){
+  if(sys === 'cableado'){
+    if(groupBy==='level') return row.level || '—';
+    if(groupBy==='area') return row.from_area || row.to_area || '—';
+  } else {
+    if(groupBy==='level') return row.level || '—';
+    if(groupBy==='area') return row.area || '—';
+  }
+  return '—';
+}
 function renderInsights(){
   const sys = insightsActiveSys;
   document.getElementById('insightsSysLabel').textContent = SYS[sys].label;
+  const rows = rowsForSys(sys);
   const {total, complete, obs} = computeSysStats(sys);
-  const pct = total ? Math.round(complete/total*100) : 0;
+  const weightedPct = weightedSystemAverage(sys, rows);
   const circumference = 2*Math.PI*30;
-  const dash = circumference * (pct/100);
+  const dash = circumference * (weightedPct/100);
 
   const weeks = weeklySummaryRows(sys).slice(-6);
   const maxVal = Math.max(1, ...weeks.map(w=>w.complete+w.inProgress));
@@ -1375,20 +1466,51 @@ function renderInsights(){
     </div>`;
   }).join('');
 
+  const groupOpts = groupOptionsForSys(sys);
+  const groupSelectHtml = `<select class="insights-sys-select" id="avanceGroupSelect">${groupOpts.map(o=>`<option value="${o.v}" ${o.v===insightsGroupBy?'selected':''}>${o.l}</option>`).join('')}</select>`;
+
+  let groupedHtml = '';
+  if(insightsGroupBy !== 'general'){
+    const groups = {};
+    rows.forEach(r=>{
+      const key = groupValueOf(sys, r, insightsGroupBy);
+      if(!groups[key]) groups[key] = [];
+      groups[key].push(r);
+    });
+    const sortedKeys = Object.keys(groups).sort((a,b)=> a.localeCompare(b, undefined, {numeric:true}));
+    groupedHtml = sortedKeys.map(key=>{
+      const groupRows = groups[key];
+      const groupPct = weightedSystemAverage(sys, groupRows);
+      const color = groupPct >= 80 ? 'var(--green-600)' : groupPct >= 40 ? '#C79100' : 'var(--brand-red)';
+      return `<div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--steel-100);">
+        <svg width="40" height="40" viewBox="0 0 40 40" style="flex:none;">
+          <circle cx="20" cy="20" r="16" fill="none" stroke="var(--steel-200)" stroke-width="5"/>
+          <circle cx="20" cy="20" r="16" fill="none" stroke="${color}" stroke-width="5" stroke-linecap="round"
+            stroke-dasharray="${2*Math.PI*16*(groupPct/100)} ${2*Math.PI*16}" transform="rotate(-90 20 20)"/>
+          <text x="20" y="24" text-anchor="middle" style="font-size:10px; font-weight:700; fill:var(--navy-900);">${groupPct}</text>
+        </svg>
+        <div style="flex:1;">
+          <div style="font-size:12.5px; font-weight:600; color:var(--navy-900);">${escapeHtml(key)}</div>
+          <div style="font-size:10.5px; color:var(--steel-500);">${groupRows.length} registro(s)</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
   document.getElementById('insightsBody').innerHTML = `
     <button class="insights-back-btn" id="btnAvanceBack"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Volver</button>
     ${sysSelectHtml('avanceSysSelect')}
-    <div class="insights-section-label">Avance</div>
+    <div class="insights-section-label">Avance ponderado (reglas de crédito)</div>
     <div class="insights-ring-row">
       <svg width="72" height="72" viewBox="0 0 72 72">
         <circle cx="36" cy="36" r="30" fill="none" stroke="var(--steel-200)" stroke-width="8"/>
         <circle cx="36" cy="36" r="30" fill="none" stroke="var(--green-600)" stroke-width="8" stroke-linecap="round"
           stroke-dasharray="${dash} ${circumference}" transform="rotate(-90 36 36)"/>
-        <text x="36" y="41" text-anchor="middle" class="insights-ring-num">${pct}%</text>
+        <text x="36" y="41" text-anchor="middle" class="insights-ring-num">${weightedPct}%</text>
       </svg>
       <div>
         <div class="insights-ring-label">Avance general</div>
-        <div class="insights-ring-sub">${complete} de ${total} completos</div>
+        <div class="insights-ring-sub">Ponderado por hitos, no solo "completo/pendiente"</div>
       </div>
     </div>
     <div class="insights-stats-grid">
@@ -1396,17 +1518,26 @@ function renderInsights(){
       <div class="insights-stat" style="background:var(--steel-050);"><div class="n" style="color:var(--navy-900);">${total-complete}</div><div class="l" style="color:var(--steel-500);">Pendientes</div></div>
       <div class="insights-stat" style="background:var(--red-100);"><div class="n" style="color:var(--brand-red-dark);">${obs}</div><div class="l" style="color:var(--brand-red-dark);">Observados</div></div>
     </div>
+    <div class="insights-section-label">Ver avance agrupado</div>
+    ${groupSelectHtml}
+    ${groupedHtml || (insightsGroupBy!=='general' ? '<div style="font-size:12px; color:var(--steel-500); margin-bottom:14px;">No hay datos para agrupar.</div>' : '')}
     <div class="insights-section-label">Rendimiento — completados por semana</div>
     <div class="insights-chart-wrap">
       ${weeks.length ? `<div style="display:flex; gap:6px; align-items:flex-end;">${chartBars}</div>` : `<div style="font-size:12px; color:var(--steel-500);">Todavía no hay suficientes datos para mostrar el gráfico.</div>`}
     </div>
-    <div class="insights-section-label">Planificación</div>
-    <div class="insights-planning-box">Las metas y fechas planificadas todavía no están configuradas para este sistema. Avísame y las armamos juntos.</div>
   `;
   document.getElementById('avanceSysSelect').addEventListener('change', (e)=>{
     insightsActiveSys = e.target.value;
+    insightsGroupBy = 'general';
     renderInsights();
   });
+  const groupSel = document.getElementById('avanceGroupSelect');
+  if(groupSel){
+    groupSel.addEventListener('change', (e)=>{
+      insightsGroupBy = e.target.value;
+      renderInsights();
+    });
+  }
 }
 function showInsightsMenu(){
   document.getElementById('insightsTitle').textContent = 'Panel';
@@ -1487,6 +1618,270 @@ document.getElementById('btnGoDocs').addEventListener('click', ()=>{
   renderDocsPanel();
   pullDocumentsFromSheet(true).then(ok=>{ if(ok) renderDocsPanel(); });
 });
+/* ===================== Restricciones (bloqueos MAT/INT/PRE/DOC) ===================== */
+const RESTRICCION_CATS = {
+  MAT: { label:'Material', color:'#B81219', bg:'#FCE4E4' },
+  INT: { label:'Interferencia', color:'#8A6300', bg:'#FFF3CD' },
+  PRE: { label:'Precedencia', color:'#053E7A', bg:'#EDF5FC' },
+  DOC: { label:'Documentación', color:'#5B3A99', bg:'#F0E9FB' }
+};
+document.getElementById('btnGoRestricciones').addEventListener('click', ()=>{
+  document.getElementById('insightsTitle').textContent = 'Restricciones';
+  document.getElementById('insightsMenu').style.display = 'none';
+  const body = document.getElementById('insightsBody');
+  body.style.display = '';
+  renderRestriccionesPanel();
+  pullRestriccionesFromSheet(true).then(ok=>{ if(ok) renderRestriccionesPanel(); });
+});
+function renderRestriccionesPanel(){
+  if(!state.restricciones) state.restricciones = {};
+  if(!state.restricciones[insightsActiveSys]) state.restricciones[insightsActiveSys] = [];
+  const items = state.restricciones[insightsActiveSys];
+  const abiertas = items.filter(r=>r.estado!=='Liberada');
+  document.getElementById('insightsBody').innerHTML = `
+    <button class="insights-back-btn" id="btnRestBack"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Volver</button>
+    ${sysSelectHtml('restSysSelect')}
+    <div class="insights-planning-box" style="margin-bottom:14px;">${abiertas.length} restricción(es) abierta(s) de ${items.length} registradas para ${SYS[insightsActiveSys].label}.</div>
+    <button class="insights-menu-btn" id="btnRestNew" style="margin-bottom:14px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <div><div class="t">Registrar restricción</div><div class="s">Componente, categoría, acción requerida</div></div>
+    </button>
+    <button class="doc-upload-label" id="btnRestPdf" style="border-style:solid; background:#fff;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Descargar informe de restricciones (PDF)
+    </button>
+    <div class="insights-section-label">Restricciones (${SYS[insightsActiveSys].label})</div>
+    <div id="restList">${items.length ? items.slice().reverse().map(r=>{
+      const cat = RESTRICCION_CATS[r.categoria] || RESTRICCION_CATS.DOC;
+      const liberada = r.estado === 'Liberada';
+      return `<div class="rest-item" style="border-left-color:${cat.color};">
+        <div class="rest-item-top">
+          <span class="rest-cat-tag" style="background:${cat.bg}; color:${cat.color};">${r.categoria} · ${cat.label}</span>
+          <span class="rest-estado-tag ${liberada?'liberada':''}">${r.estado}</span>
+        </div>
+        <div class="rest-tag-name">${escapeHtml(r.tag||'—')}</div>
+        <div class="rest-desc">${escapeHtml(r.descripcion)}</div>
+        ${r.accion ? `<div class="rest-accion"><b>Acción requerida:</b> ${escapeHtml(r.accion)}</div>` : ''}
+        ${r.frente ? `<div class="rest-frente"><b>Frente responsable:</b> ${escapeHtml(r.frente)}</div>` : ''}
+        <div class="insights-note-date">${formatDateTime(r.date)}</div>
+        <div class="rest-actions">
+          ${!liberada ? `<button class="rest-btn-liberar" data-liberar="${r.id}">Marcar como liberada</button>` : ''}
+          <button class="rest-btn-del" data-restdel="${r.id}">Borrar</button>
+        </div>
+      </div>`;
+    }).join('') : '<div style="font-size:12px; color:var(--steel-500);">Todavía no hay restricciones registradas para este sistema.</div>'}</div>
+  `;
+  document.getElementById('btnRestBack').addEventListener('click', showInsightsMenu);
+  document.getElementById('restSysSelect').addEventListener('change', (e)=>{
+    insightsActiveSys = e.target.value;
+    renderRestriccionesPanel();
+  });
+  document.getElementById('btnRestNew').addEventListener('click', showRestriccionForm);
+  document.getElementById('btnRestPdf').addEventListener('click', ()=> buildRestriccionesPDF(insightsActiveSys));
+  document.querySelectorAll('[data-liberar]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const item = items.find(r=>r.id===btn.dataset.liberar);
+      if(!item) return;
+      item.estado = 'Liberada';
+      item.date = new Date().toISOString();
+      scheduleSave();
+      pushRestriccionToSheet(insightsActiveSys, item);
+      showToast('Restricción marcada como liberada');
+      renderRestriccionesPanel();
+    });
+  });
+  document.querySelectorAll('[data-restdel]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.dataset.restdel;
+      state.restricciones[insightsActiveSys] = items.filter(r=>r.id!==id);
+      scheduleSave();
+      deleteRestriccionFromSheet(id);
+      showToast('Restricción borrada');
+      renderRestriccionesPanel();
+    });
+  });
+}
+// Se llama desde el botón "⚠ Restricción" dentro de la ficha de cada Tag — abre el panel
+// directo en el formulario de nueva restricción, con el sistema y el Tag ya pre-llenados.
+function openRestriccionFormFor(sys, tagName){
+  insightsActiveSys = sys;
+  document.getElementById('insightsSysLabel').textContent = SYS[sys].label;
+  document.getElementById('insightsTitle').textContent = 'Restricciones';
+  document.getElementById('insightsOverlay').classList.add('open');
+  document.getElementById('insightsPanel').classList.add('open');
+  document.getElementById('insightsMenu').style.display = 'none';
+  document.getElementById('insightsBody').style.display = '';
+  showRestriccionForm();
+  const tagInput = document.getElementById('restTagInput');
+  if(tagInput) tagInput.value = tagName || '';
+}
+function showRestriccionForm(){
+  document.getElementById('insightsBody').innerHTML = `
+    <button class="insights-back-btn" id="btnRestFormBack"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Volver</button>
+    <div class="insights-section-label">Nueva restricción — ${SYS[insightsActiveSys].label}</div>
+    <div class="field-group"><label>Tag / componente afectado</label><input type="text" class="text-input" id="restTagInput" placeholder="Ej: =442.CCB05-UH03"></div>
+    <div class="field-group"><label>Categoría</label>
+      <select class="insights-sys-select" id="restCatSelect">
+        <option value="MAT">MAT — Falta de materiales</option>
+        <option value="INT">INT — Interferencia de obra</option>
+        <option value="PRE">PRE — Precedencia técnica pendiente</option>
+        <option value="DOC">DOC — Documentación / RFI / Planos</option>
+      </select>
+    </div>
+    <div class="field-group"><label>Descripción</label><textarea class="text-input" id="restDescInput" rows="3" placeholder="Qué está pasando..."></textarea></div>
+    <div class="field-group"><label>Acción requerida</label><input type="text" class="text-input" id="restAccionInput" placeholder="Qué hay que hacer para liberarla"></div>
+    <div class="field-group"><label>Frente responsable</label><input type="text" class="text-input" id="restFrenteInput" placeholder="Ej: Cuadrilla eléctrica, Oficina técnica..."></div>
+    <button class="insights-save-btn" id="btnRestSave" style="width:100%; padding:12px; margin-top:6px;">Guardar restricción</button>
+  `;
+  document.getElementById('btnRestFormBack').addEventListener('click', renderRestriccionesPanel);
+  document.getElementById('btnRestSave').addEventListener('click', ()=>{
+    const tag = document.getElementById('restTagInput').value.trim();
+    const descripcion = document.getElementById('restDescInput').value.trim();
+    if(!descripcion){ showToast('Escribe una descripción'); return; }
+    const item = {
+      id: 'rest-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),
+      tag, categoria: document.getElementById('restCatSelect').value,
+      descripcion, accion: document.getElementById('restAccionInput').value.trim(),
+      frente: document.getElementById('restFrenteInput').value.trim(),
+      estado: 'Abierta', date: new Date().toISOString()
+    };
+    if(!state.restricciones) state.restricciones = {};
+    if(!state.restricciones[insightsActiveSys]) state.restricciones[insightsActiveSys] = [];
+    state.restricciones[insightsActiveSys].push(item);
+    scheduleSave();
+    pushRestriccionToSheet(insightsActiveSys, item);
+    showToast('Restricción registrada');
+    renderRestriccionesPanel();
+  });
+}
+async function pushRestriccionToSheet(sys, item){
+  if(!state.sheetSync.enabled || !state.sheetSync.url) return;
+  try{
+    await fetch(state.sheetSync.url, {
+      method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: sheetPostBody({ action:'upsertFields', sheet:'RESTRICCIONES', uid: item.id,
+        fields: { SISTEMA: SYS[sys] ? SYS[sys].label : sys, TAG: item.tag, CATEGORIA: item.categoria,
+          DESCRIPCION: item.descripcion, ACCION: item.accion, FRENTE: item.frente, ESTADO: item.estado, FECHA: formatDateTime(item.date) } })
+    });
+    state.sheetSync.lastSync = new Date().toISOString();
+    scheduleSave();
+  }catch(e){
+    showToast('Sin conexión: se guardó en el celular y se subirá cuando vuelva la señal');
+  }
+}
+async function deleteRestriccionFromSheet(id){
+  if(!state.sheetSync.enabled || !state.sheetSync.url) return;
+  try{
+    await fetch(state.sheetSync.url, {
+      method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: sheetPostBody({ action:'deleteRow', sheet:'RESTRICCIONES', uid: id })
+    });
+  }catch(e){}
+}
+async function pullRestriccionesFromSheet(silent){
+  if(!state.sheetSync.url) return false;
+  try{
+    const res = await fetch(sheetUrl(`?sheet=${encodeURIComponent('RESTRICCIONES')}`), { method:'GET' });
+    const rows = await res.json();
+    if(!state.restricciones) state.restricciones = {};
+    const sysByLabel = {};
+    Object.keys(SYS).forEach(k=> sysByLabel[SYS[k].label] = k);
+    const idsInSheet = new Set();
+    let changed = false;
+    rows.forEach(obj=>{
+      const id = obj.UID; if(!id) return;
+      const sysKey = sysByLabel[obj.SISTEMA] || obj.SISTEMA;
+      if(!SYS[sysKey]) return;
+      if(!state.restricciones[sysKey]) state.restricciones[sysKey] = [];
+      idsInSheet.add(sysKey + '|' + id);
+      const entry = { id, tag: obj.TAG||'', categoria: obj.CATEGORIA||'DOC', descripcion: obj.DESCRIPCION||'',
+        accion: obj.ACCION||'', frente: obj.FRENTE||'', estado: obj.ESTADO||'Abierta', date: parseSheetEditDate(obj.FECHA) || new Date().toISOString() };
+      const existing = state.restricciones[sysKey].find(r=>r.id===id);
+      const recentlyEditedLocally = existing && (Date.now() - new Date(existing.date).getTime()) < 60000;
+      if(existing){
+        if(!recentlyEditedLocally){ Object.assign(existing, entry); changed = true; }
+      } else {
+        state.restricciones[sysKey].push(entry); changed = true;
+      }
+    });
+    const cutoff = Date.now() - 60000;
+    Object.keys(state.restricciones).forEach(sysKey=>{
+      const before = state.restricciones[sysKey].length;
+      state.restricciones[sysKey] = state.restricciones[sysKey].filter(r=>{
+        if(idsInSheet.has(sysKey+'|'+r.id)) return true;
+        return (Date.now() - new Date(r.date).getTime()) < cutoff;
+      });
+      if(state.restricciones[sysKey].length !== before) changed = true;
+    });
+    if(changed) scheduleSave();
+    return true;
+  }catch(e){ return false; }
+}
+async function buildRestriccionesPDF(sys){
+  if(!window.jspdf || !window.jspdf.jsPDF){ showToast('No se pudo cargar el generador de PDF.'); return; }
+  const items = (state.restricciones && state.restricciones[sys]) ? state.restricciones[sys] : [];
+  if(!items.length){ showToast('No hay restricciones registradas para este sistema'); return; }
+  showToast('Generando PDF...');
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'pt', format:'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 32, footerH = 18;
+  let y = margin;
+  const logoImg = document.querySelector('.masthead img');
+  const logoSrc = logoImg ? logoImg.getAttribute('src') : null;
+  function drawHeader(){
+    y = margin;
+    if(logoSrc){ try{ doc.addImage(logoSrc, 'PNG', margin, y, 94, 17.8); }catch(e){} }
+    doc.setFont('helvetica','bold'); doc.setFontSize(19); doc.setTextColor(9,24,35);
+    doc.text('Informe de Restricciones', pageW/2, y+11, { align:'center' });
+    doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(7,80,156);
+    doc.text(SYS[sys].label, pageW/2, y+28, { align:'center' });
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(60,78,94);
+    doc.text(formatDateShort(new Date().toISOString()), pageW-margin, y+28, { align:'right' });
+    y = margin + 40;
+    const abiertas = items.filter(r=>r.estado!=='Liberada').length;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(100,110,120);
+    doc.text(`${items.length} restricción(es) total · ${abiertas} abierta(s)`, margin, y); y += 13;
+    doc.setDrawColor(200,200,200); doc.line(margin, y, pageW-margin, y); y += 20;
+  }
+  drawHeader();
+  const catColors = { MAT:[184,18,25], INT:[138,99,0], PRE:[5,62,122], DOC:[91,58,153] };
+  const catBg = { MAT:[252,228,228], INT:[255,243,205], PRE:[237,245,252], DOC:[240,233,251] };
+  for(const it of items.slice().reverse()){
+    const bg = catBg[it.categoria] || catBg.DOC, fg = catColors[it.categoria] || catColors.DOC;
+    const descLines = doc.splitTextToSize(it.descripcion || '', pageW - margin*2 - 12);
+    const accionLines = it.accion ? doc.splitTextToSize('Acción requerida: ' + it.accion, pageW - margin*2 - 12) : [];
+    const frenteLine = it.frente ? 1 : 0;
+    const boxH = 46 + descLines.length*12 + accionLines.length*12 + frenteLine*12;
+    if(y + boxH > pageH - footerH - 10){ doc.addPage(); drawHeader(); }
+    doc.setFillColor(bg[0],bg[1],bg[2]);
+    doc.roundedRect(margin, y, pageW-margin*2, boxH, 4, 4, 'F');
+    doc.setFillColor(fg[0],fg[1],fg[2]);
+    doc.rect(margin, y, 3, boxH, 'F');
+    let ty = y + 15;
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(fg[0],fg[1],fg[2]);
+    doc.text(`${it.categoria} · ${(RESTRICCION_CATS[it.categoria]||{}).label||''}   ·   ${it.estado}`, margin+10, ty); ty += 14;
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(9,24,35);
+    doc.text(it.tag || 'Sin tag asociado', margin+10, ty); ty += 13;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(50,60,70);
+    doc.text(descLines, margin+10, ty); ty += descLines.length*12;
+    if(accionLines.length){ doc.text(accionLines, margin+10, ty); ty += accionLines.length*12; }
+    if(it.frente){ doc.setFont('helvetica','italic'); doc.text('Frente: ' + it.frente, margin+10, ty); ty += 12; }
+    y += boxH + 10;
+  }
+  const pageCount = doc.internal.getNumberOfPages();
+  for(let p=1; p<=pageCount; p++){
+    doc.setPage(p);
+    doc.setDrawColor(225,225,225); doc.line(margin, pageH-footerH, pageW-margin, pageH-footerH);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(140,148,158);
+    doc.text('BY GUSTAVO_DEVELOPER', margin, pageH-7);
+    doc.text(`Página ${p} de ${pageCount}`, pageW-margin, pageH-7, { align:'right' });
+  }
+  doc.save(`Restricciones_${SYS[sys].label}_${dateStamp()}.pdf`);
+  showToast('PDF descargado');
+}
+
 function renderDocsPanel(){
   if(!state.documents) state.documents = {};
   if(!state.documents[insightsActiveSys]) state.documents[insightsActiveSys] = [];
@@ -1502,6 +1897,10 @@ function renderDocsPanel(){
     <button class="doc-upload-label" id="btnSyncDocsFolder" style="border-style:solid; background:#fff; margin-top:-8px;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
       Sincronizar desde Drive
+    </button>
+    <button class="doc-upload-label" id="btnInitDocsFolders" style="border-style:solid; background:#fff; margin-top:-8px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+      Crear carpetas de todos los sistemas en Drive
     </button>
     <div class="upload-progress-bar" id="docsUploadBar" style="width:100%; margin:8px 0 16px;"><div class="fill"></div></div>
     <div class="insights-section-label">Documentos de ${SYS[insightsActiveSys].label} (${docs.length})</div>
@@ -1525,7 +1924,7 @@ function renderDocsPanel(){
     try{
       await fetch(state.sheetSync.url, {
         method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify({ action:'syncDocsFolder', sistema: SYS[insightsActiveSys].label })
+        body: sheetPostBody({ action:'syncDocsFolder', sistema: SYS[insightsActiveSys].label })
       });
       await new Promise(r=>setTimeout(r, 3000));
       await pullDocumentsFromSheet(true);
@@ -1535,6 +1934,25 @@ function renderDocsPanel(){
     }catch(e){
       if(bar) bar.classList.remove('active');
       showToast('No se pudo sincronizar — revisa tu conexión');
+    }
+  });
+  document.getElementById('btnInitDocsFolders').addEventListener('click', async ()=>{
+    if(!state.sheetSync.url) return;
+    const bar = document.getElementById('docsUploadBar');
+    if(bar) bar.classList.add('active');
+    showToast('Creando carpetas en Drive...');
+    try{
+      const res = await fetch(sheetUrl('?action=initDocsFolders'), { method:'GET' });
+      const json = await res.json();
+      if(bar) bar.classList.remove('active');
+      if(json && json.ok){
+        showToast(`Listo — ${json.folders.length} carpeta(s) creada(s)/verificada(s) en CONTROL_AVANCE_DOCS`);
+      } else {
+        showToast('No se pudo crear las carpetas — revisa el Apps Script');
+      }
+    }catch(e){
+      if(bar) bar.classList.remove('active');
+      showToast('No se pudo conectar — revisa tu conexión');
     }
   });
   document.getElementById('docsFileInput').addEventListener('change', async (e)=>{
@@ -1563,7 +1981,7 @@ async function uploadDocToSheet(sys, nombre, filename, base64){
   try{
     await fetch(state.sheetSync.url, {
       method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ action:'uploadDoc', sistema: SYS[sys].label, nombre, filename, base64, mimeType:'application/pdf' })
+      body: sheetPostBody({ action:'uploadDoc', sistema: SYS[sys].label, nombre, filename, base64, mimeType:'application/pdf' })
     });
     // El Apps Script ya registró el documento en la pestaña DOCUMENTOS; lo traemos de vuelta.
     await new Promise(r=>setTimeout(r, 3000));
@@ -1574,7 +1992,7 @@ async function uploadDocToSheet(sys, nombre, filename, base64){
 async function pullDocumentsFromSheet(silent){
   if(!state.sheetSync.url) return false;
   try{
-    const res = await fetch(`${state.sheetSync.url}?sheet=${encodeURIComponent('DOCUMENTOS')}`, { method:'GET' });
+    const res = await fetch(sheetUrl(`?sheet=${encodeURIComponent('DOCUMENTOS')}`), { method:'GET' });
     const rows = await res.json();
     if(!state.documents) state.documents = {};
     const sysByLabel = {};
@@ -2580,6 +2998,10 @@ document.getElementById('hvacSaveDetail').addEventListener('click', ()=>{
   scheduleSave(); renderAll(); closeDetailHvac(); showToast('Cambios guardados');
   if(row) pushRowToSheet('hvac', row);
 });
+document.getElementById('btnRestHvac').addEventListener('click', ()=>{
+  const row = state.hvac.find(r=>r.uid===currentDetailItem);
+  openRestriccionFormFor('hvac', row ? row.tag : '');
+});
 
 /* ===================== CABLEADO detail ===================== */
 function sideFieldsHtml(prefix, tagLabel){
@@ -2719,6 +3141,10 @@ document.getElementById('cableSaveDetail').addEventListener('click', ()=>{
   scheduleSave(); renderAll(); closeDetailCable(); showToast('Cambios guardados');
   if(row) pushRowToSheet('cableado', row);
 });
+document.getElementById('btnRestCable').addEventListener('click', ()=>{
+  const row = state.cableado.find(r=>r.id===currentDetailItem);
+  openRestriccionFormFor('cableado', row ? row.cable : '');
+});
 
 /* ===================== FDS detail ===================== */
 function openDetailFds(id){
@@ -2799,6 +3225,10 @@ document.getElementById('fdsSaveDetail').addEventListener('click', ()=>{
   }
   scheduleSave(); renderAll(); closeDetailFds(); showToast('Cambios guardados');
   if(row) pushRowToSheet('fds', row);
+});
+document.getElementById('btnRestFds').addEventListener('click', ()=>{
+  const row = state.fds.find(r=>r.id===currentDetailItem);
+  openRestriccionFormFor('fds', row ? row.tag : '');
 });
 
 /* ===================== TRANSIT detail ===================== */
@@ -2884,6 +3314,10 @@ document.getElementById('transitSaveDetail').addEventListener('click', ()=>{
   scheduleSave(); renderAll(); closeDetailTransit(); showToast('Cambios guardados');
   if(row) pushRowToSheet('transit', row);
 });
+document.getElementById('btnRestTransit').addEventListener('click', ()=>{
+  const row = state.transit.find(r=>r.id===currentDetailItem);
+  openRestriccionFormFor('transit', row ? row.tag : '');
+});
 
 function openDetailTimbrado(id){
   const row = state.timbrado.find(r=>r.id===id);
@@ -2943,6 +3377,10 @@ document.getElementById('timbradoSaveDetail').addEventListener('click', ()=>{
   }
   scheduleSave(); renderAll(); closeDetailTimbrado(); showToast('Cambios guardados');
   if(row) pushRowToSheet('timbrado', row);
+});
+document.getElementById('btnRestTimbrado').addEventListener('click', ()=>{
+  const row = state.timbrado.find(r=>r.id===currentDetailItem);
+  openRestriccionFormFor('timbrado', row ? row.cable : '');
 });
 
 /* ===================== Filters UI ===================== */
@@ -3174,7 +3612,7 @@ async function pushRowToSheet(sys, row){
   try{
     await fetch(state.sheetSync.url, {
       method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ action:'upsert', ...payload })
+      body: sheetPostBody({ action:'upsert', ...payload })
     });
     state.sheetSync.lastSync = new Date().toISOString();
     if(idVal !== null) dequeueSyncRetry(sys, idVal);
@@ -3219,7 +3657,7 @@ async function deleteAndResyncPhotos(sys, row, fieldName, arr, idx, afterFn, sid
   try{
     await fetch(state.sheetSync.url, {
       method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ action:'deleteFieldPhotos', sistema: sistemaLabel, uid: String(uidVal), prefix: fieldName })
+      body: sheetPostBody({ action:'deleteFieldPhotos', sistema: sistemaLabel, uid: String(uidVal), prefix: fieldName })
     });
   }catch(e){ /* si falla, la próxima sincronización de fotos lo reintenta igual */ }
   for(let i=0; i<arr.length; i++){
@@ -3232,7 +3670,7 @@ async function uploadOnePhotoToDrive(sistema, uid, base64DataUrl, filename, shee
   try{
     await fetch(state.sheetSync.url, {
       method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ action:'uploadPhoto', sistema, uid: String(uid), base64, mimeType:'image/jpeg', filename,
+      body: sheetPostBody({ action:'uploadPhoto', sistema, uid: String(uid), base64, mimeType:'image/jpeg', filename,
         sheet: sheetName, sheetUid, linkColumn, directLink: !!directLink })
     });
     return true;
@@ -3312,7 +3750,7 @@ async function pushNoteToSheet(sys, note){
   try{
     await fetch(state.sheetSync.url, {
       method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ action:'upsertFields', sheet:'NOTAS', uid: note.id,
+      body: sheetPostBody({ action:'upsertFields', sheet:'NOTAS', uid: note.id,
         fields: { SISTEMA: SYS[sys] ? SYS[sys].label : sys, TEXTO: note.text, PRIORIDAD: note.priority ? 'SI' : 'NO', FECHA: formatDateTime(note.date) } })
     });
     state.sheetSync.lastSync = new Date().toISOString();
@@ -3340,7 +3778,7 @@ async function deleteNoteFromSheet(id){
   try{
     await fetch(state.sheetSync.url, {
       method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ action:'deleteRow', sheet:'NOTAS', uid: id })
+      body: sheetPostBody({ action:'deleteRow', sheet:'NOTAS', uid: id })
     });
   }catch(e){
     showToast('Sin conexión: se borró en el celular, se borrará en Sheets cuando vuelva la señal');
@@ -3349,7 +3787,7 @@ async function deleteNoteFromSheet(id){
 async function pullNotesFromSheet(silent){
   if(!state.sheetSync.url) return false;
   try{
-    const res = await fetch(`${state.sheetSync.url}?sheet=${encodeURIComponent('NOTAS')}`, { method:'GET' });
+    const res = await fetch(sheetUrl(`?sheet=${encodeURIComponent('NOTAS')}`), { method:'GET' });
     const rows = await res.json();
     if(!state.notes) state.notes = {};
     const sysByLabel = {};
@@ -3407,7 +3845,8 @@ async function pullNotesFromSheet(silent){
 }
 async function testSheetConnection(url){
   try{
-    const res = await fetch(url, { method:'GET' });
+    const sep = url.includes('?') ? '&' : '?';
+    const res = await fetch(`${url}${sep}key=${encodeURIComponent(APP_SECRET)}`, { method:'GET' });
     const text = await res.text();
     return text.indexOf('OK') !== -1;
   }catch(e){ return false; }
@@ -3419,14 +3858,14 @@ async function testSheetWrite(url){
   try{
     await fetch(url, {
       method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ action:'upsert', sheet:'PING_TEST', uid:pingUid, headers:['UID','TIMESTAMP'], values:[pingUid, new Date().toISOString()] })
+      body: sheetPostBody({ action:'upsert', sheet:'PING_TEST', uid:pingUid, headers:['UID','TIMESTAMP'], values:[pingUid, new Date().toISOString()] })
     });
   }catch(e){
     return { ok:false, stage:'send', detail:'No se pudo ni enviar la solicitud. Revisa la URL y tu conexión a internet.' };
   }
   await sleep(1500);
   try{
-    const res = await fetch(`${url}?sheet=PING_TEST`, { method:'GET' });
+    const res = await fetch(`${url}?sheet=PING_TEST&key=${encodeURIComponent(APP_SECRET)}`, { method:'GET' });
     const rows = await res.json();
     const found = Array.isArray(rows) && rows.some(r => r.UID === pingUid);
     if(found) return { ok:true };
@@ -3577,7 +4016,7 @@ async function pushAccessToSheet(sys){
   try{
     await fetch(state.sheetSync.url, {
       method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ action:'upsert', sheet:'ACCESS', uid,
+      body: sheetPostBody({ action:'upsert', sheet:'ACCESS', uid,
         headers:['UID','SISTEMA','CODIGO','FECHA_ACTUALIZACION'],
         values:[uid, SYS[sys].label, "'"+pin, formatDateTime(new Date().toISOString())] })
     });
@@ -3605,7 +4044,7 @@ async function pullAccessFromSheet(silent){
   const note = document.getElementById('accessSyncNote');
   if(note) note.textContent = 'Leyendo códigos desde Google Sheets...';
   try{
-    const res = await fetch(`${state.sheetSync.url}?sheet=${encodeURIComponent('ACCESS')}`, { method:'GET' });
+    const res = await fetch(sheetUrl(`?sheet=${encodeURIComponent('ACCESS')}`), { method:'GET' });
     const rows = await res.json();
     let applied = 0;
     rows.forEach(obj=>{
@@ -3635,7 +4074,7 @@ async function pullFromSheet(sys, silent){
   const progressEl = document.getElementById('syncBulkProgress');
   if(progressEl) progressEl.textContent = `Leyendo ${SYS[sys].label} desde Google Sheets...`;
   try{
-    const res = await fetch(`${state.sheetSync.url}?sheet=${encodeURIComponent(sheetName)}`, { method:'GET' });
+    const res = await fetch(sheetUrl(`?sheet=${encodeURIComponent(sheetName)}`), { method:'GET' });
     const rows = await res.json();
     let applied = 0;
     rows.forEach(obj=>{
@@ -3674,7 +4113,7 @@ async function bulkSyncAll(sysFilter){
       try{
         const ctrl = new AbortController();
         const timeoutId = setTimeout(()=>ctrl.abort(), 12000);
-        await fetch(state.sheetSync.url, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ action:'upsert', ...payload }), signal: ctrl.signal });
+        await fetch(state.sheetSync.url, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: sheetPostBody({ action:'upsert', ...payload }), signal: ctrl.signal });
         clearTimeout(timeoutId);
         sent = true;
       }catch(e){ if(attempt===2) failed++; else await sleep(500); }
@@ -4058,7 +4497,8 @@ function drawReportSummary(doc, margin, pageW, y, sys, dateStr, isWeekly, rangeS
       completedInRange = rows.filter(r=> r.completedAt && sameLocalDate(r.completedAt, dateStr) && statusFn(r) === 'complete').length;
     }
   }
-  const pct = total ? Math.round(completeCount/total*100) : 0;
+  const pct = sys === 'cableado' ? weightedSystemAverage('cableado', state.cableado) : weightedSystemAverage(sys, rows);
+  const restriccionesAbiertas = (state.restricciones && state.restricciones[sys]) ? state.restricciones[sys].filter(r=>r.estado!=='Liberada').length : 0;
 
   const ringR = 30, ringLW = 8;
   const ringCx = margin + ringR + 4, ringCy = y + ringR + 4;
@@ -4083,26 +4523,27 @@ function drawReportSummary(doc, margin, pageW, y, sys, dateStr, isWeekly, rangeS
 
   const textX = ringCx + ringR + 16;
   doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(9,24,35);
-  doc.text(`Avance general ${SYS[sys].label}`, textX, ringCy - 4);
+  doc.text(`Avance ponderado ${SYS[sys].label}`, textX, ringCy - 4);
   doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(100,110,120);
-  doc.text(`${completeCount} de ${total} completos`, textX, ringCy + 10);
+  doc.text(`${completeCount} de ${total} totalmente completos`, textX, ringCy + 10);
 
   const cardY = y + ringR*2 + 26;
-  const cardGap = 8;
-  const cardW = (pageW - margin*2 - cardGap*2) / 3;
+  const cardGap = 7;
+  const cardW = (pageW - margin*2 - cardGap*3) / 4;
   const cardH = 36;
   const cards = [
     { n: completedInRange, label: isWeekly ? 'Completados esta semana' : 'Completados hoy', bg:[237,245,252], fg:[7,80,156] },
     { n: completeCount, label: 'Completados total', bg:[227,245,236], fg:[30,142,90] },
-    { n: obsCount, label: 'Observaciones', bg:[252,228,228], fg:[184,18,25] }
+    { n: obsCount, label: 'Observaciones', bg:[252,228,228], fg:[184,18,25] },
+    { n: restriccionesAbiertas, label: 'Restricciones abiertas', bg:[255,243,205], fg:[138,99,0] }
   ];
   cards.forEach((c,i)=>{
     const cx0 = margin + i*(cardW+cardGap);
     doc.setFillColor(c.bg[0], c.bg[1], c.bg[2]);
     doc.roundedRect(cx0, cardY, cardW, cardH, 4, 4, 'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(13.5); doc.setTextColor(c.fg[0], c.fg[1], c.fg[2]);
+    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(c.fg[0], c.fg[1], c.fg[2]);
     doc.text(String(c.n), cx0+cardW/2, cardY+17, { align:'center' });
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.8);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7);
     doc.text(c.label, cx0+cardW/2, cardY+28, { align:'center' });
   });
 
@@ -4118,7 +4559,7 @@ async function fetchDrivePhotosForItem(sistema, uid){
     equipoPhotos: 'Equipo', fotografiaPhotos: 'Fotografía', conexionadoPhotos: 'Conexionado'
   };
   try{
-    const res = await fetch(`${state.sheetSync.url}?action=getPhotos&sistema=${encodeURIComponent(sistema)}&uid=${encodeURIComponent(uid)}`);
+    const res = await fetch(sheetUrl(`?action=getPhotos&sistema=${encodeURIComponent(sistema)}&uid=${encodeURIComponent(uid)}`));
     const files = await res.json();
     if(!Array.isArray(files)) return [];
     return files.map(f=>{
@@ -4419,6 +4860,7 @@ function mergeSavedState(saved){
   if(Array.isArray(saved.syncQueue)) state.syncQueue = saved.syncQueue;
   if(saved.notes) state.notes = saved.notes;
   if(saved.documents) state.documents = saved.documents;
+  if(saved.restricciones) state.restricciones = saved.restricciones;
 
   const idFieldOf = { hvac:'uid', fds:'id', transit:'id', timbrado:'id' };
   let mergedAny = false;
@@ -4473,6 +4915,7 @@ async function init(){
     await pullAccessFromSheet(true);
     await pullNotesFromSheet(true);
     await pullDocumentsFromSheet(true);
+    await pullRestriccionesFromSheet(true);
     renderAll();
     populateSelects();
   }
