@@ -336,9 +336,9 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .sidebar-item.active .sidebar-lock{color:#FFC905;}
 
 /* ---------- Insights panel (derecha): avance, rendimiento, gráficos ---------- */
-.insights-overlay{position:fixed; inset:0; z-index:800; background:rgba(0,0,0,.4); opacity:0; pointer-events:none; transition:opacity .22s ease;}
+.insights-overlay{position:fixed; inset:0; z-index:950; background:rgba(0,0,0,.4); opacity:0; pointer-events:none; transition:opacity .22s ease;}
 .insights-overlay.open{opacity:1; pointer-events:auto;}
-.insights-panel{position:fixed; top:0; right:0; bottom:0; width:88%; max-width:340px; z-index:801; background:#fff; transform:translateX(100%); transition:transform .22s ease; display:flex; flex-direction:column; box-shadow:-2px 0 18px rgba(0,0,0,.25);}
+.insights-panel{position:fixed; top:0; right:0; bottom:0; width:88%; max-width:340px; z-index:951; background:#fff; transform:translateX(100%); transition:transform .22s ease; display:flex; flex-direction:column; box-shadow:-2px 0 18px rgba(0,0,0,.25);}
 .insights-panel.open{transform:translateX(0);}
 .insights-header{display:flex; align-items:center; justify-content:space-between; padding:18px 16px 14px; border-bottom:1px solid var(--steel-200);}
 .insights-title{font-family:var(--font-display); font-weight:700; font-size:15px; color:var(--navy-900);}
@@ -935,7 +935,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v9.1 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v9.2 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1703,7 +1703,7 @@ function renderRestriccionesPanel(){
 }
 // Se llama desde el botón "⚠ Restricción" dentro de la ficha de cada Tag — abre el panel
 // directo en el formulario de nueva restricción, con el sistema y el Tag ya pre-llenados.
-function openRestriccionFormFor(sys, tagName){
+function openRestriccionFormFor(sys, tagName, prefillDescripcion){
   insightsActiveSys = sys;
   document.getElementById('insightsSysLabel').textContent = SYS[sys].label;
   document.getElementById('insightsTitle').textContent = 'Restricciones';
@@ -1714,6 +1714,10 @@ function openRestriccionFormFor(sys, tagName){
   showRestriccionForm();
   const tagInput = document.getElementById('restTagInput');
   if(tagInput) tagInput.value = tagName || '';
+  if(prefillDescripcion){
+    const descInput = document.getElementById('restDescInput');
+    if(descInput){ descInput.value = prefillDescripcion; showToast('Se copió tu observación — completa categoría y acción'); }
+  }
 }
 function showRestriccionForm(){
   document.getElementById('insightsBody').innerHTML = `
@@ -3000,7 +3004,7 @@ document.getElementById('hvacSaveDetail').addEventListener('click', ()=>{
 });
 document.getElementById('btnRestHvac').addEventListener('click', ()=>{
   const row = state.hvac.find(r=>r.uid===currentDetailItem);
-  openRestriccionFormFor('hvac', row ? row.tag : '');
+  openRestriccionFormFor('hvac', row ? row.tag : '', document.getElementById('hvacObservacion').value.trim());
 });
 
 /* ===================== CABLEADO detail ===================== */
@@ -3143,7 +3147,8 @@ document.getElementById('cableSaveDetail').addEventListener('click', ()=>{
 });
 document.getElementById('btnRestCable').addEventListener('click', ()=>{
   const row = state.cableado.find(r=>r.id===currentDetailItem);
-  openRestriccionFormFor('cableado', row ? row.cable : '');
+  const obsText = (document.getElementById('cableFromObservacion').value + ' ' + document.getElementById('cableToObservacion').value).trim();
+  openRestriccionFormFor('cableado', row ? row.cable : '', obsText);
 });
 
 /* ===================== FDS detail ===================== */
@@ -3228,7 +3233,7 @@ document.getElementById('fdsSaveDetail').addEventListener('click', ()=>{
 });
 document.getElementById('btnRestFds').addEventListener('click', ()=>{
   const row = state.fds.find(r=>r.id===currentDetailItem);
-  openRestriccionFormFor('fds', row ? row.tag : '');
+  openRestriccionFormFor('fds', row ? row.tag : '', document.getElementById('fdsObservacion').value.trim());
 });
 
 /* ===================== TRANSIT detail ===================== */
@@ -3316,7 +3321,7 @@ document.getElementById('transitSaveDetail').addEventListener('click', ()=>{
 });
 document.getElementById('btnRestTransit').addEventListener('click', ()=>{
   const row = state.transit.find(r=>r.id===currentDetailItem);
-  openRestriccionFormFor('transit', row ? row.tag : '');
+  openRestriccionFormFor('transit', row ? row.tag : '', document.getElementById('transitObservacion').value.trim());
 });
 
 function openDetailTimbrado(id){
@@ -3380,7 +3385,7 @@ document.getElementById('timbradoSaveDetail').addEventListener('click', ()=>{
 });
 document.getElementById('btnRestTimbrado').addEventListener('click', ()=>{
   const row = state.timbrado.find(r=>r.id===currentDetailItem);
-  openRestriccionFormFor('timbrado', row ? row.cable : '');
+  openRestriccionFormFor('timbrado', row ? row.cable : '', document.getElementById('timbradoObservacion').value.trim());
 });
 
 /* ===================== Filters UI ===================== */
@@ -4373,14 +4378,14 @@ function dailyReportItems(sys, dateStr){
       if(!sameLocalDate(r.lastEditedAt, dateStr)) return;
       const cambios = fieldChanges([['Soporte',r.soporte],['Fecha equipo',r.fecha],['Tagged items',r.tagged_items],['Tierra soporte',r.tierra_soporte],['Tierra equipos',r.tierra_equipos],['Miniruta',r.miniruta],['Conexionado',r.conexionado],['Megado',r.megado],['Tubing',r.tubing]]);
       if(cambios.length === 0) return;
-      out.push({ tag:r.tag||('Ítem #'+r.item), nivel:r.level, area:r.area?('Área '+r.area):'', estado: hvacStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Instalación',r.photos],['Observación',r.obsPhotos]]), date:r.lastEditedAt, sistema:SYS.hvac.label, uid:r.uid, fotosLink:r.fotosLink });
+      out.push({ tag:r.tag||('Ítem #'+r.item), nivel:r.level, area:r.area?('Área '+r.area):'', estado: hvacStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Instalación',r.photos],['Observación',r.obsPhotos]]), date:r.lastEditedAt, sistema:SYS.hvac.label, uid:r.uid, fotosLink:r.fotosLink, pct:weightedProgress('hvac', r) });
     });
   } else if(sys === 'fds'){
     state.fds.forEach(r=>{
       if(!sameLocalDate(r.lastEditedAt, dateStr)) return;
       const cambios = fieldChanges([['Semana',r.semana],['Soporte',r.soporte],['Equipo',r.equipo],['Mini ruta',r.minirutas],['Cableado',r.cableado],['Conexionado',r.conexionado],['N° Serie',r.nserie]]);
       if(cambios.length === 0) return;
-      out.push({ tag:r.tag||('Ítem #'+r.item), nivel:r.level, area:'', estado: fdsStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Soporte',r.soportePhotos],['Equipo',r.equipoPhotos],['Observación',r.obsPhotos]]), date:r.lastEditedAt, sistema:SYS.fds.label, uid:r.id, fotosLink:r.fotosLink });
+      out.push({ tag:r.tag||('Ítem #'+r.item), nivel:r.level, area:'', estado: fdsStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Soporte',r.soportePhotos],['Equipo',r.equipoPhotos],['Observación',r.obsPhotos]]), date:r.lastEditedAt, sistema:SYS.fds.label, uid:r.id, fotosLink:r.fotosLink, pct:weightedProgress('fds', r) });
     });
   } else if(sys === 'cableado'){
     state.cableado.forEach(r=>{
@@ -4389,7 +4394,7 @@ function dailyReportItems(sys, dateStr){
         if(!sameLocalDate(obj.lastEditedAt, dateStr)) return;
         const cambios = fieldChanges([['Minirutas',obj.minirutas],['Tendido',obj.tendido],['Marca Gland',obj.marca_gland],['Gland',obj.gland],['Fecha Gland',obj.fecha_gland],['Conexionado',obj.conexionado],['Fecha Conexionado',obj.fecha_conexionado]]);
         if(cambios.length === 0) return;
-        out.push({ tag:`${r.cable} (${side==='from'?r.from_tag:r.to_tag} · ${side.toUpperCase()})`, nivel:r.level, area: (side==='from'?r.from_area:r.to_area) ? ('Área '+(side==='from'?r.from_area:r.to_area)) : '', estado: sideStatus(obj)==='complete'?'Completo':'Pendiente', observacion:obj.observacion, cambios, photos:labeledPhotos([['Conexionado',obj.conexionadoPhotos],['Observación',obj.obsPhotos]]), date:obj.lastEditedAt, sistema:SYS.cableado.label, uid:r.id+'-'+side, fotosLink:obj.fotosLink });
+        out.push({ tag:`${r.cable} (${side==='from'?r.from_tag:r.to_tag} · ${side.toUpperCase()})`, nivel:r.level, area: (side==='from'?r.from_area:r.to_area) ? ('Área '+(side==='from'?r.from_area:r.to_area)) : '', estado: sideStatus(obj)==='complete'?'Completo':'Pendiente', observacion:obj.observacion, cambios, photos:labeledPhotos([['Conexionado',obj.conexionadoPhotos],['Observación',obj.obsPhotos]]), date:obj.lastEditedAt, sistema:SYS.cableado.label, uid:r.id+'-'+side, fotosLink:obj.fotosLink, pct:weightedProgressCable(r)[side] });
       });
     });
   } else if(sys === 'transit'){
@@ -4397,14 +4402,14 @@ function dailyReportItems(sys, dateStr){
       if(!sameLocalDate(r.lastEditedAt, dateStr)) return;
       const cambios = fieldChanges([['Construcción',r.construccion],['Limpieza',r.limpieza],['Pintura',r.pintura],['Cables correcto',r.cables_correcto],['Etiquetas cables',r.etiquetas_cables],['Identificación transit',r.identificacion_transit],['Fotografía',r.fotografia],['Estado final',r.estado_final]]);
       if(cambios.length === 0) return;
-      out.push({ tag:r.tag||('Ítem #'+r.id), nivel:r.level, area:r.room?('Room '+r.room):'', estado: transitStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Fotografía',r.fotografiaPhotos],['Observación',r.obsPhotos]]), date:r.lastEditedAt, sistema:SYS.transit.label, uid:r.id, fotosLink:r.fotosLink });
+      out.push({ tag:r.tag||('Ítem #'+r.id), nivel:r.level, area:r.room?('Room '+r.room):'', estado: transitStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Fotografía',r.fotografiaPhotos],['Observación',r.obsPhotos]]), date:r.lastEditedAt, sistema:SYS.transit.label, uid:r.id, fotosLink:r.fotosLink, pct:weightedProgress('transit', r) });
     });
   } else if(sys === 'timbrado'){
     state.timbrado.forEach(r=>{
       if(r.fecha_timbrado !== dateStr) return;
       const cambios = fieldChanges([['Timbrado',r.timbrado],['Fecha timbrado',r.fecha_timbrado]]);
       if(cambios.length === 0) return;
-      out.push({ tag:r.cable||('Cable #'+r.id), nivel:'', area:r.from_area?('Área '+r.from_area):'', estado: timbradoStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Observación',r.obsPhotos]]), date:r.lastEditedAt, sistema:SYS.timbrado.label, uid:r.id, fotosLink:r.fotosLink });
+      out.push({ tag:r.cable||('Cable #'+r.id), nivel:'', area:r.from_area?('Área '+r.from_area):'', estado: timbradoStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Observación',r.obsPhotos]]), date:r.lastEditedAt, sistema:SYS.timbrado.label, uid:r.id, fotosLink:r.fotosLink, pct:(timbradoStatus(r)==='complete'?100:0) });
     });
   }
   if(sys === 'timbrado') return out;
@@ -4614,7 +4619,21 @@ async function buildDailyReportPDF(sys, dateStr, items, titleOverride, dateLabel
     }
     if(y > pageH - footerH - 140){ doc.addPage(); drawHeader(); }
     doc.setFont('helvetica','bold'); doc.setFontSize(12.5); doc.setTextColor(9,24,35);
-    doc.text(String(it.tag||'—'), margin, y); y += 14;
+    doc.text(String(it.tag||'—'), margin, y);
+    // Barra de progreso ponderado, al costado derecho del Tag
+    if(typeof it.pct === 'number'){
+      const barW = 90, barH = 7, barX = pageW - margin - barW, barY = y - barH + 1;
+      const pctColor = it.pct >= 80 ? [30,142,90] : it.pct >= 40 ? [199,145,0] : [217,54,54];
+      doc.setFillColor(230,230,230);
+      doc.roundedRect(barX, barY, barW, barH, 3, 3, 'F');
+      if(it.pct > 0){
+        doc.setFillColor(pctColor[0], pctColor[1], pctColor[2]);
+        doc.roundedRect(barX, barY, Math.max(barW*(it.pct/100), 6), barH, 3, 3, 'F');
+      }
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(pctColor[0], pctColor[1], pctColor[2]);
+      doc.text(`${it.pct}%`, barX - 6, y - 1, { align:'right' });
+    }
+    y += 14;
     doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(100,110,120);
     const metaLine = [it.nivel?`Nivel: ${it.nivel}`:'', it.area||'', `Estado: ${it.estado}`].filter(Boolean).join('   ·   ');
     doc.text(metaLine, margin, y); y += 13;
