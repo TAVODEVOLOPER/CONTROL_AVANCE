@@ -483,6 +483,10 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
       Modo Planificador
     </button>
+    <button class="sidebar-admin-btn" id="btnSidebarLogout" style="margin-top:8px; display:none; border-color:rgba(233,33,39,.4); color:#FF9B9B;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Cerrar sesión de Admin/Planificador
+    </button>
   </div>
 </div>
 
@@ -941,7 +945,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v9.3 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v9.4 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1661,7 +1665,7 @@ function renderRestriccionesPanel(){
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       Descargar informe de restricciones (PDF)
     </button>
-    <button class="doc-upload-label" id="btnRestPdfAll" style="border-style:solid; background:#fff;">
+    <button class="doc-upload-label" id="btnRestPdfAll" style="border-style:solid; background:#fff; display:${(plannerModeActive || accessPanelUnlocked) ? '' : 'none'};">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
       Descargar TODAS las restricciones (los 5 sistemas)
     </button>
@@ -1902,6 +1906,7 @@ async function buildRestriccionesPDF(sys){
   showToast('PDF descargado');
 }
 async function buildRestriccionesPDFAll(){
+  if(!plannerModeActive && !accessPanelUnlocked){ showToast('Esta descarga es solo para Modo Planificador o Administrador'); return; }
   if(!window.jspdf || !window.jspdf.jsPDF){ showToast('No se pudo cargar el generador de PDF.'); return; }
   const totalItems = SYS_ORDER.reduce((acc,s)=> acc + ((state.restricciones && state.restricciones[s]) ? state.restricciones[s].length : 0), 0);
   if(!totalItems){ showToast('No hay restricciones registradas en ningún sistema'); return; }
@@ -2769,7 +2774,24 @@ function updatePlannerModeButton(){
   if(!btn) return;
   btn.classList.toggle('unlocked', plannerModeActive);
   btn.lastChild.textContent = plannerModeActive ? ' Planificador activo' : ' Modo Planificador';
+  updateLogoutButton();
 }
+function updateLogoutButton(){
+  const btn = document.getElementById('btnSidebarLogout');
+  if(!btn) return;
+  const anySessionActive = plannerModeActive || accessPanelUnlocked || SYS_ORDER.some(s=>unlockedSystems.has(s));
+  btn.style.display = anySessionActive ? '' : 'none';
+}
+document.getElementById('btnSidebarLogout').addEventListener('click', ()=>{
+  plannerModeActive = false;
+  accessPanelUnlocked = false;
+  unlockedSystems.clear();
+  updateAdminModeButton();
+  updatePlannerModeButton();
+  renderSystemTabs();
+  showToast('Sesión cerrada — vuelve a ingresar el código para editar');
+  closeSidebar();
+});
 document.getElementById('btnSidebarPlannerMode').addEventListener('click', ()=>{
   if(plannerModeActive){
     showToast('El Modo Planificador ya está activo');
