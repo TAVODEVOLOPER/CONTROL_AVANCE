@@ -945,7 +945,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v9.4 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v9.5 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1673,12 +1673,13 @@ function renderRestriccionesPanel(){
     <div id="restList">${items.length ? items.slice().reverse().map(r=>{
       const cat = RESTRICCION_CATS[r.categoria] || RESTRICCION_CATS.DOC;
       const liberada = r.estado === 'Liberada';
+      const critIcon = r.criticidad === 'Alta' ? '🔴' : r.criticidad === 'Baja' ? '🟢' : '🟡';
       return `<div class="rest-item" style="border-left-color:${cat.color};">
         <div class="rest-item-top">
           <span class="rest-cat-tag" style="background:${cat.bg}; color:${cat.color};">${r.categoria} · ${cat.label}</span>
           <span class="rest-estado-tag ${liberada?'liberada':''}">${r.estado}</span>
         </div>
-        <div class="rest-tag-name">${escapeHtml(r.tag||'—')}</div>
+        <div class="rest-tag-name">${critIcon} ${escapeHtml(r.tag||'—')} <span style="font-weight:400; font-size:10.5px; color:var(--steel-500);">· Criticidad ${r.criticidad||'Media'}</span></div>
         <div class="rest-desc">${escapeHtml(r.descripcion)}</div>
         ${r.accion ? `<div class="rest-accion"><b>Acción requerida:</b> ${escapeHtml(r.accion)}</div>` : ''}
         ${r.frente ? `<div class="rest-frente"><b>Frente responsable:</b> ${escapeHtml(r.frente)}</div>` : ''}
@@ -1752,6 +1753,13 @@ function showRestriccionForm(){
         <option value="DOC">DOC — Documentación / RFI / Planos</option>
       </select>
     </div>
+    <div class="field-group"><label>Nivel de criticidad</label>
+      <select class="insights-sys-select" id="restCritSelect">
+        <option value="Alta">🔴 Alta — frena el avance ahora mismo</option>
+        <option value="Media" selected>🟡 Media — retrasa, pero hay margen</option>
+        <option value="Baja">🟢 Baja — no urgente</option>
+      </select>
+    </div>
     <div class="field-group"><label>Descripción</label><textarea class="text-input" id="restDescInput" rows="3" placeholder="Qué está pasando..."></textarea></div>
     <div class="field-group"><label>Acción requerida</label><input type="text" class="text-input" id="restAccionInput" placeholder="Qué hay que hacer para liberarla"></div>
     <div class="field-group"><label>Frente responsable</label><input type="text" class="text-input" id="restFrenteInput" placeholder="Ej: Cuadrilla eléctrica, Oficina técnica..."></div>
@@ -1765,6 +1773,7 @@ function showRestriccionForm(){
     const item = {
       id: 'rest-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),
       tag, categoria: document.getElementById('restCatSelect').value,
+      criticidad: document.getElementById('restCritSelect').value,
       descripcion, accion: document.getElementById('restAccionInput').value.trim(),
       frente: document.getElementById('restFrenteInput').value.trim(),
       estado: 'Abierta', date: new Date().toISOString()
@@ -1784,7 +1793,7 @@ async function pushRestriccionToSheet(sys, item){
     await fetch(state.sheetSync.url, {
       method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: sheetPostBody({ action:'upsertFields', sheet:'RESTRICCIONES', uid: item.id,
-        fields: { SISTEMA: SYS[sys] ? SYS[sys].label : sys, TAG: item.tag, CATEGORIA: item.categoria,
+        fields: { SISTEMA: SYS[sys] ? SYS[sys].label : sys, TAG: item.tag, CATEGORIA: item.categoria, CRITICIDAD: item.criticidad || 'Media',
           DESCRIPCION: item.descripcion, ACCION: item.accion, FRENTE: item.frente, ESTADO: item.estado, FECHA: formatDateTime(item.date) } })
     });
     state.sheetSync.lastSync = new Date().toISOString();
@@ -1818,7 +1827,7 @@ async function pullRestriccionesFromSheet(silent){
       if(!SYS[sysKey]) return;
       if(!state.restricciones[sysKey]) state.restricciones[sysKey] = [];
       idsInSheet.add(sysKey + '|' + id);
-      const entry = { id, tag: obj.TAG||'', categoria: obj.CATEGORIA||'DOC', descripcion: obj.DESCRIPCION||'',
+      const entry = { id, tag: obj.TAG||'', categoria: obj.CATEGORIA||'DOC', criticidad: obj.CRITICIDAD||'Media', descripcion: obj.DESCRIPCION||'',
         accion: obj.ACCION||'', frente: obj.FRENTE||'', estado: obj.ESTADO||'Abierta', date: parseSheetEditDate(obj.FECHA) || new Date().toISOString() };
       const existing = state.restricciones[sysKey].find(r=>r.id===id);
       const recentlyEditedLocally = existing && (Date.now() - new Date(existing.date).getTime()) < 60000;
@@ -1885,7 +1894,7 @@ async function buildRestriccionesPDF(sys){
     doc.rect(margin, y, 3, boxH, 'F');
     let ty = y + 15;
     doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(fg[0],fg[1],fg[2]);
-    doc.text(`${it.categoria} · ${(RESTRICCION_CATS[it.categoria]||{}).label||''}   ·   ${it.estado}`, margin+10, ty); ty += 14;
+    doc.text(`${it.categoria} · ${(RESTRICCION_CATS[it.categoria]||{}).label||''}   ·   Criticidad ${it.criticidad||'Media'}   ·   ${it.estado}`, margin+10, ty); ty += 14;
     doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(9,24,35);
     doc.text(it.tag || 'Sin tag asociado', margin+10, ty); ty += 13;
     doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(50,60,70);
@@ -1960,7 +1969,7 @@ async function buildRestriccionesPDFAll(){
       doc.rect(margin, y, 3, boxH, 'F');
       let ty = y + 15;
       doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(fg[0],fg[1],fg[2]);
-      doc.text(`${it.categoria} · ${(RESTRICCION_CATS[it.categoria]||{}).label||''}   ·   ${it.estado}`, margin+10, ty); ty += 14;
+      doc.text(`${it.categoria} · ${(RESTRICCION_CATS[it.categoria]||{}).label||''}   ·   Criticidad ${it.criticidad||'Media'}   ·   ${it.estado}`, margin+10, ty); ty += 14;
       doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(9,24,35);
       doc.text(it.tag || 'Sin tag asociado', margin+10, ty); ty += 13;
       doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(50,60,70);
