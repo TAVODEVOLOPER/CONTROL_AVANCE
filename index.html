@@ -547,6 +547,9 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
     <select class="insights-sys-select" id="dashSysSelect" style="margin-bottom:0;">
       <option value="all">Todos los sistemas</option>
     </select>
+    <button class="doc-upload-label" id="btnDashboardRefresh" style="border-style:solid; background:#fff; margin:0; white-space:nowrap;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px; margin-right:4px;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Actualizar
+    </button>
     <div class="dashboard-export-wrap">
       <button class="doc-upload-label" id="btnDashboardExport" style="border-style:solid; background:#fff; margin:0; white-space:nowrap;">Exportar ▾</button>
       <div class="dashboard-export-menu" id="dashboardExportMenu">
@@ -1018,7 +1021,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v10.2 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v10.4 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1503,8 +1506,14 @@ function weightedSystemAverage(sys, rows){
   return Math.round(sum / rows.length);
 }
 let insightsActiveSys = 'hvac';
+function authorizedSystems(){
+  if(accessPanelUnlocked || plannerModeActive) return SYS_ORDER;
+  return SYS_ORDER.filter(s=>isUnlocked(s));
+}
 function sysSelectHtml(id){
-  return `<select class="insights-sys-select" id="${id}">${SYS_ORDER.map(s=>`<option value="${s}" ${s===insightsActiveSys?'selected':''}>${SYS[s].label}</option>`).join('')}</select>`;
+  const allowed = authorizedSystems();
+  if(!allowed.includes(insightsActiveSys)) insightsActiveSys = allowed[0] || currentSystem;
+  return `<select class="insights-sys-select" id="${id}">${allowed.map(s=>`<option value="${s}" ${s===insightsActiveSys?'selected':''}>${SYS[s].label}</option>`).join('')}</select>`;
 }
 let insightsGroupBy = 'general'; // 'general' | 'level' | 'area'
 function rowsForSys(sys){ return sys==='cableado' ? state.cableado : state[sys]; }
@@ -3265,6 +3274,15 @@ document.querySelectorAll('.dashboard-tab').forEach(tab=>{
   tab.addEventListener('click', ()=>{ dashTab = tab.dataset.tab; renderDashboard(); });
 });
 document.getElementById('btnSidebarDashboard').addEventListener('click', openDashboard);
+document.getElementById('btnDashboardRefresh').addEventListener('click', async ()=>{
+  showToast('Actualizando dashboard...');
+  const systemsToRefresh = dashSys === 'all' ? SYS_ORDER : [dashSys];
+  await Promise.all(systemsToRefresh.map(s=>pullFromSheet(s, true)));
+  await pullMetasFromSheet(true);
+  await pullRestriccionesFromSheet(true);
+  renderDashboard();
+  showToast('Dashboard actualizado');
+});
 document.getElementById('btnDashboardClose').addEventListener('click', closeDashboard);
 document.getElementById('dashSysSelect').addEventListener('change', (e)=>{ dashSys = e.target.value; renderDashboard(); });
 document.getElementById('btnDashboardExport').addEventListener('click', (e)=>{
@@ -4350,29 +4368,45 @@ function buildWorkbook(sys){
 // Script Web App connected to a Google Sheet, upserting one row per record by UID.
 function sheetRowPayload(sys, row){
   if(sys === 'hvac'){
-    return { sheet:'HVAC', uid:'hvac-'+row.uid,
-      headers:['UID','SUBCONTRACTOR','ITEM','TAG','DESCRIPTION','ELEV.','STD SUPPORT','FIXING','HOOK UP','ROOM_NUMBER','AREA','LEVEL','SOPORTE','FECHA_EQUIPO','TAGGED_ITEMS','TIERRA SOPORTE','TIERRA EQUIPOS','MINIRUTA','CONEXIONADO','MEGADO','TUBING','OBSERVACION','FECHA_EDICION'],
-      values:['hvac-'+row.uid, row.subcontractor, row.item, row.tag, row.description, row.elev, row.std_support, row.fixing, row.hook_up, row.room, row.area, row.level, row.soporte, row.fecha, row.tagged_items, row.tierra_soporte, row.tierra_equipos, row.miniruta, row.conexionado, row.megado, row.tubing, row.observacion, formatDateTime(row.lastEditedAt)] };
+    return { sheet:'HVAC', uid:'hvac-'+row.uid, fields: {
+      SUBCONTRACTOR: row.subcontractor, ITEM: row.item, TAG: row.tag, DESCRIPTION: row.description, 'ELEV.': row.elev,
+      'STD SUPPORT': row.std_support, FIXING: row.fixing, 'HOOK UP': row.hook_up, ROOM_NUMBER: row.room, AREA: row.area, LEVEL: row.level,
+      SOPORTE: row.soporte, FECHA_EQUIPO: row.fecha, TAGGED_ITEMS: row.tagged_items, 'TIERRA SOPORTE': row.tierra_soporte, 'TIERRA EQUIPOS': row.tierra_equipos,
+      MINIRUTA: row.miniruta, CONEXIONADO: row.conexionado, MEGADO: row.megado, TUBING: row.tubing, OBSERVACION: row.observacion, FECHA_EDICION: formatDateTime(row.lastEditedAt)
+    } };
   }
   if(sys === 'fds'){
-    return { sheet:'FDS', uid:'fds-'+row.id,
-      headers:['UID','ITEM','TAG_EQUIPOS','STD_SUPPORT','NIVEL','FECHA_SOPORTE','SOPORTE','EQUIPO','MINI_RUTA','CABLEADO','CONEXIONADO','N_SERIE_EQUIPO','OBSERVACION','FECHA_EDICION'],
-      values:['fds-'+row.id, row.item, row.tag, row.std_support, row.level, row.semana_date, row.soporte, row.equipo, row.minirutas, row.cableado, row.conexionado, row.nserie, row.observacion, formatDateTime(row.lastEditedAt)] };
+    return { sheet:'FDS', uid:'fds-'+row.id, fields: {
+      ITEM: row.item, TAG_EQUIPOS: row.tag, STD_SUPPORT: row.std_support, NIVEL: row.level, FECHA_SOPORTE: row.semana_date,
+      SOPORTE: row.soporte, EQUIPO: row.equipo, MINI_RUTA: row.minirutas, CABLEADO: row.cableado, CONEXIONADO: row.conexionado,
+      N_SERIE_EQUIPO: row.nserie, OBSERVACION: row.observacion, FECHA_EDICION: formatDateTime(row.lastEditedAt)
+    } };
   }
   if(sys === 'transit'){
-    return { sheet:'TRANSIT', uid:'transit-'+row.id,
-      headers:['UID','REV','INSTALLER','TAG','HOLE_NAME','LEVEL','TYPE','PROFILE','SYSTEM','FRAME_TYPE','DESCRIPTION','FRAME_MATERIAL','ROOM','CONSTRUCCION','LIMPIEZA','PINTURA','CABLES_CORRECTO','ETIQUETAS_CABLES','IDENTIFICACION_TRANSIT','FOTOGRAFIA','ESTADO_FINAL','OBSERVACION','FECHA_EDICION'],
-      values:['transit-'+row.id, row.rev, row.installer, row.tag, row.hole_name, row.level, row.type, row.profile, row.system, row.frame_type, row.description, row.frame_material, row.room, row.construccion, row.limpieza, row.pintura, row.cables_correcto, row.etiquetas_cables, row.identificacion_transit, row.fotografia, row.estado_final, row.observacion, formatDateTime(row.lastEditedAt)] };
+    return { sheet:'TRANSIT', uid:'transit-'+row.id, fields: {
+      REV: row.rev, INSTALLER: row.installer, TAG: row.tag, HOLE_NAME: row.hole_name, LEVEL: row.level, TYPE: row.type, PROFILE: row.profile,
+      SYSTEM: row.system, FRAME_TYPE: row.frame_type, DESCRIPTION: row.description, FRAME_MATERIAL: row.frame_material, ROOM: row.room,
+      CONSTRUCCION: row.construccion, LIMPIEZA: row.limpieza, PINTURA: row.pintura, CABLES_CORRECTO: row.cables_correcto,
+      ETIQUETAS_CABLES: row.etiquetas_cables, IDENTIFICACION_TRANSIT: row.identificacion_transit, FOTOGRAFIA: row.fotografia,
+      ESTADO_FINAL: row.estado_final, OBSERVACION: row.observacion, FECHA_EDICION: formatDateTime(row.lastEditedAt)
+    } };
   }
   if(sys === 'timbrado'){
-    return { sheet:'TIMBRADO', uid:'timbrado-'+row.id,
-      headers:['UID','CABLE_NUMBER','From_Tag','From_Description','From_Area','To_Tag','To_Description','To_Area','TIMBRADO','FECHA_TIMBRADO','OBSERVACIÓN','FECHA_EDICION'],
-      values:['timbrado-'+row.id, row.cable, row.from_tag, row.from_description, row.from_area, row.to_tag, row.to_description, row.to_area, row.timbrado, row.fecha_timbrado, row.observacion, formatDateTime(row.lastEditedAt)] };
+    return { sheet:'TIMBRADO', uid:'timbrado-'+row.id, fields: {
+      CABLE_NUMBER: row.cable, From_Tag: row.from_tag, From_Description: row.from_description, From_Area: row.from_area,
+      To_Tag: row.to_tag, To_Description: row.to_description, To_Area: row.to_area, TIMBRADO: row.timbrado,
+      FECHA_TIMBRADO: row.fecha_timbrado, 'OBSERVACIÓN': row.observacion, FECHA_EDICION: formatDateTime(row.lastEditedAt)
+    } };
   }
   const lastEdited = [row.from.lastEditedAt, row.to.lastEditedAt].filter(Boolean).sort().pop();
-  return { sheet:'CONEXIONADO', uid:'cable-'+row.id,
-    headers:['UID','CABLE_NUMBER','From_Tag','From_Area','Nivel','From_Minirutas','From_Tendido','From_Marca_Gland','From_Gland','From_Fecha_Gland','From_Conexionado','From_Fecha_Conexionado','From_Observacion','To_Tag','To_Area','To_Minirutas','To_Tendido','To_Marca_Gland','To_Gland','To_Fecha_Gland','To_Conexionado','To_Fecha_Conexionado','To_Observacion','FECHA_EDICION'],
-    values:['cable-'+row.id, row.cable, row.from_tag, row.from_area, row.level, row.from.minirutas, row.from.tendido, row.from.marca_gland, row.from.gland, row.from.fecha_gland, row.from.conexionado, row.from.fecha_conexionado, row.from.observacion, row.to_tag, row.to_area, row.to.minirutas, row.to.tendido, row.to.marca_gland, row.to.gland, row.to.fecha_gland, row.to.conexionado, row.to.fecha_conexionado, row.to.observacion, formatDateTime(lastEdited)] };
+  return { sheet:'CONEXIONADO', uid:'cable-'+row.id, fields: {
+    CABLE_NUMBER: row.cable, From_Tag: row.from_tag, From_Area: row.from_area, Nivel: row.level,
+    From_Minirutas: row.from.minirutas, From_Tendido: row.from.tendido, From_Marca_Gland: row.from.marca_gland, From_Gland: row.from.gland,
+    From_Fecha_Gland: row.from.fecha_gland, From_Conexionado: row.from.conexionado, From_Fecha_Conexionado: row.from.fecha_conexionado, From_Observacion: row.from.observacion,
+    To_Tag: row.to_tag, To_Area: row.to_area, To_Minirutas: row.to.minirutas, To_Tendido: row.to.tendido, To_Marca_Gland: row.to.marca_gland, To_Gland: row.to.gland,
+    To_Fecha_Gland: row.to.fecha_gland, To_Conexionado: row.to.conexionado, To_Fecha_Conexionado: row.to.fecha_conexionado, To_Observacion: row.to.observacion,
+    FECHA_EDICION: formatDateTime(lastEdited)
+  } };
 }
 function queueSyncRetry(sys, idVal){
   if(!state.syncQueue) state.syncQueue = [];
@@ -4407,7 +4441,7 @@ async function pushRowToSheet(sys, row){
   try{
     await fetch(state.sheetSync.url, {
       method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: sheetPostBody({ action:'upsert', ...payload })
+      body: sheetPostBody({ action:'upsertFields', sheet:payload.sheet, uid:payload.uid, fields:payload.fields })
     });
     state.sheetSync.lastSync = new Date().toISOString();
     if(idVal !== null) dequeueSyncRetry(sys, idVal);
@@ -4908,7 +4942,7 @@ async function bulkSyncAll(sysFilter){
       try{
         const ctrl = new AbortController();
         const timeoutId = setTimeout(()=>ctrl.abort(), 12000);
-        await fetch(state.sheetSync.url, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: sheetPostBody({ action:'upsert', ...payload }), signal: ctrl.signal });
+        await fetch(state.sheetSync.url, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: sheetPostBody({ action:'upsertFields', sheet:payload.sheet, uid:payload.uid, fields:payload.fields }), signal: ctrl.signal });
         clearTimeout(timeoutId);
         sent = true;
       }catch(e){ if(attempt===2) failed++; else await sleep(500); }
