@@ -384,15 +384,16 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .dashboard-header{display:flex; align-items:center; justify-content:space-between; padding:18px 20px 14px; background:#fff; border-bottom:1px solid var(--steel-200); flex:none;}
 .dashboard-title{font-family:var(--font-display); font-weight:700; font-size:17px; color:var(--navy-900);}
 .dashboard-sub{font-size:11.5px; color:var(--steel-500); margin-top:2px;}
-.dashboard-controls{display:flex; gap:8px; padding:14px 20px; background:#fff; border-bottom:1px solid var(--steel-200); flex-wrap:wrap; align-items:center; flex:none;}
-.dashboard-controls select{flex:1; min-width:140px;}
-.dashboard-export-wrap{position:relative;}
-.dashboard-export-menu{display:none; position:absolute; top:calc(100% + 4px); right:0; background:#fff; border:1px solid var(--steel-200); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.15); z-index:10; overflow:hidden; min-width:160px;}
+.dashboard-controls{display:flex; gap:6px; padding:8px 12px; background:#fff; border-bottom:1px solid var(--steel-200); flex-wrap:wrap; align-items:center; flex:none;}
+.dashboard-controls select{flex:0 1 auto; min-width:0; width:auto; font-size:12px; padding:6px 26px 6px 8px;}
+.dashboard-controls .doc-upload-label{padding:6px 10px; font-size:12px; width:auto; margin-bottom:0; white-space:nowrap;}
+.dashboard-export-wrap{position:relative; margin-left:auto;}
+.dashboard-export-menu{display:none; position:absolute; top:calc(100% + 4px); right:0; max-width:calc(100vw - 24px); background:#fff; border:1px solid var(--steel-200); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.15); z-index:10; overflow:hidden; min-width:160px;}
 .dashboard-export-menu.open{display:block;}
 .dashboard-export-menu button{display:block; width:100%; text-align:left; padding:10px 14px; border:none; background:none; font-size:13px; cursor:pointer;}
 .dashboard-export-menu button:hover{background:var(--steel-050);}
 .dashboard-body{flex:1; min-height:0; overflow-y:auto; width:100%; box-sizing:border-box;}
-.dashboard-body-inner{max-width:1100px; margin:0 auto; padding:16px 20px 40px; box-sizing:border-box;}
+.dashboard-body-inner{max-width:1300px; margin:0 auto; padding:14px 14px 40px; box-sizing:border-box;}
 .dashboard-tabs{display:flex; gap:4px; padding:0 20px; background:#fff; border-bottom:1px solid var(--steel-200); overflow-x:auto; flex:none;}
 .dashboard-tab{padding:12px 16px; font-size:12.5px; font-weight:600; color:var(--steel-500); border:none; background:none; border-bottom:2.5px solid transparent; cursor:pointer; white-space:nowrap;}
 .dashboard-tab.active{color:var(--brand-blue); border-bottom-color:var(--brand-blue);}
@@ -415,6 +416,12 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .dash-breakdown-pct{width:38px; text-align:right; font-size:11.5px; color:var(--steel-500); flex:none;}
 .dash-breakdown-meta{width:118px; flex:none; padding:6px 8px; border-radius:7px; border:1px solid var(--steel-300); font-size:11px;}
 .dash-breakdown-atraso{color:var(--brand-red-dark); font-size:9.5px; font-weight:700; width:56px; flex:none;}
+.dash-program-toggle{flex:none; width:88px; font-size:10.5px; font-weight:600; color:var(--brand-blue); background:var(--steel-050); border:1px solid var(--steel-200); border-radius:7px; padding:6px 4px; cursor:pointer;}
+.dash-program-panel{background:var(--steel-050); border-radius:8px; padding:10px 12px; margin:-2px 0 8px;}
+.dash-program-title{font-size:11px; font-weight:700; color:var(--navy-900); margin-bottom:8px;}
+.dash-program-hito-row{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:5px 0;}
+.dash-program-hito-name{font-size:11.5px; color:var(--steel-600); flex:1;}
+.dash-program-hito-row input{width:130px; padding:5px 7px; border-radius:6px; border:1px solid var(--steel-300); font-size:11px;}
 .dash-heatmap{border-collapse:collapse; width:100%; font-size:11px;}
 .dash-heatmap th{padding:6px 8px; font-size:10px; color:var(--steel-500); font-weight:600; text-align:center;}
 .dash-heatmap-row-label{font-size:11px; font-weight:600; color:var(--navy-900); padding:6px 10px 6px 0; white-space:nowrap;}
@@ -1021,7 +1028,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v10.6 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v11.0 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -2888,29 +2895,64 @@ document.getElementById('btnSidebarLogout').addEventListener('click', ()=>{
 /* ===================== Dashboard de planificación (Planner / Admin) ===================== */
 let dashSys = 'all';
 let dashGroupBy = 'level';
-function metaId(sys, groupBy, value){
-  return `${sys}__${groupBy}__${String(value).replace(/[^a-zA-Z0-9]+/g,'_')}`;
+// Nombres legibles de cada hito por sistema — mismos campos que ya pesan en el avance ponderado.
+const HITO_LABELS = {
+  hvac: { soporte:'Soporte', miniruta:'Miniruta', conexionado:'Conexionado', megado:'Megado', tubing:'Tubing' },
+  fds: { soporte:'Soporte', equipo:'Equipo', minirutas:'Minirutas', cableado:'Cableado', conexionado:'Conexionado' },
+  cableado: { minirutas:'Minirutas', tendido:'Tendido', gland:'Gland', conexionado:'Conexionado' },
+  transit: { construccion:'Construcción', limpieza:'Limpieza', pintura:'Pintura', etiquetas_cables:'Etiquetas cables', identificacion_transit:'Identificación', fotografia:'Fotografía', estado_final:'Estado final' },
+  timbrado: { timbrado:'Timbrado' }
+};
+function hitosForSys(sys){ return Object.keys(HITO_LABELS[sys] || {}); }
+function lastHitoForSys(sys){ const h = hitosForSys(sys); return h[h.length-1]; }
+function metaId(sys, groupBy, value, hito){
+  return `${sys}__${groupBy}__${String(value).replace(/[^a-zA-Z0-9]+/g,'_')}__${hito}`;
 }
+// Devuelve el objeto de metas de un Nivel/Área: { hitos:{soporte:'2026-09-05', ...}, date }
+// Migra automáticamente el formato viejo (una sola fecha en .fecha) al hito final, si lo encuentra.
+function getMetaObj(sys, groupBy, value){
+  if(!state.metas) state.metas = {};
+  if(!state.metas[sys]) state.metas[sys] = { level:{}, area:{} };
+  const existing = state.metas[sys][groupBy][value];
+  if(!existing) return null;
+  if(!existing.hitos){
+    const migrated = { hitos: {}, date: existing.date || new Date().toISOString() };
+    if(existing.fecha) migrated.hitos[lastHitoForSys(sys)] = existing.fecha;
+    state.metas[sys][groupBy][value] = migrated;
+    return migrated;
+  }
+  return existing;
+}
+// Fecha de un hito específico (o '' si no está definida).
+function getMetaHitoFecha(sys, groupBy, value, hito){
+  const obj = getMetaObj(sys, groupBy, value);
+  return (obj && obj.hitos[hito]) || '';
+}
+// Fecha "meta general" del grupo = fecha del último hito (equivalente al 100%).
 function getMeta(sys, groupBy, value){
-  if(!state.metas) state.metas = {};
-  if(!state.metas[sys]) state.metas[sys] = { level:{}, area:{} };
-  return state.metas[sys][groupBy][value] || null;
+  const obj = getMetaObj(sys, groupBy, value);
+  if(!obj) return null;
+  const fecha = obj.hitos[lastHitoForSys(sys)] || '';
+  return fecha ? { fecha, date: obj.date } : null;
 }
-function setMeta(sys, groupBy, value, fecha){
+function setMetaHito(sys, groupBy, value, hito, fecha){
   if(!state.metas) state.metas = {};
   if(!state.metas[sys]) state.metas[sys] = { level:{}, area:{} };
-  state.metas[sys][groupBy][value] = { fecha, date: new Date().toISOString() };
+  const obj = getMetaObj(sys, groupBy, value) || { hitos:{}, date:'' };
+  obj.hitos[hito] = fecha;
+  obj.date = new Date().toISOString();
+  state.metas[sys][groupBy][value] = obj;
   scheduleSave();
-  const id = metaId(sys, groupBy, value);
-  pushMetaToSheet(id, sys, groupBy, value, fecha);
+  const id = metaId(sys, groupBy, value, hito);
+  pushMetaToSheet(id, sys, groupBy, value, hito, fecha);
 }
-async function pushMetaToSheet(id, sys, groupBy, value, fecha){
+async function pushMetaToSheet(id, sys, groupBy, value, hito, fecha){
   if(!state.sheetSync.enabled || !state.sheetSync.url) return;
   try{
     await fetch(state.sheetSync.url, {
       method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: sheetPostBody({ action:'upsertFields', sheet:'METAS', uid:id,
-        fields: { SISTEMA: SYS[sys] ? SYS[sys].label : sys, AGRUPACION: groupBy==='level'?'Nivel':'Area', VALOR: value, FECHA_META: fecha || '' } })
+        fields: { SISTEMA: SYS[sys] ? SYS[sys].label : sys, AGRUPACION: groupBy==='level'?'Nivel':'Area', VALOR: value, HITO: (HITO_LABELS[sys]||{})[hito] || hito, FECHA_META: fecha || '' } })
     });
   }catch(e){
     showToast('Sin conexión: la meta se guardó en el celular y se subirá cuando vuelva la señal');
@@ -2929,8 +2971,13 @@ async function pullMetasFromSheet(silent){
       if(!SYS[sysKey]) return;
       const groupBy = obj.AGRUPACION === 'Nivel' ? 'level' : 'area';
       const value = obj.VALOR; if(!value) return;
+      const hitoLabels = HITO_LABELS[sysKey] || {};
+      const hitoKey = Object.keys(hitoLabels).find(k=>hitoLabels[k]===obj.HITO) || obj.HITO;
+      if(!hitoKey) return;
       if(!state.metas[sysKey]) state.metas[sysKey] = { level:{}, area:{} };
-      state.metas[sysKey][groupBy][value] = { fecha: obj.FECHA_META || '', date: new Date().toISOString() };
+      if(!state.metas[sysKey][groupBy][value]) state.metas[sysKey][groupBy][value] = { hitos:{}, date:new Date().toISOString() };
+      if(!state.metas[sysKey][groupBy][value].hitos) state.metas[sysKey][groupBy][value].hitos = {};
+      state.metas[sysKey][groupBy][value].hitos[hitoKey] = obj.FECHA_META || '';
     });
     scheduleSave();
     return true;
@@ -2995,8 +3042,10 @@ function dashboardScope(){
 // del proyecto (no tenemos fecha de inicio explícita por Nivel/Área todavía),
 // y la meta más lejana como referencia de "100% planificado".
 function computeDesviacion(scope, sys){
-  const metaObjs = sys === 'all' ? [] : Object.values((state.metas && state.metas[sys] && state.metas[sys][dashGroupBy]) || {});
-  const metaDates = metaObjs.map(m=>m.fecha).filter(Boolean).sort();
+  if(sys === 'all') return null;
+  const metaGroups = Object.keys((state.metas && state.metas[sys] && state.metas[sys][dashGroupBy]) || {});
+  const lastHito = lastHitoForSys(sys);
+  const metaDates = metaGroups.map(key=> getMetaHitoFecha(sys, dashGroupBy, key, lastHito)).filter(Boolean).sort();
   if(!metaDates.length) return null; // sin metas definidas, no se puede calcular desviación
   const allDates = scope.map(r=>r.completedAt).filter(Boolean).sort();
   if(!allDates.length) return null;
@@ -3033,7 +3082,10 @@ function buildCurvaSData(sys){
   const allMetaDates = [];
   systemsForMeta.forEach(s=>{
     ['level','area'].forEach(gb=>{
-      Object.values((state.metas && state.metas[s] && state.metas[s][gb]) || {}).forEach(m=>{ if(m.fecha) allMetaDates.push(m.fecha); });
+      Object.values((state.metas && state.metas[s] && state.metas[s][gb]) || {}).forEach(m=>{
+        if(m.hitos) Object.values(m.hitos).forEach(fecha=>{ if(fecha) allMetaDates.push(fecha); });
+        else if(m.fecha) allMetaDates.push(m.fecha); // compatibilidad con formato viejo aún no migrado
+      });
     });
   });
   if(allMetaDates.length && weekKeys.length){
@@ -3122,18 +3174,34 @@ function breakdownList(scope, groupBy, showMeta){
 }
 function breakdownRowHtml(item, groupBy, showMeta){
   const color = item.pct >= 80 ? 'var(--green-600)' : item.pct >= 40 ? '#C79100' : 'var(--brand-red)';
+  const canProgram = showMeta && dashSys !== 'all';
+  const rowId = 'dashrow-' + groupBy + '-' + String(item.key).replace(/[^a-zA-Z0-9]+/g,'_');
+  const hitos = canProgram ? hitosForSys(dashSys) : [];
   return `<div class="dash-breakdown-row">
     <div class="dash-breakdown-name">${escapeHtml(item.key)}</div>
     <div class="dash-breakdown-track"><div class="dash-breakdown-fill" style="width:${item.pct}%; background:${color};"></div></div>
     <div class="dash-breakdown-pct">${item.pct}%</div>
-    ${showMeta && dashSys !== 'all' ? `<input type="date" class="dash-breakdown-meta" data-metakey="${escapeHtml(item.key)}" data-groupby="${groupBy}" value="${item.metaFecha}">` : '<div style="width:118px; flex:none;"></div>'}
+    ${canProgram ? `<button class="dash-program-toggle" data-toggle="${rowId}">📅 Programar</button>` : '<div style="width:88px; flex:none;"></div>'}
     <div class="dash-breakdown-atraso">${item.atrasado ? '⚠ Atrasado' : ''}</div>
-  </div>`;
+  </div>
+  ${canProgram ? `<div class="dash-program-panel" id="${rowId}" style="display:none;">
+    <div class="dash-program-title">Programación de actividades — ${escapeHtml(item.key)}</div>
+    ${hitos.map(h=>`<div class="dash-program-hito-row">
+      <span class="dash-program-hito-name">${HITO_LABELS[dashSys][h]}</span>
+      <input type="date" class="dash-breakdown-meta" data-metakey="${escapeHtml(item.key)}" data-groupby="${groupBy}" data-hito="${h}" value="${getMetaHitoFecha(dashSys, groupBy, item.key, h)}">
+    </div>`).join('')}
+  </div>` : ''}`;
 }
 function wireMetaInputs(){
+  document.querySelectorAll('[data-toggle]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const panel = document.getElementById(btn.dataset.toggle);
+      if(panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    });
+  });
   document.querySelectorAll('[data-metakey]').forEach(input=>{
     input.addEventListener('change', (e)=>{
-      setMeta(dashSys, e.target.dataset.groupby, e.target.dataset.metakey, e.target.value);
+      setMetaHito(dashSys, e.target.dataset.groupby, e.target.dataset.metakey, e.target.dataset.hito, e.target.value);
       renderDashboard();
     });
   });
