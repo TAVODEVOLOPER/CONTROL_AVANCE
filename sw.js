@@ -5,7 +5,7 @@
 // CACHE_VERSION (no es obligatorio cambiarlo en cada versión, solo si quieres forzar
 // que los celulares descarten la caché vieja de inmediato).
 
-const CACHE_VERSION = 'v5.9';
+const CACHE_VERSION = 'v6.0';
 const CACHE_NAME = 'dragados-control-' + CACHE_VERSION;
 
 const APP_SHELL = [
@@ -13,7 +13,8 @@ const APP_SHELL = [
   './index.html',
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'
 ];
 
 self.addEventListener('install', (event) => {

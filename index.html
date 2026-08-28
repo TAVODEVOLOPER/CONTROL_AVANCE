@@ -15,6 +15,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 :root{
   --navy-900:#091823;
@@ -406,6 +407,10 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .dash-breakdown-pct{width:38px; text-align:right; font-size:11.5px; color:var(--steel-500); flex:none;}
 .dash-breakdown-meta{width:118px; flex:none; padding:6px 8px; border-radius:7px; border:1px solid var(--steel-300); font-size:11px;}
 .dash-breakdown-atraso{color:var(--brand-red-dark); font-size:9.5px; font-weight:700; width:56px; flex:none;}
+.dash-heatmap{border-collapse:collapse; width:100%; font-size:11px;}
+.dash-heatmap th{padding:6px 8px; font-size:10px; color:var(--steel-500); font-weight:600; text-align:center;}
+.dash-heatmap-row-label{font-size:11px; font-weight:600; color:var(--navy-900); padding:6px 10px 6px 0; white-space:nowrap;}
+.dash-heatmap-cell{text-align:center; padding:8px 10px; font-weight:700; color:var(--navy-900); min-width:56px; border:2px solid #fff;}
 @media(min-width:900px){ .dashboard-body{max-width:1100px;} }
 .reminder-banner.show{top:0;}
 .reminder-banner button{border:none; background:rgba(138,99,0,.12); color:#8A6300; padding:6px 12px; border-radius:7px; font-weight:700; font-size:12.5px; flex:none;}
@@ -1005,7 +1010,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v10.0 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v10.1 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -2957,6 +2962,93 @@ function dashboardScope(){
   });
   return out;
 }
+// ---- % Desviación vs. Meta ----
+// Usa la fecha más antigua registrada en el alcance como "inicio" implícito
+// del proyecto (no tenemos fecha de inicio explícita por Nivel/Área todavía),
+// y la meta más lejana como referencia de "100% planificado".
+function computeDesviacion(scope, sys){
+  const metaObjs = sys === 'all' ? [] : Object.values((state.metas && state.metas[sys] && state.metas[sys][dashGroupBy]) || {});
+  const metaDates = metaObjs.map(m=>m.fecha).filter(Boolean).sort();
+  if(!metaDates.length) return null; // sin metas definidas, no se puede calcular desviación
+  const allDates = scope.map(r=>r.completedAt).filter(Boolean).sort();
+  if(!allDates.length) return null;
+  const startDate = new Date(allDates[0]);
+  const targetDate = new Date(metaDates[metaDates.length-1]);
+  const now = new Date();
+  const totalMs = targetDate - startDate;
+  if(totalMs <= 0) return null;
+  const elapsedMs = Math.min(Math.max(now - startDate, 0), totalMs);
+  const plannedPct = Math.round((elapsedMs / totalMs) * 100);
+  const realPct = scope.length ? Math.round(scope.reduce((a,r)=>a+r.pct,0)/scope.length) : 0;
+  return { real: realPct, planned: plannedPct, desviacion: realPct - plannedPct };
+}
+// ---- Curva S: avance acumulado real (por semana) vs. plan (interpolado a la meta) ----
+function buildCurvaSData(sys){
+  const weeksSource = sys === 'all'
+    ? SYS_ORDER.flatMap(s=> weeklySummaryRows(s).map(w=>({...w, sys:s})))
+    : weeklySummaryRows(sys).map(w=>({...w, sys}));
+  const byWeek = {};
+  weeksSource.forEach(w=>{
+    if(!byWeek[w.key]) byWeek[w.key] = { label:w.label, complete:0, total:0 };
+    byWeek[w.key].complete += w.complete;
+    byWeek[w.key].total += (w.complete + w.inProgress);
+  });
+  const weekKeys = Object.keys(byWeek).sort().slice(-8);
+  let cum = 0, cumTotal = 0;
+  const realLine = weekKeys.map(k=>{
+    cum += byWeek[k].complete; cumTotal += byWeek[k].total;
+    return cumTotal ? Math.round((cum/cumTotal)*100) : 0;
+  });
+  // Plan: rampa lineal hasta la meta más lejana definida (si hay alguna)
+  let planLine = null;
+  const systemsForMeta = sys === 'all' ? SYS_ORDER : [sys];
+  const allMetaDates = [];
+  systemsForMeta.forEach(s=>{
+    ['level','area'].forEach(gb=>{
+      Object.values((state.metas && state.metas[s] && state.metas[s][gb]) || {}).forEach(m=>{ if(m.fecha) allMetaDates.push(m.fecha); });
+    });
+  });
+  if(allMetaDates.length && weekKeys.length){
+    const targetDate = new Date(allMetaDates.sort().pop());
+    const startDate = new Date(); startDate.setDate(startDate.getDate() - (weekKeys.length*7));
+    const totalMs = targetDate - startDate;
+    if(totalMs > 0){
+      planLine = weekKeys.map((k,i)=>{
+        const pointDate = new Date(startDate); pointDate.setDate(pointDate.getDate() + (i+1)*7);
+        const frac = Math.min(Math.max((pointDate-startDate)/totalMs, 0), 1);
+        return Math.round(frac*100);
+      });
+    }
+  }
+  return { labels: weekKeys.map(k=>byWeek[k].label.replace('Semana ','S')), real: realLine, plan: planLine };
+}
+// ---- Mapa de calor Sistema × Nivel ----
+function buildHeatmapData(){
+  const grid = {};
+  SYS_ORDER.forEach(sys=>{
+    const rows = sys==='cableado' ? state.cableado : state[sys];
+    const scoped = dashboardScope().filter(r=>r.sys===sys);
+    scoped.forEach(r=>{
+      const key = r.level || '—';
+      if(!grid[key]) grid[key] = {};
+      if(!grid[key][sys]) grid[key][sys] = [];
+      grid[key][sys].push(r.pct);
+    });
+  });
+  const levels = Object.keys(grid).sort((a,b)=> a.localeCompare(b, undefined, {numeric:true}));
+  return { levels, grid };
+}
+function heatColor(pct){
+  if(pct === null || pct === undefined) return '#F1EFE8';
+  if(pct >= 80) return '#97C459';
+  if(pct >= 50) return '#EF9F27';
+  if(pct >= 1) return '#F0997B';
+  return '#E1E0D9';
+}
+let dashRestCatFilter = 'all';
+let dashRestEstadoFilter = 'all';
+let dashCurvaSChart = null;
+let dashParetoChart = null;
 function renderDashboard(){
   document.getElementById('dashSysSelect').value = dashSys;
   document.getElementById('dashGroupSelect').value = dashGroupBy;
@@ -2969,6 +3061,7 @@ function renderDashboard(){
 
   const cutoff7 = new Date(); cutoff7.setDate(cutoff7.getDate()-7);
   const completados7d = scope.filter(r=> r.completedAt && new Date(r.completedAt) >= cutoff7).length;
+  const desviacion = computeDesviacion(scope, dashSys);
 
   // Agrupar por Nivel o Área
   const groups = {};
@@ -3001,6 +3094,7 @@ function renderDashboard(){
   }).join('');
 
   let sysBarsHtml = '';
+  let heatmapHtml = '';
   if(dashSys === 'all'){
     sysBarsHtml = `<div class="dash-section-label">Avance por sistema</div>` + SYS_ORDER.map(s=>{
       const rows = s==='cableado' ? state.cableado : state[s];
@@ -3011,19 +3105,111 @@ function renderDashboard(){
         <div class="dash-sys-bar-track"><div class="dash-sys-bar-fill" style="width:${pct}%; background:${color};"></div></div>
       </div>`;
     }).join('');
+
+    const { levels, grid } = buildHeatmapData();
+    if(levels.length){
+      heatmapHtml = `<div class="dash-section-label" style="margin-top:20px;">Mapa de calor — Nivel × Sistema</div>
+      <div style="overflow-x:auto;"><table class="dash-heatmap">
+        <tr><th></th>${SYS_ORDER.map(s=>`<th>${SYS[s].label}</th>`).join('')}</tr>
+        ${levels.map(lvl=>`<tr><td class="dash-heatmap-row-label">${escapeHtml(lvl)}</td>${SYS_ORDER.map(s=>{
+          const vals = (grid[lvl] && grid[lvl][s]) ? grid[lvl][s] : null;
+          const pct = vals ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null;
+          return `<td class="dash-heatmap-cell" style="background:${heatColor(pct)};">${pct===null?'—':pct+'%'}</td>`;
+        }).join('')}</tr>`).join('')}
+      </table></div>
+      <div style="display:flex; gap:12px; font-size:10px; color:var(--steel-500); margin-top:6px;">
+        <span><span style="display:inline-block; width:9px; height:9px; background:#97C459; border-radius:2px; margin-right:3px;"></span>≥80%</span>
+        <span><span style="display:inline-block; width:9px; height:9px; background:#EF9F27; border-radius:2px; margin-right:3px;"></span>50-79%</span>
+        <span><span style="display:inline-block; width:9px; height:9px; background:#F0997B; border-radius:2px; margin-right:3px;"></span>&lt;50%</span>
+        <span><span style="display:inline-block; width:9px; height:9px; background:#F1EFE8; border-radius:2px; margin-right:3px;"></span>Sin datos</span>
+      </div>`;
+    }
   }
+
+  // Pareto de restricciones (con filtros de criticidad/estado)
+  const restSystems = dashSys === 'all' ? SYS_ORDER : [dashSys];
+  let restAll = [];
+  restSystems.forEach(s=>{ if(state.restricciones && state.restricciones[s]) restAll = restAll.concat(state.restricciones[s]); });
+  const restFiltered = restAll.filter(r=>
+    (dashRestCatFilter==='all' || r.categoria===dashRestCatFilter) &&
+    (dashRestEstadoFilter==='all' || r.estado===dashRestEstadoFilter)
+  );
+  const paretoCounts = { MAT:0, INT:0, PRE:0, DOC:0 };
+  restFiltered.forEach(r=>{ if(paretoCounts[r.categoria]!==undefined) paretoCounts[r.categoria]++; });
 
   document.getElementById('dashboardBody').innerHTML = `
     <div class="dash-kpi-grid">
       <div class="dash-kpi-card" style="background:var(--steel-050);"><div class="dash-kpi-num" style="color:var(--navy-900);">${avgPct}%</div><div class="dash-kpi-label" style="color:var(--steel-500);">Avance ponderado</div></div>
+      <div class="dash-kpi-card" style="background:${desviacion===null?'var(--steel-050)':(desviacion.desviacion>=0?'var(--green-100)':'#FCE4E4')};">
+        <div class="dash-kpi-num" style="color:${desviacion===null?'var(--steel-400)':(desviacion.desviacion>=0?'var(--green-600)':'#B81219')};">${desviacion===null ? '—' : (desviacion.desviacion>=0?'+':'')+desviacion.desviacion+'%'}</div>
+        <div class="dash-kpi-label" style="color:${desviacion===null?'var(--steel-500)':(desviacion.desviacion>=0?'var(--green-600)':'#B81219')};">${desviacion===null ? 'Desviación (define metas)' : 'Desviación vs. meta'}</div>
+      </div>
       <div class="dash-kpi-card" style="background:#FCE4E4;"><div class="dash-kpi-num" style="color:#B81219;">${restAbiertas}</div><div class="dash-kpi-label" style="color:#B81219;">Restricciones abiertas</div></div>
       <div class="dash-kpi-card" style="background:#FFF3CD;"><div class="dash-kpi-num" style="color:#8A6300;">${atrasados}</div><div class="dash-kpi-label" style="color:#8A6300;">${dashGroupBy==='level'?'Niveles':'Áreas'} atrasados</div></div>
       <div class="dash-kpi-card" style="background:var(--steel-050);"><div class="dash-kpi-num" style="color:var(--navy-900);">${completados7d}</div><div class="dash-kpi-label" style="color:var(--steel-500);">Completados (7 días)</div></div>
     </div>
+
+    <div class="dash-section-label">Curva S — avance acumulado real vs. plan</div>
+    <div style="position:relative; height:200px; margin-bottom:20px;">
+      <canvas id="dashCurvaS" role="img" aria-label="Curva S de avance acumulado, real comparado con plan"></canvas>
+    </div>
+
     ${sysBarsHtml}
-    <div class="dash-section-label" style="margin-top:${dashSys==='all'?'20px':'0'};">Desglose por ${dashGroupBy==='level'?'Nivel':'Área'}${dashSys==='all' ? ' (todos los sistemas combinados — sin meta editable)' : ' — con meta editable'}</div>
+    ${heatmapHtml}
+
+    <div class="dash-section-label" style="margin-top:20px;">Restricciones por categoría (Pareto)</div>
+    <div style="display:flex; gap:8px; margin-bottom:10px;">
+      <select class="insights-sys-select" id="dashRestCatSelect" style="margin-bottom:0;">
+        <option value="all">Todas las categorías</option>
+        <option value="MAT">MAT</option><option value="INT">INT</option><option value="PRE">PRE</option><option value="DOC">DOC</option>
+      </select>
+      <select class="insights-sys-select" id="dashRestEstadoSelect" style="margin-bottom:0;">
+        <option value="all">Todos los estados</option>
+        <option value="Abierta">Abierta</option><option value="Liberada">Liberada</option>
+      </select>
+    </div>
+    <div style="position:relative; height:180px; margin-bottom:20px;">
+      <canvas id="dashPareto" role="img" aria-label="Restricciones por categoría con línea de porcentaje acumulado"></canvas>
+    </div>
+
+    <div class="dash-section-label">Desglose por ${dashGroupBy==='level'?'Nivel':'Área'}${dashSys==='all' ? ' (todos los sistemas combinados — sin meta editable)' : ' — con meta editable'}</div>
     ${rowsHtml || '<div style="font-size:12px; color:var(--steel-500);">No hay datos para mostrar.</div>'}
   `;
+  document.getElementById('dashRestCatSelect').value = dashRestCatFilter;
+  document.getElementById('dashRestEstadoSelect').value = dashRestEstadoFilter;
+  document.getElementById('dashRestCatSelect').addEventListener('change', (e)=>{ dashRestCatFilter = e.target.value; renderDashboard(); });
+  document.getElementById('dashRestEstadoSelect').addEventListener('change', (e)=>{ dashRestEstadoFilter = e.target.value; renderDashboard(); });
+
+  // Curva S
+  const curva = buildCurvaSData(dashSys);
+  const datasets = [{ label:'Real', data:curva.real, borderColor:'#07509C', backgroundColor:'rgba(7,80,156,.08)', fill:true, borderWidth:2, pointRadius:3, pointBackgroundColor:'#07509C', tension:0.15 }];
+  if(curva.plan) datasets.push({ label:'Plan', data:curva.plan, borderColor:'#FFC905', borderDash:[4,3], borderWidth:2.5, pointRadius:0, tension:0.15 });
+  if(dashCurvaSChart) dashCurvaSChart.destroy();
+  dashCurvaSChart = new Chart(document.getElementById('dashCurvaS'), {
+    type:'line',
+    data:{ labels:curva.labels, datasets },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:true, position:'bottom', labels:{ boxWidth:10, font:{size:10.5} } } },
+      scales:{ y:{ min:0, max:100, ticks:{ callback:v=>v+'%' } }, x:{ grid:{display:false} } } }
+  });
+
+  // Pareto
+  const catLabels = ['MAT','INT','PRE','DOC'];
+  const catData = catLabels.map(c=>paretoCounts[c]);
+  const totalRest = catData.reduce((a,b)=>a+b,0) || 1;
+  let acc = 0;
+  const cumData = catData.map(v=>{ acc += v; return Math.round((acc/totalRest)*100); });
+  if(dashParetoChart) dashParetoChart.destroy();
+  dashParetoChart = new Chart(document.getElementById('dashPareto'), {
+    data:{ labels:catLabels, datasets:[
+      { type:'bar', label:'Cantidad', data:catData, backgroundColor:'#07509C', borderRadius:4, yAxisID:'y' },
+      { type:'line', label:'% Acumulado', data:cumData, borderColor:'#E92127', borderWidth:2, pointRadius:3, pointBackgroundColor:'#E92127', yAxisID:'y1' }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:true, position:'bottom', labels:{ boxWidth:10, font:{size:10.5} } } },
+      scales:{ y:{ position:'left', beginAtZero:true }, y1:{ position:'right', min:0, max:100, grid:{display:false}, ticks:{ callback:v=>v+'%' } }, x:{ grid:{display:false} } } }
+  });
+
   document.querySelectorAll('[data-metakey]').forEach(input=>{
     input.addEventListener('change', (e)=>{
       setMeta(dashSys, dashGroupBy, e.target.dataset.metakey, e.target.value);
@@ -3090,10 +3276,82 @@ async function exportDashboardPDF(){
   const scope = dashboardScope();
   const total = scope.length;
   const avgPct = total ? Math.round(scope.reduce((a,r)=>a+r.pct,0)/total) : 0;
-  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(9,24,35);
-  doc.text(`Avance ponderado general: ${avgPct}%`, margin, y); y += 20;
-  doc.setDrawColor(200,200,200); doc.line(margin, y, pageW-margin, y); y += 20;
+  const desviacion = computeDesviacion(scope, dashSys);
+  const systemsForRest = dashSys === 'all' ? SYS_ORDER : [dashSys];
+  const restAbiertas = systemsForRest.reduce((acc,s)=> acc + ((state.restricciones && state.restricciones[s]) ? state.restricciones[s].filter(r=>r.estado!=='Liberada').length : 0), 0);
 
+  // Tarjetas de KPI (colores corporativos: azul Dragados y amarillo)
+  const kpis = [
+    { n: avgPct+'%', l:'Avance ponderado', bg:[237,245,252], fg:[7,80,156] },
+    { n: desviacion===null ? '—' : (desviacion.desviacion>=0?'+':'')+desviacion.desviacion+'%', l:'Desviación vs. meta', bg: desviacion && desviacion.desviacion<0 ? [252,228,228] : [227,245,236], fg: desviacion && desviacion.desviacion<0 ? [184,18,25] : [30,142,90] },
+    { n: String(restAbiertas), l:'Restricciones abiertas', bg:[252,228,228], fg:[184,18,25] }
+  ];
+  const kpiGap = 8, kpiW = (pageW - margin*2 - kpiGap*2) / 3, kpiH = 40;
+  kpis.forEach((k,i)=>{
+    const kx = margin + i*(kpiW+kpiGap);
+    doc.setFillColor(k.bg[0],k.bg[1],k.bg[2]);
+    doc.roundedRect(kx, y, kpiW, kpiH, 4, 4, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(k.fg[0],k.fg[1],k.fg[2]);
+    doc.text(k.n, kx+kpiW/2, y+18, { align:'center' });
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.text(k.l, kx+kpiW/2, y+30, { align:'center' });
+  });
+  y += kpiH + 24;
+
+  // Curva S — imagen real del gráfico ya renderizado
+  const curvaCanvas = document.getElementById('dashCurvaS');
+  if(curvaCanvas && dashCurvaSChart){
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(9,24,35);
+    doc.text('Curva S — avance acumulado real vs. plan', margin, y); y += 10;
+    const imgW = pageW - margin*2, imgH = imgW * (curvaCanvas.height/curvaCanvas.width) * 0.6;
+    try{ doc.addImage(dashCurvaSChart.toBase64Image(), 'PNG', margin, y, imgW, imgH); }catch(e){}
+    y += imgH + 20;
+  }
+
+  if(y > pageH - footerH - 160) { doc.addPage(); y = margin; }
+
+  // Mapa de calor Nivel × Sistema (solo en modo "todos los sistemas")
+  if(dashSys === 'all'){
+    const { levels, grid } = buildHeatmapData();
+    if(levels.length){
+      doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(9,24,35);
+      doc.text('Mapa de calor — Nivel × Sistema', margin, y); y += 14;
+      const colW = (pageW - margin*2 - 70) / SYS_ORDER.length;
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(100,110,120);
+      SYS_ORDER.forEach((s,i)=> doc.text(SYS[s].label, margin+70+i*colW+colW/2, y, { align:'center' }));
+      y += 10;
+      levels.forEach(lvl=>{
+        if(y > pageH - footerH - 20){ doc.addPage(); y = margin; }
+        doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(9,24,35);
+        doc.text(String(lvl), margin, y+10);
+        SYS_ORDER.forEach((s,i)=>{
+          const vals = (grid[lvl] && grid[lvl][s]) ? grid[lvl][s] : null;
+          const pct = vals ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null;
+          const hex = heatColor(pct).replace('#','');
+          const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
+          doc.setFillColor(r,g,b);
+          doc.rect(margin+70+i*colW, y-8, colW-3, 16, 'F');
+          doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(9,24,35);
+          doc.text(pct===null?'—':pct+'%', margin+70+i*colW+(colW-3)/2, y+2, { align:'center' });
+        });
+        y += 20;
+      });
+      y += 14;
+    }
+  }
+
+  if(y > pageH - footerH - 160) { doc.addPage(); y = margin; }
+
+  // Pareto de restricciones — imagen real del gráfico ya renderizado
+  const paretoCanvas = document.getElementById('dashPareto');
+  if(paretoCanvas && dashParetoChart){
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(9,24,35);
+    doc.text('Restricciones por categoría (Pareto)', margin, y); y += 10;
+    const imgW = pageW - margin*2, imgH = imgW * (paretoCanvas.height/paretoCanvas.width) * 0.6;
+    try{ doc.addImage(dashParetoChart.toBase64Image(), 'PNG', margin, y, imgW, imgH); }catch(e){}
+    y += imgH + 20;
+  }
+
+  if(y > pageH - footerH - 60) { doc.addPage(); y = margin; }
   doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(9,24,35);
   doc.text(`Desglose por ${dashGroupBy==='level'?'Nivel':'Área'}`, margin, y); y += 18;
 
@@ -3101,7 +3359,7 @@ async function exportDashboardPDF(){
   for(const d of data){
     if(y > pageH - footerH - 30){ doc.addPage(); y = margin; }
     doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(50,60,70);
-    const line = `${d.key} — ${d.pct}%${d.metaFecha ? `  ·  Meta: ${d.metaFecha}` : ''}${d.atrasado==='Sí' ? '  ·  ⚠ ATRASADO' : ''}`;
+    const line = `${d.key} — ${d.pct}%${d.metaFecha ? `  ·  Meta: ${d.metaFecha}` : ''}${d.atrasado==='Sí' ? '  ·  ATRASADO' : ''}`;
     doc.text(line, margin, y); y += 16;
   }
 
