@@ -391,7 +391,15 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .dashboard-export-menu.open{display:block;}
 .dashboard-export-menu button{display:block; width:100%; text-align:left; padding:10px 14px; border:none; background:none; font-size:13px; cursor:pointer;}
 .dashboard-export-menu button:hover{background:var(--steel-050);}
-.dashboard-body{flex:1; overflow-y:auto; padding:16px 20px 40px; max-width:960px; margin:0 auto; width:100%; box-sizing:border-box;}
+.dashboard-body{flex:1; overflow-y:auto; width:100%; box-sizing:border-box;}
+.dashboard-body-inner{max-width:1100px; margin:0 auto; padding:16px 20px 40px; box-sizing:border-box;}
+.dashboard-tabs{display:flex; gap:4px; padding:0 20px; background:#fff; border-bottom:1px solid var(--steel-200); overflow-x:auto;}
+.dashboard-tab{padding:12px 16px; font-size:12.5px; font-weight:600; color:var(--steel-500); border:none; background:none; border-bottom:2.5px solid transparent; cursor:pointer; white-space:nowrap;}
+.dashboard-tab.active{color:var(--brand-blue); border-bottom-color:var(--brand-blue);}
+.dash-general-grid{display:grid; grid-template-columns:1fr; gap:20px;}
+.dash-area-search{width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--steel-300); font-size:13px; margin-bottom:10px;}
+.dash-area-toggle{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--steel-600); margin-bottom:14px;}
+@media(min-width:900px){ .dash-general-grid{grid-template-columns:1fr 1.3fr 1.3fr;} }
 .dash-kpi-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-bottom:20px;}
 .dash-kpi-card{border-radius:12px; padding:14px;}
 .dash-kpi-num{font-family:var(--font-display); font-weight:700; font-size:24px;}
@@ -411,7 +419,6 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .dash-heatmap th{padding:6px 8px; font-size:10px; color:var(--steel-500); font-weight:600; text-align:center;}
 .dash-heatmap-row-label{font-size:11px; font-weight:600; color:var(--navy-900); padding:6px 10px 6px 0; white-space:nowrap;}
 .dash-heatmap-cell{text-align:center; padding:8px 10px; font-weight:700; color:var(--navy-900); min-width:56px; border:2px solid #fff;}
-@media(min-width:900px){ .dashboard-body{max-width:1100px;} }
 .reminder-banner.show{top:0;}
 .reminder-banner button{border:none; background:rgba(138,99,0,.12); color:#8A6300; padding:6px 12px; border-radius:7px; font-weight:700; font-size:12.5px; flex:none;}
 @media(min-width:900px){ .reminder-banner{left:300px;} }
@@ -540,10 +547,6 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
     <select class="insights-sys-select" id="dashSysSelect" style="margin-bottom:0;">
       <option value="all">Todos los sistemas</option>
     </select>
-    <select class="insights-sys-select" id="dashGroupSelect" style="margin-bottom:0;">
-      <option value="level">Por Nivel</option>
-      <option value="area">Por Área</option>
-    </select>
     <div class="dashboard-export-wrap">
       <button class="doc-upload-label" id="btnDashboardExport" style="border-style:solid; background:#fff; margin:0; white-space:nowrap;">Exportar ▾</button>
       <div class="dashboard-export-menu" id="dashboardExportMenu">
@@ -552,7 +555,12 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       </div>
     </div>
   </div>
-  <div class="dashboard-body" id="dashboardBody"></div>
+  <div class="dashboard-tabs" id="dashboardTabs">
+    <button class="dashboard-tab" data-tab="general">Vista general</button>
+    <button class="dashboard-tab" data-tab="niveles">Mapa de niveles</button>
+    <button class="dashboard-tab" data-tab="areas">Detalle por área</button>
+  </div>
+  <div class="dashboard-body" id="dashboardBody"><div class="dashboard-body-inner" id="dashboardBodyInner"></div></div>
 </div>
 
 <div class="insights-overlay" id="insightsOverlay"></div>
@@ -1010,7 +1018,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v10.1 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v10.2 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -2941,6 +2949,15 @@ function openDashboard(){
 function closeDashboard(){
   document.getElementById('dashboardScreen').classList.remove('open');
 }
+// "Level 0", "Nivel 0", "NIVEL0", "level_0" → todos se muestran como "Nivel 0".
+// Distintos sistemas cargaron el mismo dato con nombres/formatos distintos.
+function normalizeLevel(raw){
+  if(!raw) return '—';
+  const s = String(raw).trim();
+  const m = s.match(/(?:nivel|level)\s*[-_]?\s*(\S+)/i);
+  if(m) return `Nivel ${m[1]}`;
+  return s;
+}
 function dashboardScope(){
   // Devuelve la lista de {sys, rows-planas-con-nivel/area/pct/completedAt} según el sistema elegido.
   const out = [];
@@ -2949,14 +2966,14 @@ function dashboardScope(){
     if(sys === 'cableado'){
       state.cableado.forEach(r=>{
         ['from','to'].forEach(side=>{
-          out.push({ sys, level: r.level||'—', area: (side==='from'?r.from_area:r.to_area)||'—', pct: weightedProgressCable(r)[side], completedAt: r[side].completedAt });
+          out.push({ sys, level: normalizeLevel(r.level), area: (side==='from'?r.from_area:r.to_area)||'—', pct: weightedProgressCable(r)[side], completedAt: r[side].completedAt });
         });
       });
     } else {
       const statusFn = sys==='hvac'?hvacStatus : sys==='fds'?fdsStatus : sys==='transit'?transitStatus : sys==='timbrado'?timbradoStatus : null;
       state[sys].forEach(r=>{
         const pct = sys==='timbrado' ? (statusFn(r)==='complete'?100:0) : weightedProgress(sys, r);
-        out.push({ sys, level: r.level||'—', area: (r.area||r.from_area)||'—', pct, completedAt: r.completedAt });
+        out.push({ sys, level: normalizeLevel(r.level), area: (r.area||r.from_area)||'—', pct, completedAt: r.completedAt });
       });
     }
   });
@@ -3049,84 +3066,70 @@ let dashRestCatFilter = 'all';
 let dashRestEstadoFilter = 'all';
 let dashCurvaSChart = null;
 let dashParetoChart = null;
+let dashTab = 'general';
+let dashAreaSearch = '';
+let dashAreaHideZero = true;
 function renderDashboard(){
   document.getElementById('dashSysSelect').value = dashSys;
-  document.getElementById('dashGroupSelect').value = dashGroupBy;
+  document.querySelectorAll('.dashboard-tab').forEach(t=> t.classList.toggle('active', t.dataset.tab===dashTab));
   const scope = dashboardScope();
   const total = scope.length;
   const avgPct = total ? Math.round(scope.reduce((a,r)=>a+r.pct,0)/total) : 0;
-
   const systemsForRest = dashSys === 'all' ? SYS_ORDER : [dashSys];
   const restAbiertas = systemsForRest.reduce((acc,s)=> acc + ((state.restricciones && state.restricciones[s]) ? state.restricciones[s].filter(r=>r.estado!=='Liberada').length : 0), 0);
-
   const cutoff7 = new Date(); cutoff7.setDate(cutoff7.getDate()-7);
   const completados7d = scope.filter(r=> r.completedAt && new Date(r.completedAt) >= cutoff7).length;
   const desviacion = computeDesviacion(scope, dashSys);
 
-  // Agrupar por Nivel o Área
+  const inner = document.getElementById('dashboardBodyInner');
+  if(dashTab === 'general') renderDashTabGeneral(inner, { scope, avgPct, restAbiertas, completados7d, desviacion });
+  else if(dashTab === 'niveles') renderDashTabNiveles(inner, { scope });
+  else renderDashTabAreas(inner, { scope });
+}
+function breakdownList(scope, groupBy, showMeta){
   const groups = {};
   scope.forEach(r=>{
-    const key = dashGroupBy === 'level' ? r.level : r.area;
+    const key = groupBy === 'level' ? r.level : r.area;
     if(!groups[key]) groups[key] = [];
     groups[key].push(r);
   });
   const sortedKeys = Object.keys(groups).sort((a,b)=> a.localeCompare(b, undefined, {numeric:true}));
   const today = todayLocalISO();
   let atrasados = 0;
-  const rowsHtml = sortedKeys.map(key=>{
+  const items = sortedKeys.map(key=>{
     const groupRows = groups[key];
     const pct = Math.round(groupRows.reduce((a,r)=>a+r.pct,0)/groupRows.length);
-    const color = pct >= 80 ? 'var(--green-600)' : pct >= 40 ? '#C79100' : 'var(--brand-red)';
-    let metaFecha = '';
-    let atrasado = false;
-    if(dashSys !== 'all'){
-      const meta = getMeta(dashSys, dashGroupBy, key);
+    let metaFecha = '', atrasado = false;
+    if(showMeta && dashSys !== 'all'){
+      const meta = getMeta(dashSys, groupBy, key);
       metaFecha = meta ? meta.fecha : '';
       if(metaFecha && metaFecha < today && pct < 100){ atrasado = true; atrasados++; }
     }
-    return `<div class="dash-breakdown-row">
-      <div class="dash-breakdown-name">${escapeHtml(key)}</div>
-      <div class="dash-breakdown-track"><div class="dash-breakdown-fill" style="width:${pct}%; background:${color};"></div></div>
-      <div class="dash-breakdown-pct">${pct}%</div>
-      ${dashSys !== 'all' ? `<input type="date" class="dash-breakdown-meta" data-metakey="${escapeHtml(key)}" value="${metaFecha}">` : '<div style="width:118px; flex:none;"></div>'}
-      <div class="dash-breakdown-atraso">${atrasado ? '⚠ Atrasado' : ''}</div>
-    </div>`;
-  }).join('');
+    return { key, pct, metaFecha, atrasado };
+  });
+  return { items, atrasados };
+}
+function breakdownRowHtml(item, groupBy, showMeta){
+  const color = item.pct >= 80 ? 'var(--green-600)' : item.pct >= 40 ? '#C79100' : 'var(--brand-red)';
+  return `<div class="dash-breakdown-row">
+    <div class="dash-breakdown-name">${escapeHtml(item.key)}</div>
+    <div class="dash-breakdown-track"><div class="dash-breakdown-fill" style="width:${item.pct}%; background:${color};"></div></div>
+    <div class="dash-breakdown-pct">${item.pct}%</div>
+    ${showMeta && dashSys !== 'all' ? `<input type="date" class="dash-breakdown-meta" data-metakey="${escapeHtml(item.key)}" data-groupby="${groupBy}" value="${item.metaFecha}">` : '<div style="width:118px; flex:none;"></div>'}
+    <div class="dash-breakdown-atraso">${item.atrasado ? '⚠ Atrasado' : ''}</div>
+  </div>`;
+}
+function wireMetaInputs(){
+  document.querySelectorAll('[data-metakey]').forEach(input=>{
+    input.addEventListener('change', (e)=>{
+      setMeta(dashSys, e.target.dataset.groupby, e.target.dataset.metakey, e.target.value);
+      renderDashboard();
+    });
+  });
+}
 
-  let sysBarsHtml = '';
-  let heatmapHtml = '';
-  if(dashSys === 'all'){
-    sysBarsHtml = `<div class="dash-section-label">Avance por sistema</div>` + SYS_ORDER.map(s=>{
-      const rows = s==='cableado' ? state.cableado : state[s];
-      const pct = weightedSystemAverage(s, rows);
-      const color = pct >= 80 ? 'var(--green-600)' : pct >= 40 ? '#C79100' : 'var(--brand-red)';
-      return `<div class="dash-sys-bar-row">
-        <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--steel-600);"><span>${SYS[s].label}</span><span>${pct}%</span></div>
-        <div class="dash-sys-bar-track"><div class="dash-sys-bar-fill" style="width:${pct}%; background:${color};"></div></div>
-      </div>`;
-    }).join('');
-
-    const { levels, grid } = buildHeatmapData();
-    if(levels.length){
-      heatmapHtml = `<div class="dash-section-label" style="margin-top:20px;">Mapa de calor — Nivel × Sistema</div>
-      <div style="overflow-x:auto;"><table class="dash-heatmap">
-        <tr><th></th>${SYS_ORDER.map(s=>`<th>${SYS[s].label}</th>`).join('')}</tr>
-        ${levels.map(lvl=>`<tr><td class="dash-heatmap-row-label">${escapeHtml(lvl)}</td>${SYS_ORDER.map(s=>{
-          const vals = (grid[lvl] && grid[lvl][s]) ? grid[lvl][s] : null;
-          const pct = vals ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null;
-          return `<td class="dash-heatmap-cell" style="background:${heatColor(pct)};">${pct===null?'—':pct+'%'}</td>`;
-        }).join('')}</tr>`).join('')}
-      </table></div>
-      <div style="display:flex; gap:12px; font-size:10px; color:var(--steel-500); margin-top:6px;">
-        <span><span style="display:inline-block; width:9px; height:9px; background:#97C459; border-radius:2px; margin-right:3px;"></span>≥80%</span>
-        <span><span style="display:inline-block; width:9px; height:9px; background:#EF9F27; border-radius:2px; margin-right:3px;"></span>50-79%</span>
-        <span><span style="display:inline-block; width:9px; height:9px; background:#F0997B; border-radius:2px; margin-right:3px;"></span>&lt;50%</span>
-        <span><span style="display:inline-block; width:9px; height:9px; background:#F1EFE8; border-radius:2px; margin-right:3px;"></span>Sin datos</span>
-      </div>`;
-    }
-  }
-
-  // Pareto de restricciones (con filtros de criticidad/estado)
+/* ---- Pestaña: Vista general ---- */
+function renderDashTabGeneral(inner, d){
   const restSystems = dashSys === 'all' ? SYS_ORDER : [dashSys];
   let restAll = [];
   restSystems.forEach(s=>{ if(state.restricciones && state.restricciones[s]) restAll = restAll.concat(state.restricciones[s]); });
@@ -3136,64 +3139,60 @@ function renderDashboard(){
   );
   const paretoCounts = { MAT:0, INT:0, PRE:0, DOC:0 };
   restFiltered.forEach(r=>{ if(paretoCounts[r.categoria]!==undefined) paretoCounts[r.categoria]++; });
+  const { atrasados } = breakdownList(d.scope, 'level', true);
 
-  document.getElementById('dashboardBody').innerHTML = `
-    <div class="dash-kpi-grid">
-      <div class="dash-kpi-card" style="background:var(--steel-050);"><div class="dash-kpi-num" style="color:var(--navy-900);">${avgPct}%</div><div class="dash-kpi-label" style="color:var(--steel-500);">Avance ponderado</div></div>
-      <div class="dash-kpi-card" style="background:${desviacion===null?'var(--steel-050)':(desviacion.desviacion>=0?'var(--green-100)':'#FCE4E4')};">
-        <div class="dash-kpi-num" style="color:${desviacion===null?'var(--steel-400)':(desviacion.desviacion>=0?'var(--green-600)':'#B81219')};">${desviacion===null ? '—' : (desviacion.desviacion>=0?'+':'')+desviacion.desviacion+'%'}</div>
-        <div class="dash-kpi-label" style="color:${desviacion===null?'var(--steel-500)':(desviacion.desviacion>=0?'var(--green-600)':'#B81219')};">${desviacion===null ? 'Desviación (define metas)' : 'Desviación vs. meta'}</div>
+  inner.innerHTML = `
+    <div class="dash-general-grid">
+      <div>
+        <div class="dash-kpi-card" style="background:var(--steel-050); margin-bottom:10px;"><div class="dash-kpi-num" style="color:var(--navy-900);">${d.avgPct}%</div><div class="dash-kpi-label" style="color:var(--steel-500);">Avance ponderado</div></div>
+        <div class="dash-kpi-card" style="background:${d.desviacion===null?'var(--steel-050)':(d.desviacion.desviacion>=0?'var(--green-100)':'#FCE4E4')}; margin-bottom:10px;">
+          <div class="dash-kpi-num" style="color:${d.desviacion===null?'var(--steel-400)':(d.desviacion.desviacion>=0?'var(--green-600)':'#B81219')};">${d.desviacion===null ? '—' : (d.desviacion.desviacion>=0?'+':'')+d.desviacion.desviacion+'%'}</div>
+          <div class="dash-kpi-label" style="color:${d.desviacion===null?'var(--steel-500)':(d.desviacion.desviacion>=0?'var(--green-600)':'#B81219')};">${d.desviacion===null ? 'Desviación (define metas)' : 'Desviación vs. meta'}</div>
+        </div>
+        <div class="dash-kpi-card" style="background:#FCE4E4; margin-bottom:10px;"><div class="dash-kpi-num" style="color:#B81219;">${d.restAbiertas}</div><div class="dash-kpi-label" style="color:#B81219;">Restricciones abiertas</div></div>
+        <div class="dash-kpi-card" style="background:#FFF3CD; margin-bottom:10px;"><div class="dash-kpi-num" style="color:#8A6300;">${atrasados}</div><div class="dash-kpi-label" style="color:#8A6300;">Niveles atrasados</div></div>
+        <div class="dash-kpi-card" style="background:var(--steel-050);"><div class="dash-kpi-num" style="color:var(--navy-900);">${d.completados7d}</div><div class="dash-kpi-label" style="color:var(--steel-500);">Completados (7 días)</div></div>
       </div>
-      <div class="dash-kpi-card" style="background:#FCE4E4;"><div class="dash-kpi-num" style="color:#B81219;">${restAbiertas}</div><div class="dash-kpi-label" style="color:#B81219;">Restricciones abiertas</div></div>
-      <div class="dash-kpi-card" style="background:#FFF3CD;"><div class="dash-kpi-num" style="color:#8A6300;">${atrasados}</div><div class="dash-kpi-label" style="color:#8A6300;">${dashGroupBy==='level'?'Niveles':'Áreas'} atrasados</div></div>
-      <div class="dash-kpi-card" style="background:var(--steel-050);"><div class="dash-kpi-num" style="color:var(--navy-900);">${completados7d}</div><div class="dash-kpi-label" style="color:var(--steel-500);">Completados (7 días)</div></div>
+      <div>
+        <div class="dash-section-label">Curva S — real vs. plan</div>
+        <div style="position:relative; height:220px;">
+          <canvas id="dashCurvaS" role="img" aria-label="Curva S de avance acumulado, real comparado con plan"></canvas>
+        </div>
+      </div>
+      <div>
+        <div class="dash-section-label">Restricciones por categoría (Pareto)</div>
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+          <select class="insights-sys-select" id="dashRestCatSelect" style="margin-bottom:0;">
+            <option value="all">Todas las categorías</option>
+            <option value="MAT">MAT</option><option value="INT">INT</option><option value="PRE">PRE</option><option value="DOC">DOC</option>
+          </select>
+          <select class="insights-sys-select" id="dashRestEstadoSelect" style="margin-bottom:0;">
+            <option value="all">Todos los estados</option>
+            <option value="Abierta">Abierta</option><option value="Liberada">Liberada</option>
+          </select>
+        </div>
+        <div style="position:relative; height:180px;">
+          <canvas id="dashPareto" role="img" aria-label="Restricciones por categoría con línea de porcentaje acumulado"></canvas>
+        </div>
+      </div>
     </div>
-
-    <div class="dash-section-label">Curva S — avance acumulado real vs. plan</div>
-    <div style="position:relative; height:200px; margin-bottom:20px;">
-      <canvas id="dashCurvaS" role="img" aria-label="Curva S de avance acumulado, real comparado con plan"></canvas>
-    </div>
-
-    ${sysBarsHtml}
-    ${heatmapHtml}
-
-    <div class="dash-section-label" style="margin-top:20px;">Restricciones por categoría (Pareto)</div>
-    <div style="display:flex; gap:8px; margin-bottom:10px;">
-      <select class="insights-sys-select" id="dashRestCatSelect" style="margin-bottom:0;">
-        <option value="all">Todas las categorías</option>
-        <option value="MAT">MAT</option><option value="INT">INT</option><option value="PRE">PRE</option><option value="DOC">DOC</option>
-      </select>
-      <select class="insights-sys-select" id="dashRestEstadoSelect" style="margin-bottom:0;">
-        <option value="all">Todos los estados</option>
-        <option value="Abierta">Abierta</option><option value="Liberada">Liberada</option>
-      </select>
-    </div>
-    <div style="position:relative; height:180px; margin-bottom:20px;">
-      <canvas id="dashPareto" role="img" aria-label="Restricciones por categoría con línea de porcentaje acumulado"></canvas>
-    </div>
-
-    <div class="dash-section-label">Desglose por ${dashGroupBy==='level'?'Nivel':'Área'}${dashSys==='all' ? ' (todos los sistemas combinados — sin meta editable)' : ' — con meta editable'}</div>
-    ${rowsHtml || '<div style="font-size:12px; color:var(--steel-500);">No hay datos para mostrar.</div>'}
   `;
   document.getElementById('dashRestCatSelect').value = dashRestCatFilter;
   document.getElementById('dashRestEstadoSelect').value = dashRestEstadoFilter;
   document.getElementById('dashRestCatSelect').addEventListener('change', (e)=>{ dashRestCatFilter = e.target.value; renderDashboard(); });
   document.getElementById('dashRestEstadoSelect').addEventListener('change', (e)=>{ dashRestEstadoFilter = e.target.value; renderDashboard(); });
 
-  // Curva S
   const curva = buildCurvaSData(dashSys);
   const datasets = [{ label:'Real', data:curva.real, borderColor:'#07509C', backgroundColor:'rgba(7,80,156,.08)', fill:true, borderWidth:2, pointRadius:3, pointBackgroundColor:'#07509C', tension:0.15 }];
   if(curva.plan) datasets.push({ label:'Plan', data:curva.plan, borderColor:'#FFC905', borderDash:[4,3], borderWidth:2.5, pointRadius:0, tension:0.15 });
   if(dashCurvaSChart) dashCurvaSChart.destroy();
   dashCurvaSChart = new Chart(document.getElementById('dashCurvaS'), {
-    type:'line',
-    data:{ labels:curva.labels, datasets },
+    type:'line', data:{ labels:curva.labels, datasets },
     options:{ responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{ display:true, position:'bottom', labels:{ boxWidth:10, font:{size:10.5} } } },
       scales:{ y:{ min:0, max:100, ticks:{ callback:v=>v+'%' } }, x:{ grid:{display:false} } } }
   });
 
-  // Pareto
   const catLabels = ['MAT','INT','PRE','DOC'];
   const catData = catLabels.map(c=>paretoCounts[c]);
   const totalRest = catData.reduce((a,b)=>a+b,0) || 1;
@@ -3209,18 +3208,65 @@ function renderDashboard(){
       plugins:{ legend:{ display:true, position:'bottom', labels:{ boxWidth:10, font:{size:10.5} } } },
       scales:{ y:{ position:'left', beginAtZero:true }, y1:{ position:'right', min:0, max:100, grid:{display:false}, ticks:{ callback:v=>v+'%' } }, x:{ grid:{display:false} } } }
   });
-
-  document.querySelectorAll('[data-metakey]').forEach(input=>{
-    input.addEventListener('change', (e)=>{
-      setMeta(dashSys, dashGroupBy, e.target.dataset.metakey, e.target.value);
-      renderDashboard();
-    });
-  });
 }
+
+/* ---- Pestaña: Mapa de niveles ---- */
+function renderDashTabNiveles(inner, d){
+  let heatmapHtml = '<div style="font-size:12px; color:var(--steel-500);">Elige "Todos los sistemas" arriba para ver el mapa de calor comparado.</div>';
+  if(dashSys === 'all'){
+    const { levels, grid } = buildHeatmapData();
+    if(levels.length){
+      heatmapHtml = `<div style="overflow-x:auto;"><table class="dash-heatmap">
+        <tr><th></th>${SYS_ORDER.map(s=>`<th>${SYS[s].label}</th>`).join('')}</tr>
+        ${levels.map(lvl=>`<tr><td class="dash-heatmap-row-label">${escapeHtml(lvl)}</td>${SYS_ORDER.map(s=>{
+          const vals = (grid[lvl] && grid[lvl][s]) ? grid[lvl][s] : null;
+          const pct = vals ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null;
+          return `<td class="dash-heatmap-cell" style="background:${heatColor(pct)};">${pct===null?'—':pct+'%'}</td>`;
+        }).join('')}</tr>`).join('')}
+      </table></div>
+      <div style="display:flex; gap:12px; font-size:10px; color:var(--steel-500); margin-top:6px;">
+        <span><span style="display:inline-block; width:9px; height:9px; background:#97C459; border-radius:2px; margin-right:3px;"></span>≥80%</span>
+        <span><span style="display:inline-block; width:9px; height:9px; background:#EF9F27; border-radius:2px; margin-right:3px;"></span>50-79%</span>
+        <span><span style="display:inline-block; width:9px; height:9px; background:#F0997B; border-radius:2px; margin-right:3px;"></span>&lt;50%</span>
+        <span><span style="display:inline-block; width:9px; height:9px; background:#F1EFE8; border-radius:2px; margin-right:3px;"></span>Sin datos</span>
+      </div>`;
+    }
+  }
+  const { items } = breakdownList(d.scope, 'level', true);
+  inner.innerHTML = `
+    <div class="dash-section-label">Mapa de calor — Nivel × Sistema</div>
+    ${heatmapHtml}
+    <div class="dash-section-label" style="margin-top:22px;">Desglose por Nivel${dashSys==='all' ? ' (combinado — sin meta editable)' : ' — con meta editable'}</div>
+    ${items.length ? items.map(it=>breakdownRowHtml(it,'level',true)).join('') : '<div style="font-size:12px; color:var(--steel-500);">No hay datos para mostrar.</div>'}
+  `;
+  wireMetaInputs();
+}
+
+/* ---- Pestaña: Detalle por área ---- */
+function renderDashTabAreas(inner, d){
+  inner.innerHTML = `
+    <input type="text" class="dash-area-search" id="dashAreaSearchInput" placeholder="Buscar área..." value="${escapeHtml(dashAreaSearch)}">
+    <label class="dash-area-toggle"><input type="checkbox" id="dashAreaHideZeroCheck" ${dashAreaHideZero?'checked':''}> Ocultar áreas con 0% de avance</label>
+    <div id="dashAreaList"></div>
+  `;
+  const renderList = ()=>{
+    let { items } = breakdownList(d.scope, 'area', true);
+    if(dashAreaSearch.trim()) items = items.filter(it=> it.key.toLowerCase().includes(dashAreaSearch.trim().toLowerCase()));
+    if(dashAreaHideZero) items = items.filter(it=> it.pct > 0);
+    document.getElementById('dashAreaList').innerHTML = items.length ? items.map(it=>breakdownRowHtml(it,'area',true)).join('') : '<div style="font-size:12px; color:var(--steel-500);">No hay áreas que coincidan con el filtro.</div>';
+    wireMetaInputs();
+  };
+  document.getElementById('dashAreaSearchInput').addEventListener('input', (e)=>{ dashAreaSearch = e.target.value; renderList(); });
+  document.getElementById('dashAreaHideZeroCheck').addEventListener('change', (e)=>{ dashAreaHideZero = e.target.checked; renderList(); });
+  renderList();
+}
+
+document.querySelectorAll('.dashboard-tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{ dashTab = tab.dataset.tab; renderDashboard(); });
+});
 document.getElementById('btnSidebarDashboard').addEventListener('click', openDashboard);
 document.getElementById('btnDashboardClose').addEventListener('click', closeDashboard);
 document.getElementById('dashSysSelect').addEventListener('change', (e)=>{ dashSys = e.target.value; renderDashboard(); });
-document.getElementById('dashGroupSelect').addEventListener('change', (e)=>{ dashGroupBy = e.target.value; renderDashboard(); });
 document.getElementById('btnDashboardExport').addEventListener('click', (e)=>{
   e.stopPropagation();
   document.getElementById('dashboardExportMenu').classList.toggle('open');
@@ -3234,10 +3280,11 @@ document.querySelectorAll('[data-export]').forEach(btn=>{
   });
 });
 function dashboardExportData(){
+  const groupBy = dashTab === 'areas' ? 'area' : 'level';
   const scope = dashboardScope();
   const groups = {};
   scope.forEach(r=>{
-    const key = dashGroupBy === 'level' ? r.level : r.area;
+    const key = groupBy === 'level' ? r.level : r.area;
     if(!groups[key]) groups[key] = [];
     groups[key].push(r);
   });
@@ -3248,7 +3295,7 @@ function dashboardExportData(){
     const pct = Math.round(groupRows.reduce((a,r)=>a+r.pct,0)/groupRows.length);
     let metaFecha = '', atrasado = 'No';
     if(dashSys !== 'all'){
-      const meta = getMeta(dashSys, dashGroupBy, key);
+      const meta = getMeta(dashSys, groupBy, key);
       metaFecha = meta ? meta.fecha : '';
       if(metaFecha && metaFecha < today && pct < 100) atrasado = 'Sí';
     }
@@ -3353,7 +3400,7 @@ async function exportDashboardPDF(){
 
   if(y > pageH - footerH - 60) { doc.addPage(); y = margin; }
   doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(9,24,35);
-  doc.text(`Desglose por ${dashGroupBy==='level'?'Nivel':'Área'}`, margin, y); y += 18;
+  doc.text(`Desglose por ${dashTab==='areas'?'Área':'Nivel'}`, margin, y); y += 18;
 
   const data = dashboardExportData();
   for(const d of data){
@@ -3377,7 +3424,7 @@ async function exportDashboardPDF(){
 function exportDashboardExcel(){
   const data = dashboardExportData();
   const wsData = data.map(d=>({
-    [dashGroupBy==='level'?'Nivel':'Área']: d.key,
+    [dashTab==='areas'?'Área':'Nivel']: d.key,
     'Avance %': d.pct,
     'Meta': d.metaFecha || '',
     'Atrasado': d.atrasado,
