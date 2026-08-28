@@ -378,6 +378,35 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .note-photo-row{display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;}
 .note-photo-thumb{width:52px; height:52px; object-fit:cover; border-radius:6px; border:1px solid var(--steel-200);}
 .reminder-banner{position:fixed; top:-60px; left:0; right:0; z-index:850; background:#FFF3CD; color:#8A6300; padding:12px 16px; display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600; box-shadow:0 4px 14px rgba(0,0,0,.15); transition:top .3s ease;}
+.dashboard-screen{position:fixed; inset:0; z-index:970; background:var(--bg-2, #F4F6F8); display:none; flex-direction:column;}
+.dashboard-screen.open{display:flex;}
+.dashboard-header{display:flex; align-items:center; justify-content:space-between; padding:18px 20px 14px; background:#fff; border-bottom:1px solid var(--steel-200);}
+.dashboard-title{font-family:var(--font-display); font-weight:700; font-size:17px; color:var(--navy-900);}
+.dashboard-sub{font-size:11.5px; color:var(--steel-500); margin-top:2px;}
+.dashboard-controls{display:flex; gap:8px; padding:14px 20px; background:#fff; border-bottom:1px solid var(--steel-200); flex-wrap:wrap; align-items:center;}
+.dashboard-controls select{flex:1; min-width:140px;}
+.dashboard-export-wrap{position:relative;}
+.dashboard-export-menu{display:none; position:absolute; top:calc(100% + 4px); right:0; background:#fff; border:1px solid var(--steel-200); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.15); z-index:10; overflow:hidden; min-width:160px;}
+.dashboard-export-menu.open{display:block;}
+.dashboard-export-menu button{display:block; width:100%; text-align:left; padding:10px 14px; border:none; background:none; font-size:13px; cursor:pointer;}
+.dashboard-export-menu button:hover{background:var(--steel-050);}
+.dashboard-body{flex:1; overflow-y:auto; padding:16px 20px 40px; max-width:960px; margin:0 auto; width:100%; box-sizing:border-box;}
+.dash-kpi-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-bottom:20px;}
+.dash-kpi-card{border-radius:12px; padding:14px;}
+.dash-kpi-num{font-family:var(--font-display); font-weight:700; font-size:24px;}
+.dash-kpi-label{font-size:11.5px; margin-top:3px;}
+.dash-section-label{font-size:13px; font-weight:700; color:var(--navy-900); margin:0 0 10px;}
+.dash-sys-bar-row{margin-bottom:10px;}
+.dash-sys-bar-track{height:8px; background:var(--steel-150); border-radius:5px; overflow:hidden; margin-top:4px;}
+.dash-sys-bar-fill{height:100%; border-radius:5px;}
+.dash-breakdown-row{display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--steel-100);}
+.dash-breakdown-name{width:110px; font-size:12.5px; font-weight:600; color:var(--navy-900); flex:none;}
+.dash-breakdown-track{flex:1; height:8px; background:var(--steel-150); border-radius:5px; overflow:hidden;}
+.dash-breakdown-fill{height:100%; border-radius:5px;}
+.dash-breakdown-pct{width:38px; text-align:right; font-size:11.5px; color:var(--steel-500); flex:none;}
+.dash-breakdown-meta{width:118px; flex:none; padding:6px 8px; border-radius:7px; border:1px solid var(--steel-300); font-size:11px;}
+.dash-breakdown-atraso{color:var(--brand-red-dark); font-size:9.5px; font-weight:700; width:56px; flex:none;}
+@media(min-width:900px){ .dashboard-body{max-width:1100px;} }
 .reminder-banner.show{top:0;}
 .reminder-banner button{border:none; background:rgba(138,99,0,.12); color:#8A6300; padding:6px 12px; border-radius:7px; font-weight:700; font-size:12.5px; flex:none;}
 @media(min-width:900px){ .reminder-banner{left:300px;} }
@@ -475,6 +504,10 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
   <div class="sidebar-section-label">Sistemas</div>
   <div id="sidebarSystemsList"></div>
   <div class="sidebar-admin-row">
+    <button class="sidebar-admin-btn" id="btnSidebarDashboard" style="display:none; margin-bottom:8px; border-color:#FFC905; color:#FFC905;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+      Dashboard de planificación
+    </button>
     <button class="sidebar-admin-btn" id="btnSidebarAdminMode">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/></svg>
       Modo Administrador
@@ -488,6 +521,33 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       Cerrar sesión de Admin/Planificador
     </button>
   </div>
+</div>
+
+<div class="dashboard-screen" id="dashboardScreen">
+  <div class="dashboard-header">
+    <div>
+      <div class="dashboard-title">Dashboard de planificación</div>
+      <div class="dashboard-sub">Solo Planner / Administrador</div>
+    </div>
+    <button class="sidebar-close" id="btnDashboardClose"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="dashboard-controls">
+    <select class="insights-sys-select" id="dashSysSelect" style="margin-bottom:0;">
+      <option value="all">Todos los sistemas</option>
+    </select>
+    <select class="insights-sys-select" id="dashGroupSelect" style="margin-bottom:0;">
+      <option value="level">Por Nivel</option>
+      <option value="area">Por Área</option>
+    </select>
+    <div class="dashboard-export-wrap">
+      <button class="doc-upload-label" id="btnDashboardExport" style="border-style:solid; background:#fff; margin:0; white-space:nowrap;">Exportar ▾</button>
+      <div class="dashboard-export-menu" id="dashboardExportMenu">
+        <button data-export="pdf">📄 PDF</button>
+        <button data-export="xlsx">📊 Excel (.xlsx)</button>
+      </div>
+    </div>
+  </div>
+  <div class="dashboard-body" id="dashboardBody"></div>
 </div>
 
 <div class="insights-overlay" id="insightsOverlay"></div>
@@ -945,7 +1005,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v9.5 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v10.0 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -2790,6 +2850,8 @@ function updateLogoutButton(){
   if(!btn) return;
   const anySessionActive = plannerModeActive || accessPanelUnlocked || SYS_ORDER.some(s=>unlockedSystems.has(s));
   btn.style.display = anySessionActive ? '' : 'none';
+  const dashBtn = document.getElementById('btnSidebarDashboard');
+  if(dashBtn) dashBtn.style.display = (plannerModeActive || accessPanelUnlocked) ? '' : 'none';
 }
 document.getElementById('btnSidebarLogout').addEventListener('click', ()=>{
   plannerModeActive = false;
@@ -2801,6 +2863,275 @@ document.getElementById('btnSidebarLogout').addEventListener('click', ()=>{
   showToast('Sesión cerrada — vuelve a ingresar el código para editar');
   closeSidebar();
 });
+/* ===================== Dashboard de planificación (Planner / Admin) ===================== */
+let dashSys = 'all';
+let dashGroupBy = 'level';
+function metaId(sys, groupBy, value){
+  return `${sys}__${groupBy}__${String(value).replace(/[^a-zA-Z0-9]+/g,'_')}`;
+}
+function getMeta(sys, groupBy, value){
+  if(!state.metas) state.metas = {};
+  if(!state.metas[sys]) state.metas[sys] = { level:{}, area:{} };
+  return state.metas[sys][groupBy][value] || null;
+}
+function setMeta(sys, groupBy, value, fecha){
+  if(!state.metas) state.metas = {};
+  if(!state.metas[sys]) state.metas[sys] = { level:{}, area:{} };
+  state.metas[sys][groupBy][value] = { fecha, date: new Date().toISOString() };
+  scheduleSave();
+  const id = metaId(sys, groupBy, value);
+  pushMetaToSheet(id, sys, groupBy, value, fecha);
+}
+async function pushMetaToSheet(id, sys, groupBy, value, fecha){
+  if(!state.sheetSync.enabled || !state.sheetSync.url) return;
+  try{
+    await fetch(state.sheetSync.url, {
+      method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: sheetPostBody({ action:'upsertFields', sheet:'METAS', uid:id,
+        fields: { SISTEMA: SYS[sys] ? SYS[sys].label : sys, AGRUPACION: groupBy==='level'?'Nivel':'Area', VALOR: value, FECHA_META: fecha || '' } })
+    });
+  }catch(e){
+    showToast('Sin conexión: la meta se guardó en el celular y se subirá cuando vuelva la señal');
+  }
+}
+async function pullMetasFromSheet(silent){
+  if(!state.sheetSync.url) return false;
+  try{
+    const res = await fetch(sheetUrl(`?sheet=${encodeURIComponent('METAS')}`), { method:'GET' });
+    const rows = await res.json();
+    if(!state.metas) state.metas = {};
+    const sysByLabel = {};
+    Object.keys(SYS).forEach(k=> sysByLabel[SYS[k].label] = k);
+    rows.forEach(obj=>{
+      const sysKey = sysByLabel[obj.SISTEMA] || obj.SISTEMA;
+      if(!SYS[sysKey]) return;
+      const groupBy = obj.AGRUPACION === 'Nivel' ? 'level' : 'area';
+      const value = obj.VALOR; if(!value) return;
+      if(!state.metas[sysKey]) state.metas[sysKey] = { level:{}, area:{} };
+      state.metas[sysKey][groupBy][value] = { fecha: obj.FECHA_META || '', date: new Date().toISOString() };
+    });
+    scheduleSave();
+    return true;
+  }catch(e){ return false; }
+}
+function openDashboard(){
+  if(!plannerModeActive && !accessPanelUnlocked){
+    showToast('El Dashboard es solo para Modo Planificador o Administrador');
+    return;
+  }
+  const sysSel = document.getElementById('dashSysSelect');
+  if(sysSel.options.length <= 1){
+    SYS_ORDER.forEach(s=>{
+      const opt = document.createElement('option');
+      opt.value = s; opt.textContent = SYS[s].label;
+      sysSel.appendChild(opt);
+    });
+  }
+  closeSidebar();
+  document.getElementById('dashboardScreen').classList.add('open');
+  renderDashboard();
+  pullMetasFromSheet(true).then(ok=>{ if(ok) renderDashboard(); });
+  pullRestriccionesFromSheet(true).then(ok=>{ if(ok) renderDashboard(); });
+}
+function closeDashboard(){
+  document.getElementById('dashboardScreen').classList.remove('open');
+}
+function dashboardScope(){
+  // Devuelve la lista de {sys, rows-planas-con-nivel/area/pct/completedAt} según el sistema elegido.
+  const out = [];
+  const systems = dashSys === 'all' ? SYS_ORDER : [dashSys];
+  systems.forEach(sys=>{
+    if(sys === 'cableado'){
+      state.cableado.forEach(r=>{
+        ['from','to'].forEach(side=>{
+          out.push({ sys, level: r.level||'—', area: (side==='from'?r.from_area:r.to_area)||'—', pct: weightedProgressCable(r)[side], completedAt: r[side].completedAt });
+        });
+      });
+    } else {
+      const statusFn = sys==='hvac'?hvacStatus : sys==='fds'?fdsStatus : sys==='transit'?transitStatus : sys==='timbrado'?timbradoStatus : null;
+      state[sys].forEach(r=>{
+        const pct = sys==='timbrado' ? (statusFn(r)==='complete'?100:0) : weightedProgress(sys, r);
+        out.push({ sys, level: r.level||'—', area: (r.area||r.from_area)||'—', pct, completedAt: r.completedAt });
+      });
+    }
+  });
+  return out;
+}
+function renderDashboard(){
+  document.getElementById('dashSysSelect').value = dashSys;
+  document.getElementById('dashGroupSelect').value = dashGroupBy;
+  const scope = dashboardScope();
+  const total = scope.length;
+  const avgPct = total ? Math.round(scope.reduce((a,r)=>a+r.pct,0)/total) : 0;
+
+  const systemsForRest = dashSys === 'all' ? SYS_ORDER : [dashSys];
+  const restAbiertas = systemsForRest.reduce((acc,s)=> acc + ((state.restricciones && state.restricciones[s]) ? state.restricciones[s].filter(r=>r.estado!=='Liberada').length : 0), 0);
+
+  const cutoff7 = new Date(); cutoff7.setDate(cutoff7.getDate()-7);
+  const completados7d = scope.filter(r=> r.completedAt && new Date(r.completedAt) >= cutoff7).length;
+
+  // Agrupar por Nivel o Área
+  const groups = {};
+  scope.forEach(r=>{
+    const key = dashGroupBy === 'level' ? r.level : r.area;
+    if(!groups[key]) groups[key] = [];
+    groups[key].push(r);
+  });
+  const sortedKeys = Object.keys(groups).sort((a,b)=> a.localeCompare(b, undefined, {numeric:true}));
+  const today = todayLocalISO();
+  let atrasados = 0;
+  const rowsHtml = sortedKeys.map(key=>{
+    const groupRows = groups[key];
+    const pct = Math.round(groupRows.reduce((a,r)=>a+r.pct,0)/groupRows.length);
+    const color = pct >= 80 ? 'var(--green-600)' : pct >= 40 ? '#C79100' : 'var(--brand-red)';
+    let metaFecha = '';
+    let atrasado = false;
+    if(dashSys !== 'all'){
+      const meta = getMeta(dashSys, dashGroupBy, key);
+      metaFecha = meta ? meta.fecha : '';
+      if(metaFecha && metaFecha < today && pct < 100){ atrasado = true; atrasados++; }
+    }
+    return `<div class="dash-breakdown-row">
+      <div class="dash-breakdown-name">${escapeHtml(key)}</div>
+      <div class="dash-breakdown-track"><div class="dash-breakdown-fill" style="width:${pct}%; background:${color};"></div></div>
+      <div class="dash-breakdown-pct">${pct}%</div>
+      ${dashSys !== 'all' ? `<input type="date" class="dash-breakdown-meta" data-metakey="${escapeHtml(key)}" value="${metaFecha}">` : '<div style="width:118px; flex:none;"></div>'}
+      <div class="dash-breakdown-atraso">${atrasado ? '⚠ Atrasado' : ''}</div>
+    </div>`;
+  }).join('');
+
+  let sysBarsHtml = '';
+  if(dashSys === 'all'){
+    sysBarsHtml = `<div class="dash-section-label">Avance por sistema</div>` + SYS_ORDER.map(s=>{
+      const rows = s==='cableado' ? state.cableado : state[s];
+      const pct = weightedSystemAverage(s, rows);
+      const color = pct >= 80 ? 'var(--green-600)' : pct >= 40 ? '#C79100' : 'var(--brand-red)';
+      return `<div class="dash-sys-bar-row">
+        <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--steel-600);"><span>${SYS[s].label}</span><span>${pct}%</span></div>
+        <div class="dash-sys-bar-track"><div class="dash-sys-bar-fill" style="width:${pct}%; background:${color};"></div></div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('dashboardBody').innerHTML = `
+    <div class="dash-kpi-grid">
+      <div class="dash-kpi-card" style="background:var(--steel-050);"><div class="dash-kpi-num" style="color:var(--navy-900);">${avgPct}%</div><div class="dash-kpi-label" style="color:var(--steel-500);">Avance ponderado</div></div>
+      <div class="dash-kpi-card" style="background:#FCE4E4;"><div class="dash-kpi-num" style="color:#B81219;">${restAbiertas}</div><div class="dash-kpi-label" style="color:#B81219;">Restricciones abiertas</div></div>
+      <div class="dash-kpi-card" style="background:#FFF3CD;"><div class="dash-kpi-num" style="color:#8A6300;">${atrasados}</div><div class="dash-kpi-label" style="color:#8A6300;">${dashGroupBy==='level'?'Niveles':'Áreas'} atrasados</div></div>
+      <div class="dash-kpi-card" style="background:var(--steel-050);"><div class="dash-kpi-num" style="color:var(--navy-900);">${completados7d}</div><div class="dash-kpi-label" style="color:var(--steel-500);">Completados (7 días)</div></div>
+    </div>
+    ${sysBarsHtml}
+    <div class="dash-section-label" style="margin-top:${dashSys==='all'?'20px':'0'};">Desglose por ${dashGroupBy==='level'?'Nivel':'Área'}${dashSys==='all' ? ' (todos los sistemas combinados — sin meta editable)' : ' — con meta editable'}</div>
+    ${rowsHtml || '<div style="font-size:12px; color:var(--steel-500);">No hay datos para mostrar.</div>'}
+  `;
+  document.querySelectorAll('[data-metakey]').forEach(input=>{
+    input.addEventListener('change', (e)=>{
+      setMeta(dashSys, dashGroupBy, e.target.dataset.metakey, e.target.value);
+      renderDashboard();
+    });
+  });
+}
+document.getElementById('btnSidebarDashboard').addEventListener('click', openDashboard);
+document.getElementById('btnDashboardClose').addEventListener('click', closeDashboard);
+document.getElementById('dashSysSelect').addEventListener('change', (e)=>{ dashSys = e.target.value; renderDashboard(); });
+document.getElementById('dashGroupSelect').addEventListener('change', (e)=>{ dashGroupBy = e.target.value; renderDashboard(); });
+document.getElementById('btnDashboardExport').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  document.getElementById('dashboardExportMenu').classList.toggle('open');
+});
+document.addEventListener('click', ()=> document.getElementById('dashboardExportMenu').classList.remove('open'));
+document.querySelectorAll('[data-export]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.getElementById('dashboardExportMenu').classList.remove('open');
+    if(btn.dataset.export === 'pdf') exportDashboardPDF();
+    else exportDashboardExcel();
+  });
+});
+function dashboardExportData(){
+  const scope = dashboardScope();
+  const groups = {};
+  scope.forEach(r=>{
+    const key = dashGroupBy === 'level' ? r.level : r.area;
+    if(!groups[key]) groups[key] = [];
+    groups[key].push(r);
+  });
+  const sortedKeys = Object.keys(groups).sort((a,b)=> a.localeCompare(b, undefined, {numeric:true}));
+  const today = todayLocalISO();
+  return sortedKeys.map(key=>{
+    const groupRows = groups[key];
+    const pct = Math.round(groupRows.reduce((a,r)=>a+r.pct,0)/groupRows.length);
+    let metaFecha = '', atrasado = 'No';
+    if(dashSys !== 'all'){
+      const meta = getMeta(dashSys, dashGroupBy, key);
+      metaFecha = meta ? meta.fecha : '';
+      if(metaFecha && metaFecha < today && pct < 100) atrasado = 'Sí';
+    }
+    return { key, pct, metaFecha, atrasado, count: groupRows.length };
+  });
+}
+async function exportDashboardPDF(){
+  if(!window.jspdf || !window.jspdf.jsPDF){ showToast('No se pudo cargar el generador de PDF.'); return; }
+  showToast('Generando PDF del dashboard...');
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'pt', format:'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 32, footerH = 18;
+  let y = margin;
+  const logoImg = document.querySelector('.masthead img');
+  const logoSrc = logoImg ? logoImg.getAttribute('src') : null;
+  if(logoSrc){ try{ doc.addImage(logoSrc, 'PNG', margin, y, 94, 17.8); }catch(e){} }
+  doc.setFont('helvetica','bold'); doc.setFontSize(19); doc.setTextColor(9,24,35);
+  doc.text('Dashboard de Planificación', pageW/2, y+11, { align:'center' });
+  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(7,80,156);
+  doc.text(dashSys==='all' ? 'Todos los sistemas' : SYS[dashSys].label, pageW/2, y+28, { align:'center' });
+  y = margin + 50;
+
+  const scope = dashboardScope();
+  const total = scope.length;
+  const avgPct = total ? Math.round(scope.reduce((a,r)=>a+r.pct,0)/total) : 0;
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(9,24,35);
+  doc.text(`Avance ponderado general: ${avgPct}%`, margin, y); y += 20;
+  doc.setDrawColor(200,200,200); doc.line(margin, y, pageW-margin, y); y += 20;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(9,24,35);
+  doc.text(`Desglose por ${dashGroupBy==='level'?'Nivel':'Área'}`, margin, y); y += 18;
+
+  const data = dashboardExportData();
+  for(const d of data){
+    if(y > pageH - footerH - 30){ doc.addPage(); y = margin; }
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(50,60,70);
+    const line = `${d.key} — ${d.pct}%${d.metaFecha ? `  ·  Meta: ${d.metaFecha}` : ''}${d.atrasado==='Sí' ? '  ·  ⚠ ATRASADO' : ''}`;
+    doc.text(line, margin, y); y += 16;
+  }
+
+  const pageCount = doc.internal.getNumberOfPages();
+  for(let p=1; p<=pageCount; p++){
+    doc.setPage(p);
+    doc.setDrawColor(225,225,225); doc.line(margin, pageH-footerH, pageW-margin, pageH-footerH);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(140,148,158);
+    doc.text('BY GUSTAVO_DEVELOPER', margin, pageH-7);
+    doc.text(`Página ${p} de ${pageCount}`, pageW-margin, pageH-7, { align:'right' });
+  }
+  doc.save(`Dashboard_${dashSys==='all'?'TODOS':SYS[dashSys].label}_${dateStamp()}.pdf`);
+  showToast('PDF descargado');
+}
+function exportDashboardExcel(){
+  const data = dashboardExportData();
+  const wsData = data.map(d=>({
+    [dashGroupBy==='level'?'Nivel':'Área']: d.key,
+    'Avance %': d.pct,
+    'Meta': d.metaFecha || '',
+    'Atrasado': d.atrasado,
+    'Registros': d.count
+  }));
+  const ws = XLSX.utils.json_to_sheet(wsData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Dashboard');
+  XLSX.writeFile(wb, `Dashboard_${dashSys==='all'?'TODOS':SYS[dashSys].label}_${dateStamp()}.xlsx`);
+  showToast('Excel descargado');
+}
+
 document.getElementById('btnSidebarPlannerMode').addEventListener('click', ()=>{
   if(plannerModeActive){
     showToast('El Modo Planificador ya está activo');
@@ -5034,6 +5365,7 @@ function mergeSavedState(saved){
   if(saved.notes) state.notes = saved.notes;
   if(saved.documents) state.documents = saved.documents;
   if(saved.restricciones) state.restricciones = saved.restricciones;
+  if(saved.metas) state.metas = saved.metas;
 
   const idFieldOf = { hvac:'uid', fds:'id', transit:'id', timbrado:'id' };
   let mergedAny = false;
@@ -5089,6 +5421,7 @@ async function init(){
     await pullNotesFromSheet(true);
     await pullDocumentsFromSheet(true);
     await pullRestriccionesFromSheet(true);
+    await pullMetasFromSheet(true);
     renderAll();
     populateSelects();
   }
