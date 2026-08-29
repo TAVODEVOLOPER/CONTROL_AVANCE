@@ -111,7 +111,8 @@ input,select,button,textarea{font-family:inherit;font-size:16px;}
 .result-count-row .result-count{margin:2px 0 10px;}
 .table-view-toggle{flex-shrink:0; margin-bottom:8px; padding:7px 12px; border-radius:8px; border:1.5px solid var(--steel-300); background:#fff; font-weight:700; font-size:12px; color:var(--brand-blue);}
 .table-view-toggle.active{background:var(--brand-blue); border-color:var(--brand-blue); color:#fff;}
-.fds-table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch; border:1.5px solid var(--steel-300); border-radius:10px; background:#fff; margin-bottom:16px;}
+.fds-table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch; border:1.5px solid var(--steel-300); border-radius:10px; background:#fff; margin-bottom:16px; position:relative;}
+.fds-table-scroll-hint{position:sticky; top:0; float:right; margin:-1px -1px 0 0; background:linear-gradient(90deg, transparent, rgba(9,24,35,.75) 60%); color:#fff; font-size:10px; font-weight:600; padding:5px 8px 5px 20px; border-radius:0 9px 0 8px; pointer-events:none; z-index:2;}
 .fds-table{border-collapse:collapse; width:100%; min-width:520px; font-family:var(--font-body);}
 .fds-table thead th{position:sticky; top:0; background:var(--steel-050); color:var(--ink-600); font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.02em; padding:9px 6px; text-align:center; border-bottom:1.5px solid var(--steel-300); white-space:nowrap; z-index:2;}
 .fds-table thead th:first-child{text-align:left; padding-left:12px; position:sticky; left:0; z-index:3; background:var(--steel-050);}
@@ -175,6 +176,9 @@ input,select,button,textarea{font-family:inherit;font-size:16px;}
 .field-group{margin-bottom:16px;}
 .field-group label{display:block; font-size:12.5px; font-weight:600; color:var(--ink-600); margin-bottom:6px;}
 .field-group .field-legend{font-weight:400; color:var(--steel-500); font-size:11px;}
+.restricted-note{background:#FFF3CD; color:#8A6300; font-size:12px; font-weight:600; padding:10px 12px; border-radius:9px; margin-bottom:14px;}
+.cable-timbrado-block{background:var(--steel-050); border-radius:10px; padding:12px; margin-bottom:16px;}
+.seg button:disabled{opacity:.45; cursor:not-allowed;}
 .seg{display:flex; gap:8px;}
 .seg button{flex:1; padding:11px 0; border-radius:9px; border:1.5px solid var(--steel-300); background:#fff; font-weight:600; font-size:13.5px; color:var(--ink-600);}
 .seg button.on-si{border-color:var(--green-600); background:var(--green-100); color:var(--green-600);}
@@ -1014,7 +1018,7 @@ const SYS = {
   cableado: { label:'CONEXIONADO', subtitle:'Conexionado y rotulado de cables', accent:'#E92127', hasRoom:false, hasArea:true },
   fds: { label:'FDS', subtitle:'Instalación de detectores', accent:'#FFC905', hasRoom:false, hasArea:false },
   transit: { label:'TRANSIT', subtitle:'Cierre y acabado de transits', accent:'#133752', hasRoom:true, hasArea:false },
-  timbrado: { label:'TIMBRADO', subtitle:'Timbrado de cables', accent:'#6B3FA0', hasRoom:false, hasArea:true }
+  timbrado: { label:'TIMBRADO', subtitle:'Ahora dentro de Conexionado — acceso restringido', accent:'#6B3FA0', hasRoom:false, hasArea:true }
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado'];
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
@@ -1032,7 +1036,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v11.1 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v12.0 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1144,6 +1148,7 @@ let state = {
   })),
   cableado: CABLE_RAW.map(r => ({
     id:r.id, cable:r.cable, from_tag:r.from_tag, from_area:r.from_area, level:r.level, to_tag:r.to_tag, to_area:r.to_area,
+    sistema_origen: r.sistema_origen || 'FDS', timbrado:'', fecha_timbrado:'', imputado:'', lastEditedAt:'',
     from: emptySide(), to: emptySide()
   })),
   fds: FDS_RAW.map(r => ({
@@ -1365,7 +1370,8 @@ function renderSystemTabs(){
     item.addEventListener('click', ()=>{
       closeSidebar();
       closeLanding();
-      switchSystem(item.dataset.sys);
+      // TIMBRADO ya no tiene tabla propia — su código ahora da acceso restringido a CONEXIONADO.
+      switchSystem(item.dataset.sys === 'timbrado' ? 'cableado' : item.dataset.sys);
     });
   });
   updateAdminModeButton();
@@ -2648,7 +2654,7 @@ function renderSysTable(sys, list, container){
   const headerCells = cfg.fields.map(f=>`<th>${cfg.nested ? (f.side==='from'?'Desde ':'Hasta ')+f.label : f.label}</th>`).join('');
   const extraHeaderCells = extra.map(f=>`<th>${cfg.nested ? (f.side==='from'?'Desde ':'Hasta ')+f.label : f.label}</th>`).join('');
   const readonlyHeaderCells = readonly.map(f=>`<th>${f.label}</th>`).join('');
-  container.innerHTML = `<div class="fds-table-wrap"><table class="fds-table">
+  container.innerHTML = `<div class="fds-table-wrap">${cfg.nested ? '<div class="fds-table-scroll-hint">⟷ Desliza para ver más</div>' : ''}<table class="fds-table">
     <thead><tr><th>Tag</th>${headerCells}${extraHeaderCells}${readonlyHeaderCells}</tr></thead>
     <tbody>${rowsHtml}</tbody>
   </table></div>`;
@@ -2666,7 +2672,7 @@ function renderSysTable(sys, list, container){
   });
   container.querySelectorAll('.fds-input-cell').forEach(inp=>{
     inp.addEventListener('focus', (e)=>{
-      if(!isUnlocked(sys)){
+      if(!canPassUnlockGate(sys)){
         e.target.blur();
         requestSysUnlock(sys, ()=> renderList());
       }
@@ -2675,7 +2681,7 @@ function renderSysTable(sys, list, container){
       const id = parseInt(inp.dataset.id);
       const field = inp.dataset.field;
       const side = inp.dataset.side || null;
-      if(!isUnlocked(sys)){ requestSysUnlock(sys, ()=> renderList()); return; }
+      if(!canPassUnlockGate(sys)){ requestSysUnlock(sys, ()=> renderList()); return; }
       saveSysTableTextField(sys, id, field, side, inp.value);
     });
   });
@@ -2690,6 +2696,11 @@ function requestSysUnlock(sys, onUnlocked){
   refreshSysBiometricButton();
 }
 function saveSysTableTextField(sys, id, field, side, value){
+  if(sys === 'cableado' && isTimbradoRestricted()){
+    showToast('Con el código de Timbrado solo puedes editar Timbrado y Observaciones, desde la ficha del cable');
+    renderList();
+    return;
+  }
   const cfg = TABLE_CONFIG[sys];
   const row = state[sys].find(r=>r[cfg.idField]===id);
   if(!row) return;
@@ -2709,10 +2720,14 @@ function saveSysTableTextField(sys, id, field, side, value){
   renderGauge();
 }
 function requestSysTableToggle(sys, id, field, side, cellEl, fieldCfg){
-  if(isUnlocked(sys)){ toggleSysTableField(sys, id, field, side, cellEl, fieldCfg); return; }
+  if(canPassUnlockGate(sys)){ toggleSysTableField(sys, id, field, side, cellEl, fieldCfg); return; }
   requestSysUnlock(sys, ()=> toggleSysTableField(sys, id, field, side, cellEl, fieldCfg));
 }
 function toggleSysTableField(sys, id, field, side, cellEl, fieldCfg){
+  if(sys === 'cableado' && isTimbradoRestricted()){
+    showToast('Con el código de Timbrado solo puedes editar Timbrado y Observaciones, desde la ficha del cable');
+    return;
+  }
   const cfg = TABLE_CONFIG[sys];
   const row = state[sys].find(r=>r[cfg.idField]===id);
   if(!row) return;
@@ -2765,6 +2780,13 @@ function renderAll(){ renderList(); renderGauge(); updateFilterDot(); }
 
 /* ===================== Access control ===================== */
 function isUnlocked(sys){ return unlockedSystems.has(sys); }
+// Igual que !isUnlocked(sys), pero para CONEXIONADO también deja pasar si entraron con el
+// código de Timbrado — la restricción de qué pueden tocar se aplica más adentro, no aquí.
+function canPassUnlockGate(sys){ return sys === 'cableado' ? hasCableadoAccess() : isUnlocked(sys); }
+// TIMBRADO ya no es un sistema aparte — su código de acceso ahora abre CONEXIONADO,
+// pero solo deja editar el campo Timbrado y las Observaciones, nada más.
+function hasCableadoAccess(){ return isUnlocked('cableado') || isUnlocked('timbrado') || accessPanelUnlocked; }
+function isTimbradoRestricted(){ return isUnlocked('timbrado') && !isUnlocked('cableado') && !accessPanelUnlocked; }
 function openDetail(sys, id){
   if(sys === 'hvac') openDetailHvac(id);
   else if(sys === 'fds') openDetailFds(id);
@@ -2773,7 +2795,7 @@ function openDetail(sys, id){
   else openDetailCable(id);
 }
 function requestOpenDetail(sys, id){
-  if(isUnlocked(sys)){ openDetail(sys, id); return; }
+  if(canPassUnlockGate(sys)){ openDetail(sys, id); return; }
   pendingUnlockAction = ()=> openDetail(sys, id);
   document.getElementById('pinSub').textContent = `Ingresa el código para editar ${SYS[sys].label}`;
   document.getElementById('pinInput').value = '';
@@ -2804,6 +2826,12 @@ function confirmPin(){
   const val = document.getElementById('pinInput').value.trim();
   if(val && val === state.access[currentSystem].pin){
     unlockCurrentSystemAfterPin();
+  } else if(currentSystem === 'cableado' && val && state.access.timbrado && val === state.access.timbrado.pin){
+    unlockedSystems.add('timbrado');
+    document.getElementById('pinOverlay').classList.remove('open');
+    renderSystemTabs();
+    showToast('Acceso con código de Timbrado: solo puedes editar Timbrado y Observaciones');
+    if(pendingUnlockAction){ pendingUnlockAction(); pendingUnlockAction = null; }
   } else {
     document.getElementById('pinErr').textContent = 'Código incorrecto, intenta de nuevo.';
   }
@@ -3968,9 +3996,30 @@ function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
 function initCableSheet(){
   document.getElementById('cableSheetBody').innerHTML = `
     <div class="info-grid" id="cableInfoGrid"></div>
+    <div class="field-group cable-timbrado-block">
+      <label>Timbrado <span class="field-legend">— una vez por cable, no por lado</span></label>
+      <div class="seg" id="cableTimbradoSeg"><button data-val="SI">Sí</button><button data-val="NO">No</button></div>
+      <label style="margin-top:8px;">Fecha Timbrado</label>
+      <input type="date" class="text-input" id="cableFechaTimbrado">
+    </div>
     ${sideFieldsHtml('from')}
     ${sideFieldsHtml('to')}
   `;
+  document.getElementById('cableTimbradoSeg').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button'); if(!btn) return;
+    const row = state.cableado.find(r=>r.id===currentDetailItem); if(!row) return;
+    row.timbrado = (row.timbrado === btn.dataset.val) ? '' : btn.dataset.val;
+    row.lastEditedAt = new Date().toISOString();
+    document.querySelectorAll('#cableTimbradoSeg button').forEach(b=>b.classList.remove('on-si','on-no'));
+    if(row.timbrado) btn.classList.add(btn.dataset.val==='SI'?'on-si':'on-no');
+    syncCableTimbradoDate(row);
+  });
+  document.getElementById('cableFechaTimbrado').addEventListener('change', (e)=>{
+    const row = state.cableado.find(r=>r.id===currentDetailItem); if(!row) return;
+    row.fecha_timbrado = e.target.value;
+    row.lastEditedAt = new Date().toISOString();
+    syncCableTimbradoDate(row, true);
+  });
   ['from','to'].forEach(side=>{
     document.querySelectorAll(`#detailOverlayCable .seg[data-side="${side}"]`).forEach(seg=>{
       seg.addEventListener('click', (e)=>{
@@ -3981,7 +4030,16 @@ function initCableSheet(){
         obj[field] = (obj[field] === btn.dataset.val) ? '' : btn.dataset.val;
         seg.querySelectorAll('button').forEach(b=>b.classList.remove('on-si','on-no'));
         if(obj[field]) btn.classList.add(btn.dataset.val==='SI'?'on-si':'on-no');
-        if(field === 'gland' || field === 'conexionado') updateCableDateLock(side, field, obj);
+        if(field === 'gland' || field === 'conexionado') syncCableStatusDate(side, field, obj);
+      });
+    });
+    ['gland','conexionado'].forEach(field=>{
+      const dateInputId = field === 'gland' ? `cable${cap(side)}FechaGland` : `cable${cap(side)}FechaConexionado`;
+      document.getElementById(dateInputId).addEventListener('change', (e)=>{
+        const row = state.cableado.find(r=>r.id===currentDetailItem); if(!row) return;
+        const obj = row[side];
+        if(field === 'gland') obj.fecha_gland = e.target.value; else obj.fecha_conexionado = e.target.value;
+        syncCableStatusDate(side, field, obj, true);
       });
     });
     wirePhotoInput(document.getElementById(`cable${cap(side)}ConPhotoInput`), document.getElementById(`cable${cap(side)}ConPhotoGrid`),
@@ -3995,18 +4053,54 @@ function initCableSheet(){
     });
   });
 }
-// Fecha Gland / Fecha Conexionado no se pueden elegir si el paso anterior (Gland / Conexionado) está en "No".
-function updateCableDateLock(side, field, obj){
+// SI en Gland/Conexionado ⇄ Fecha Gland/Fecha Conexionado: si eliges "Sí" y no hay fecha, se pone
+// la de hoy. Si eliges una fecha y el estado no era "Sí", se marca "Sí" automáticamente. Si pasa a
+// "No", se borra la fecha.
+function syncCableTimbradoDate(row, fromDateInput){
+  const input = document.getElementById('cableFechaTimbrado');
+  const segButtons = document.querySelectorAll('#cableTimbradoSeg button');
+  if(fromDateInput){
+    if(row.fecha_timbrado && row.timbrado !== 'SI'){
+      row.timbrado = 'SI';
+      segButtons.forEach(b=>{ b.classList.remove('on-si','on-no'); if(b.dataset.val==='SI') b.classList.add('on-si'); });
+    } else if(!row.fecha_timbrado && row.timbrado === 'SI'){
+      row.timbrado = '';
+      segButtons.forEach(b=>b.classList.remove('on-si','on-no'));
+    }
+  } else {
+    if(row.timbrado === 'SI'){
+      if(!row.fecha_timbrado) row.fecha_timbrado = todayLocalISO();
+    } else {
+      row.fecha_timbrado = '';
+    }
+  }
+  if(input) input.value = row.fecha_timbrado || '';
+}
+function syncCableStatusDate(side, field, obj, fromDateInput){
   const dateInputId = field === 'gland' ? `cable${cap(side)}FechaGland` : `cable${cap(side)}FechaConexionado`;
   const input = document.getElementById(dateInputId);
-  if(!input) return;
-  if(obj[field] === 'SI'){
-    input.disabled = false;
+  const segButtons = document.querySelectorAll(`#detailOverlayCable .seg[data-cfield="${field}"][data-side="${side}"] button`);
+  if(fromDateInput){
+    const fecha = field === 'gland' ? obj.fecha_gland : obj.fecha_conexionado;
+    if(fecha && obj[field] !== 'SI'){
+      obj[field] = 'SI';
+      segButtons.forEach(b=>{ b.classList.remove('on-si','on-no'); if(b.dataset.val==='SI') b.classList.add('on-si'); });
+    } else if(!fecha && obj[field] === 'SI'){
+      obj[field] = '';
+      segButtons.forEach(b=>b.classList.remove('on-si','on-no'));
+    }
   } else {
-    if(field === 'gland') obj.fecha_gland = ''; else obj.fecha_conexionado = '';
-    input.value = '';
-    input.disabled = true;
+    if(obj[field] === 'SI'){
+      const current = field === 'gland' ? obj.fecha_gland : obj.fecha_conexionado;
+      if(!current){
+        const hoy = todayLocalISO();
+        if(field === 'gland') obj.fecha_gland = hoy; else obj.fecha_conexionado = hoy;
+      }
+    } else {
+      if(field === 'gland') obj.fecha_gland = ''; else obj.fecha_conexionado = '';
+    }
   }
+  if(input) input.value = field === 'gland' ? obj.fecha_gland : obj.fecha_conexionado;
 }
 function refreshCablePhotoGrids(){
   const row = state.cableado.find(r=>r.id===currentDetailItem);
@@ -4026,7 +4120,7 @@ function openDetailCable(id){
   currentDetailItem = id;
   document.getElementById('cableDetailTag').textContent = row.cable || ('Cable #'+row.id);
   document.getElementById('cableDetailSub').textContent = `${row.level||'—'} · ${row.from_tag||'—'} → ${row.to_tag||'—'}`;
-  const lastEdited = [row.from.lastEditedAt, row.to.lastEditedAt].filter(Boolean).sort().pop();
+  const lastEdited = [row.from.lastEditedAt, row.to.lastEditedAt, row.lastEditedAt].filter(Boolean).sort().pop();
   document.getElementById('cableLastEdited').textContent = lastEdited ? `Última edición: ${formatDateTime(lastEdited)}` : 'Aún sin editar';
   { const dl = document.getElementById('cableFromDriveLink'); if(row.from.fotosLink){ dl.href = row.from.fotosLink; dl.style.display = 'inline-block'; } else { dl.style.display = 'none'; } }
   { const dl = document.getElementById('cableToDriveLink'); if(row.to.fotosLink){ dl.href = row.to.fotosLink; dl.style.display = 'inline-block'; } else { dl.style.display = 'none'; } }
@@ -4034,9 +4128,16 @@ function openDetailCable(id){
     <div class="info-cell"><div class="lbl">Nivel</div><div class="val">${escapeHtml(orDash(row.level))}</div></div>
     <div class="info-cell"><div class="lbl">Cable</div><div class="val">${escapeHtml(orDash(row.cable))}</div></div>
     <div class="info-cell"><div class="lbl">From área</div><div class="val">${escapeHtml(orDash(row.from_area))}</div></div>
-    <div class="info-cell"><div class="lbl">To área</div><div class="val">${escapeHtml(orDash(row.to_area))}</div></div>`;
+    <div class="info-cell"><div class="lbl">To área</div><div class="val">${escapeHtml(orDash(row.to_area))}</div></div>
+    <div class="info-cell"><div class="lbl">Sistema origen</div><div class="val">${escapeHtml(orDash(row.sistema_origen))}</div></div>`;
   document.getElementById('cableFromTag').textContent = row.from_tag || '';
   document.getElementById('cableToTag').textContent = row.to_tag || '';
+
+  document.querySelectorAll('#cableTimbradoSeg button').forEach(b=>{
+    b.classList.remove('on-si','on-no');
+    if(row.timbrado === b.dataset.val) b.classList.add(b.dataset.val==='SI'?'on-si':'on-no');
+  });
+  document.getElementById('cableFechaTimbrado').value = row.fecha_timbrado || '';
 
   ['from','to'].forEach(side=>{
     const obj = row[side];
@@ -4050,11 +4151,29 @@ function openDetailCable(id){
     document.getElementById(`cable${cap(side)}FechaGland`).value = obj.fecha_gland || '';
     document.getElementById(`cable${cap(side)}FechaConexionado`).value = obj.fecha_conexionado || '';
     document.getElementById(`cable${cap(side)}Observacion`).value = obj.observacion || '';
-    updateCableDateLock(side, 'gland', obj);
-    updateCableDateLock(side, 'conexionado', obj);
   });
+  applyCableRestrictedMode();
   refreshCablePhotoGrids();
   document.getElementById('detailOverlayCable').classList.add('open');
+}
+// Con el código de Timbrado, solo se puede tocar Timbrado y las Observaciones — todo lo demás
+// se ve, pero queda deshabilitado. Con el código completo de CONEXIONADO (o Admin), todo editable.
+function applyCableRestrictedMode(){
+  const restricted = isTimbradoRestricted();
+  const sheet = document.getElementById('detailOverlayCable');
+  sheet.querySelectorAll('.seg:not(#cableTimbradoSeg) button').forEach(b=> b.disabled = restricted);
+  sheet.querySelectorAll('input[id*="MarcaGland"], input[id*="FechaGland"], input[id*="FechaConexionado"]').forEach(inp=> inp.disabled = restricted);
+  ['from','to'].forEach(side=>{
+    const photoInput = document.getElementById(`cable${cap(side)}ConPhotoInput`);
+    if(photoInput){ photoInput.disabled = restricted; photoInput.closest('label').style.opacity = restricted ? '.4' : ''; }
+  });
+  sheet.querySelector('.restricted-note')?.remove();
+  if(restricted){
+    const note = document.createElement('div');
+    note.className = 'restricted-note';
+    note.textContent = '🔒 Acceso con código de Timbrado — solo puedes editar Timbrado y Observaciones.';
+    document.getElementById('cableSheetBody').prepend(note);
+  }
 }
 function closeDetailCable(){ document.getElementById('detailOverlayCable').classList.remove('open'); currentDetailItem = null; }
 document.getElementById('cableCloseDetail1').addEventListener('click', closeDetailCable);
@@ -4523,14 +4642,14 @@ function sheetRowPayload(sys, row){
       FECHA_TIMBRADO: row.fecha_timbrado, 'OBSERVACIÓN': row.observacion, FECHA_EDICION: formatDateTime(row.lastEditedAt), IMPUTADO: row.imputado||''
     } };
   }
-  const lastEdited = [row.from.lastEditedAt, row.to.lastEditedAt].filter(Boolean).sort().pop();
+  const lastEdited = [row.from.lastEditedAt, row.to.lastEditedAt, row.lastEditedAt].filter(Boolean).sort().pop();
   return { sheet:'CONEXIONADO', uid:'cable-'+row.id, fields: {
-    CABLE_NUMBER: row.cable, From_Tag: row.from_tag, From_Area: row.from_area, Nivel: row.level,
+    CABLE_NUMBER: row.cable, From_Tag: row.from_tag, From_Area: row.from_area, Nivel: row.level, SISTEMA_ORIGEN: row.sistema_origen||'',
     From_Minirutas: row.from.minirutas, From_Tendido: row.from.tendido, From_Marca_Gland: row.from.marca_gland, From_Gland: row.from.gland,
     From_Fecha_Gland: row.from.fecha_gland, From_Conexionado: row.from.conexionado, From_Fecha_Conexionado: row.from.fecha_conexionado, From_Observacion: row.from.observacion,
     To_Tag: row.to_tag, To_Area: row.to_area, To_Minirutas: row.to.minirutas, To_Tendido: row.to.tendido, To_Marca_Gland: row.to.marca_gland, To_Gland: row.to.gland,
     To_Fecha_Gland: row.to.fecha_gland, To_Conexionado: row.to.conexionado, To_Fecha_Conexionado: row.to.fecha_conexionado, To_Observacion: row.to.observacion,
-    FECHA_EDICION: formatDateTime(lastEdited), IMPUTADO: row.imputado||''
+    FECHA_EDICION: formatDateTime(lastEdited), TIMBRADO: row.timbrado||'', FECHA_TIMBRADO: row.fecha_timbrado||'', IMPUTADO: row.imputado||''
   } };
 }
 function queueSyncRetry(sys, idVal){
@@ -4919,6 +5038,12 @@ function applySheetRowToCable(obj){
   if(obj.From_Fotos_Link) row.from.fotosLink = obj.From_Fotos_Link;
   if(obj.To_Fotos_Link) row.to.fotosLink = obj.To_Fotos_Link;
   if(obj.IMPUTADO !== undefined) row.imputado = obj.IMPUTADO;
+  if(obj.SISTEMA_ORIGEN) row.sistema_origen = obj.SISTEMA_ORIGEN;
+  const recentlyEditedLocally = row.lastEditedAt && (Date.now() - new Date(row.lastEditedAt).getTime()) < 60000;
+  if(!recentlyEditedLocally){
+    if(obj.TIMBRADO !== undefined) row.timbrado = obj.TIMBRADO || '';
+    if(obj.FECHA_TIMBRADO !== undefined) row.fecha_timbrado = toDateOnly(obj.FECHA_TIMBRADO) || '';
+  }
   if(sideStatus(row.from) === 'complete'){ if(!row.from.completedAt) row.from.completedAt = row.from.lastEditedAt || now; } else { row.from.completedAt = ''; }
   if(sideStatus(row.to) === 'complete'){ if(!row.to.completedAt) row.to.completedAt = row.to.lastEditedAt || now; } else { row.to.completedAt = ''; }
   return true;
