@@ -400,6 +400,9 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .dash-general-grid{display:grid; grid-template-columns:1fr; gap:20px;}
 .dash-area-search{width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--steel-300); font-size:13px; margin-bottom:10px;}
 .dash-area-toggle{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--steel-600); margin-bottom:14px;}
+.dash-imput-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--steel-100);}
+.dash-imput-tag{font-size:12.5px; font-weight:600; color:var(--navy-900);}
+.dash-imput-check{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--steel-600); flex:none;}
 @media(min-width:900px){ .dash-general-grid{grid-template-columns:1fr 1.3fr 1.3fr;} }
 .dash-kpi-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-bottom:20px;}
 .dash-kpi-card{border-radius:12px; padding:14px;}
@@ -569,6 +572,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
     <button class="dashboard-tab" data-tab="general">Vista general</button>
     <button class="dashboard-tab" data-tab="niveles">Mapa de niveles</button>
     <button class="dashboard-tab" data-tab="areas">Detalle por área</button>
+    <button class="dashboard-tab" data-tab="imputacion">Imputación</button>
   </div>
   <div class="dashboard-body" id="dashboardBody"><div class="dashboard-body-inner" id="dashboardBodyInner"></div></div>
 </div>
@@ -1028,7 +1032,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v11.0 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v11.1 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1136,7 +1140,7 @@ let state = {
     uid:r.uid, item:r.item, tag:r.tag, elev:r.elev, std_support:r.std_support, fixing:r.fixing,
     hook_up:r.hook_up, room:r.room, area:r.area, level:r.level, subcontractor:r.subcontractor||'', description:r.description||'',
     soporte:'', fecha:'', tagged_items:'', tierra_soporte:'', tierra_equipos:'', miniruta:'', conexionado:'', megado:'', tubing:'',
-    photos:[], observacion:'', obsPhotos:[], lastEditedAt:'', completedAt:'', fotosLink:''
+    photos:[], observacion:'', obsPhotos:[], lastEditedAt:'', completedAt:'', fotosLink:'', imputado:''
   })),
   cableado: CABLE_RAW.map(r => ({
     id:r.id, cable:r.cable, from_tag:r.from_tag, from_area:r.from_area, level:r.level, to_tag:r.to_tag, to_area:r.to_area,
@@ -1151,7 +1155,7 @@ let state = {
     minirutas:r.minirutas || '', cableado:r.cableado || '', conexionado:r.conexionado || '',
     nserie:r.nserie || '',
     observacion:r.observacion || '', obsPhotos:[],
-    lastEditedAt:'', completedAt:'', fotosLink:''
+    lastEditedAt:'', completedAt:'', fotosLink:'', imputado:''
   })),
   transit: TRANSIT_RAW.map(r => ({
     id:r.id, rev:r.rev, installer:r.installer, tag:r.tag, hole_name:r.hole_name, level:r.level,
@@ -1161,13 +1165,13 @@ let state = {
     identificacion_transit:'', fotografia:'', fotografiaPhotos:[],
     estado_final:'',
     observacion:'', obsPhotos:[],
-    lastEditedAt:'', completedAt:'', fotosLink:''
+    lastEditedAt:'', completedAt:'', fotosLink:'', imputado:''
   })),
   timbrado: TIMBRADO_RAW.map(r => ({
     id:r.id, cable:r.cable, from_tag:r.from_tag, from_description:r.from_description, from_area:r.from_area,
     to_tag:r.to_tag, to_description:r.to_description, to_area:r.to_area,
     timbrado:'', fecha_timbrado:'', observacion:'', obsPhotos:[],
-    lastEditedAt:'', completedAt:'', fotosLink:''
+    lastEditedAt:'', completedAt:'', fotosLink:'', imputado:''
   })),
   access: {
     hvac: { pin:'1234' },
@@ -1181,7 +1185,7 @@ let state = {
 };
 function emptySide(){
   return { minirutas:'', tendido:'', marca_gland:'', gland:'', fecha_gland:'', conexionado:'', fecha_conexionado:'',
-    conexionadoPhotos:[], observacion:'', obsPhotos:[], lastEditedAt:'', completedAt:'', fotosLink:'' };
+    conexionadoPhotos:[], observacion:'', obsPhotos:[], lastEditedAt:'', completedAt:'', fotosLink:'', imputado:'' };
 }
 
 let filters = {
@@ -3147,7 +3151,8 @@ function renderDashboard(){
   const inner = document.getElementById('dashboardBodyInner');
   if(dashTab === 'general') renderDashTabGeneral(inner, { scope, avgPct, restAbiertas, completados7d, desviacion });
   else if(dashTab === 'niveles') renderDashTabNiveles(inner, { scope });
-  else renderDashTabAreas(inner, { scope });
+  else if(dashTab === 'areas') renderDashTabAreas(inner, { scope });
+  else renderDashTabImputacion(inner);
 }
 function breakdownList(scope, groupBy, showMeta){
   const groups = {};
@@ -3337,6 +3342,56 @@ function renderDashTabAreas(inner, d){
   };
   document.getElementById('dashAreaSearchInput').addEventListener('input', (e)=>{ dashAreaSearch = e.target.value; renderList(); });
   document.getElementById('dashAreaHideZeroCheck').addEventListener('change', (e)=>{ dashAreaHideZero = e.target.checked; renderList(); });
+  renderList();
+}
+
+let dashImputSearch = '';
+function dashImputIdField(sys){ return sys==='cableado' ? 'id' : (TABLE_CONFIG[sys] ? TABLE_CONFIG[sys].idField : 'id'); }
+function dashImputTagOf(sys, r){ return sys==='cableado' ? r.cable : (r.tag || r.cable || '—'); }
+function renderDashTabImputacion(inner){
+  if(dashSys === 'all'){
+    inner.innerHTML = `<div style="font-size:12px; color:var(--steel-500);">Elige un sistema específico arriba para ver y marcar la imputación de sus Tags.</div>`;
+    return;
+  }
+  const canEdit = plannerModeActive;
+  const rows = dashSys === 'cableado' ? state.cableado : state[dashSys];
+  const idField = dashImputIdField(dashSys);
+  inner.innerHTML = `
+    <input type="text" class="dash-area-search" id="dashImputSearchInput" placeholder="Buscar Tag..." value="${escapeHtml(dashImputSearch)}">
+    ${!canEdit ? '<div class="insights-planning-box" style="margin-bottom:14px;">Solo se puede marcar Imputado en Modo Planificador. Aquí puedes verlo, pero no cambiarlo.</div>' : ''}
+    <div id="dashImputList"></div>
+  `;
+  const renderList = ()=>{
+    let items = rows;
+    if(dashImputSearch.trim()){
+      const q = dashImputSearch.trim().toLowerCase();
+      items = items.filter(r=> dashImputTagOf(dashSys, r).toLowerCase().includes(q));
+    }
+    document.getElementById('dashImputList').innerHTML = items.length ? items.map(r=>{
+      const checked = r.imputado === 'SI';
+      return `<div class="dash-imput-row">
+        <span class="dash-imput-tag">${escapeHtml(dashImputTagOf(dashSys, r))}</span>
+        <label class="dash-imput-check">
+          <input type="checkbox" data-imputid="${escapeHtml(String(r[idField]))}" ${checked?'checked':''} ${canEdit?'':'disabled'}>
+          Imputado
+        </label>
+      </div>`;
+    }).join('') : '<div style="font-size:12px; color:var(--steel-500);">No hay Tags que coincidan con la búsqueda.</div>';
+    if(canEdit){
+      document.querySelectorAll('[data-imputid]').forEach(chk=>{
+        chk.addEventListener('change', (e)=>{
+          const id = e.target.dataset.imputid;
+          const row = rows.find(r=> String(r[idField]) === id);
+          if(!row) return;
+          row.imputado = e.target.checked ? 'SI' : 'NO';
+          scheduleSave();
+          pushRowToSheet(dashSys, row);
+          showToast(e.target.checked ? 'Marcado como imputado' : 'Desmarcado');
+        });
+      });
+    }
+  };
+  document.getElementById('dashImputSearchInput').addEventListener('input', (e)=>{ dashImputSearch = e.target.value; renderList(); });
   renderList();
 }
 
@@ -4442,14 +4497,14 @@ function sheetRowPayload(sys, row){
       SUBCONTRACTOR: row.subcontractor, ITEM: row.item, TAG: row.tag, DESCRIPTION: row.description, 'ELEV.': row.elev,
       'STD SUPPORT': row.std_support, FIXING: row.fixing, 'HOOK UP': row.hook_up, ROOM_NUMBER: row.room, AREA: row.area, LEVEL: row.level,
       SOPORTE: row.soporte, FECHA_EQUIPO: row.fecha, TAGGED_ITEMS: row.tagged_items, 'TIERRA SOPORTE': row.tierra_soporte, 'TIERRA EQUIPOS': row.tierra_equipos,
-      MINIRUTA: row.miniruta, CONEXIONADO: row.conexionado, MEGADO: row.megado, TUBING: row.tubing, OBSERVACION: row.observacion, FECHA_EDICION: formatDateTime(row.lastEditedAt)
+      MINIRUTA: row.miniruta, CONEXIONADO: row.conexionado, MEGADO: row.megado, TUBING: row.tubing, OBSERVACION: row.observacion, FECHA_EDICION: formatDateTime(row.lastEditedAt), IMPUTADO: row.imputado||''
     } };
   }
   if(sys === 'fds'){
     return { sheet:'FDS', uid:'fds-'+row.id, fields: {
       ITEM: row.item, TAG_EQUIPOS: row.tag, STD_SUPPORT: row.std_support, NIVEL: row.level, FECHA_SOPORTE: row.semana_date,
       SOPORTE: row.soporte, EQUIPO: row.equipo, MINI_RUTA: row.minirutas, CABLEADO: row.cableado, CONEXIONADO: row.conexionado,
-      N_SERIE_EQUIPO: row.nserie, OBSERVACION: row.observacion, FECHA_EDICION: formatDateTime(row.lastEditedAt)
+      N_SERIE_EQUIPO: row.nserie, OBSERVACION: row.observacion, FECHA_EDICION: formatDateTime(row.lastEditedAt), IMPUTADO: row.imputado||''
     } };
   }
   if(sys === 'transit'){
@@ -4458,14 +4513,14 @@ function sheetRowPayload(sys, row){
       SYSTEM: row.system, FRAME_TYPE: row.frame_type, DESCRIPTION: row.description, FRAME_MATERIAL: row.frame_material, ROOM: row.room,
       CONSTRUCCION: row.construccion, LIMPIEZA: row.limpieza, PINTURA: row.pintura, CABLES_CORRECTO: row.cables_correcto,
       ETIQUETAS_CABLES: row.etiquetas_cables, IDENTIFICACION_TRANSIT: row.identificacion_transit, FOTOGRAFIA: row.fotografia,
-      ESTADO_FINAL: row.estado_final, OBSERVACION: row.observacion, FECHA_EDICION: formatDateTime(row.lastEditedAt)
+      ESTADO_FINAL: row.estado_final, OBSERVACION: row.observacion, FECHA_EDICION: formatDateTime(row.lastEditedAt), IMPUTADO: row.imputado||''
     } };
   }
   if(sys === 'timbrado'){
     return { sheet:'TIMBRADO', uid:'timbrado-'+row.id, fields: {
       CABLE_NUMBER: row.cable, From_Tag: row.from_tag, From_Description: row.from_description, From_Area: row.from_area,
       To_Tag: row.to_tag, To_Description: row.to_description, To_Area: row.to_area, TIMBRADO: row.timbrado,
-      FECHA_TIMBRADO: row.fecha_timbrado, 'OBSERVACIÓN': row.observacion, FECHA_EDICION: formatDateTime(row.lastEditedAt)
+      FECHA_TIMBRADO: row.fecha_timbrado, 'OBSERVACIÓN': row.observacion, FECHA_EDICION: formatDateTime(row.lastEditedAt), IMPUTADO: row.imputado||''
     } };
   }
   const lastEdited = [row.from.lastEditedAt, row.to.lastEditedAt].filter(Boolean).sort().pop();
@@ -4475,7 +4530,7 @@ function sheetRowPayload(sys, row){
     From_Fecha_Gland: row.from.fecha_gland, From_Conexionado: row.from.conexionado, From_Fecha_Conexionado: row.from.fecha_conexionado, From_Observacion: row.from.observacion,
     To_Tag: row.to_tag, To_Area: row.to_area, To_Minirutas: row.to.minirutas, To_Tendido: row.to.tendido, To_Marca_Gland: row.to.marca_gland, To_Gland: row.to.gland,
     To_Fecha_Gland: row.to.fecha_gland, To_Conexionado: row.to.conexionado, To_Fecha_Conexionado: row.to.fecha_conexionado, To_Observacion: row.to.observacion,
-    FECHA_EDICION: formatDateTime(lastEdited)
+    FECHA_EDICION: formatDateTime(lastEdited), IMPUTADO: row.imputado||''
   } };
 }
 function queueSyncRetry(sys, idVal){
@@ -4807,6 +4862,7 @@ function applySheetRowToHvac(obj){
   const after = JSON.stringify([row.soporte,row.fecha,row.tagged_items,row.tierra_soporte,row.tierra_equipos,row.miniruta,row.conexionado,row.megado,row.tubing,row.observacion]);
   if(before !== after) row.lastEditedAt = parseSheetEditDate(obj.FECHA_EDICION) || new Date().toISOString();
   if(obj.FOTOS_LINK) row.fotosLink = obj.FOTOS_LINK;
+  if(obj.IMPUTADO !== undefined) row.imputado = obj.IMPUTADO;
   if(hvacStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt || new Date().toISOString(); } else { row.completedAt = ''; }
   return true;
 }
@@ -4835,6 +4891,7 @@ function applySheetRowToFds(obj){
   const after = JSON.stringify([row.semana_date,row.soporte,row.equipo,row.minirutas,row.cableado,row.conexionado,row.nserie,row.observacion]);
   if(before !== after) row.lastEditedAt = parseSheetEditDate(obj.FECHA_EDICION) || new Date().toISOString();
   if(obj.FOTOS_LINK) row.fotosLink = obj.FOTOS_LINK;
+  if(obj.IMPUTADO !== undefined) row.imputado = obj.IMPUTADO;
   if(fdsStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt || new Date().toISOString(); } else { row.completedAt = ''; }
   return true;
 }
@@ -4861,6 +4918,7 @@ function applySheetRowToCable(obj){
   if(beforeTo !== afterTo) row.to.lastEditedAt = parseSheetEditDate(obj.FECHA_EDICION) || now;
   if(obj.From_Fotos_Link) row.from.fotosLink = obj.From_Fotos_Link;
   if(obj.To_Fotos_Link) row.to.fotosLink = obj.To_Fotos_Link;
+  if(obj.IMPUTADO !== undefined) row.imputado = obj.IMPUTADO;
   if(sideStatus(row.from) === 'complete'){ if(!row.from.completedAt) row.from.completedAt = row.from.lastEditedAt || now; } else { row.from.completedAt = ''; }
   if(sideStatus(row.to) === 'complete'){ if(!row.to.completedAt) row.to.completedAt = row.to.lastEditedAt || now; } else { row.to.completedAt = ''; }
   return true;
@@ -4883,6 +4941,7 @@ function applySheetRowToTransit(obj){
   const after = JSON.stringify([row.construccion,row.limpieza,row.pintura,row.cables_correcto,row.etiquetas_cables,row.identificacion_transit,row.fotografia,row.estado_final,row.observacion]);
   if(before !== after) row.lastEditedAt = parseSheetEditDate(obj.FECHA_EDICION) || new Date().toISOString();
   if(obj.FOTOS_LINK) row.fotosLink = obj.FOTOS_LINK;
+  if(obj.IMPUTADO !== undefined) row.imputado = obj.IMPUTADO;
   if(transitStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt || new Date().toISOString(); } else { row.completedAt = ''; }
   return true;
 }
@@ -4905,6 +4964,7 @@ function applySheetRowToTimbrado(obj){
   const after = JSON.stringify([row.timbrado,row.fecha_timbrado,row.observacion]);
   if(before !== after) row.lastEditedAt = parseSheetEditDate(obj.FECHA_EDICION) || new Date().toISOString();
   if(obj.FOTOS_LINK) row.fotosLink = obj.FOTOS_LINK;
+  if(obj.IMPUTADO !== undefined) row.imputado = obj.IMPUTADO;
   if(timbradoStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt || new Date().toISOString(); } else { row.completedAt = ''; }
   return true;
 }
@@ -5228,26 +5288,29 @@ function renderReport(){
 function renderWeeklyReport(){
   const sys = currentSystem;
   const body = document.getElementById('reportBody');
-  const weeks = weeklySummaryRows(sys);
-  const maxTotal = Math.max(1, ...weeks.map(w=>w.complete + w.inProgress));
-  let weeksHtml = weeks.length===0 ? `<div class="report-empty">Todavía no hay registros modificados. El avance semanal aparecerá aquí a medida que se guarden fichas.</div>` :
-    weeks.map(w=>{
-      const total = w.complete + w.inProgress;
-      const pctComplete = (w.complete/maxTotal*100).toFixed(0);
-      const pctProgress = (w.inProgress/maxTotal*100).toFixed(0);
-      return `<div class="week-row">
-        <div class="week-row-top"><span class="wk-label">${escapeHtml(w.label)} <span class="wk-range">(${w.range})</span></span><span class="wk-count">${total} modificado${total===1?'':'s'}</span></div>
-        <div class="week-bar-track"><div class="week-bar-seg-complete" style="width:${pctComplete}%"></div><div class="week-bar-seg-progress" style="width:${pctProgress}%"></div></div>
-        <div class="week-row-stats"><span class="wk-stat-complete">✓ ${w.complete} completo${w.complete===1?'':'s'}</span><span class="wk-stat-progress">◐ ${w.inProgress} en proceso</span></div>
-      </div>`;
-    }).join('');
-
-  const obs = observationEntries(sys).sort((a,b)=> (b.date||'').localeCompare(a.date||''));
-  let obsHtml = obs.length===0 ? `<div class="report-empty">No se han registrado observaciones o incidencias todavía.</div>` :
-    obs.map(o=>`<div class="obs-card"><div class="obs-card-top"><span class="obs-card-tag">${escapeHtml(o.tag)}</span><span class="obs-card-date">${escapeHtml(formatDateShort(o.date))}</span></div><div class="obs-card-loc">${escapeHtml(o.loc)}</div><div class="obs-card-text">${escapeHtml(o.text)}</div>${o.photos.length?`<div class="obs-card-photos">${o.photos.map(p=>`<img src="${p}">`).join('')}</div>`:''}</div>`).join('');
-
-  document.getElementById('reportSysName').textContent = SYS[sys].label + ' · registros modificados por semana, completos y en proceso';
-  body.innerHTML = `<div class="report-section-title">Avance por semana</div>${weeksHtml}<div class="report-section-title">Observaciones e incidencias (${obs.length})</div>${obsHtml}`;
+  const { start, end } = getWeeklyRange();
+  const items = weeklyReportItems(sys, start, end);
+  document.getElementById('reportSysName').textContent = `${SYS[sys].label} · lo modificado entre ${formatDateShort(start+'T00:00:00')} y ${formatDateShort(end+'T00:00:00')}`;
+  if(items.length === 0){
+    body.innerHTML = `<div class="report-section-title">Informe semanal</div><div class="report-empty">No hay registros modificados en ese rango de fechas para ${SYS[sys].label}.</div>`;
+    return;
+  }
+  const cardsHtml = items.map(it=>`
+    <div class="daily-card">
+      <div class="daily-card-top">
+        <span class="daily-card-tag">${escapeHtml(it.tag)}</span>
+        <span class="daily-card-time">${it.date ? formatDateShort(it.date) : ''}</span>
+      </div>
+      <div class="daily-card-meta">
+        ${it.nivel ? `<span class="tag-pill"><b>${escapeHtml(it.nivel)}</b></span>` : ''}
+        ${it.area ? `<span class="tag-pill">${escapeHtml(it.area)}</span>` : ''}
+        <span class="tag-pill">${it.estado === 'Completo' ? '✓ Completo' : '◐ Pendiente'}</span>
+        ${typeof it.pct === 'number' ? `<span class="tag-pill">${it.pct}% avance</span>` : ''}
+      </div>
+      ${it.cambios && it.cambios.length ? `<div class="daily-card-changes">${it.cambios.map(c=>`${escapeHtml(c.label)}: ${escapeHtml(c.value)}`).join(' · ')}</div>` : ''}
+      ${it.observacion ? `<div class="daily-card-obs">⚠ ${escapeHtml(it.observacion)}</div>` : ''}
+    </div>`).join('');
+  body.innerHTML = `<div class="report-section-title">${items.length} registro(s) modificado(s) en el rango</div>${cardsHtml}`;
 }
 
 /* ---------- Daily report ---------- */
@@ -5513,10 +5576,22 @@ async function buildDailyReportPDF(sys, dateStr, items, titleOverride, dateLabel
     }
     if(y > pageH - footerH - 140){ doc.addPage(); drawHeader(); }
     doc.setFont('helvetica','bold'); doc.setFontSize(12.5); doc.setTextColor(9,24,35);
-    doc.text(String(it.tag||'—'), margin, y);
-    // Barra de progreso ponderado, al costado derecho del Tag
+    const tagText = String(it.tag||'—');
+    doc.text(tagText, margin, y);
+    // Barra de progreso ponderado — al costado del Tag si entra, si no, en una línea propia debajo
+    // (Tags largos, como los de CONEXIONADO con "Desde/Hasta", no siempre entran al lado).
     if(typeof it.pct === 'number'){
-      const barW = 90, barH = 7, barX = pageW - margin - barW, barY = y - barH + 1;
+      const barW = 90, barH = 7;
+      const tagTextWidth = doc.getTextWidth(tagText);
+      const fitsBeside = (margin + tagTextWidth + 10) < (pageW - margin - barW - 24);
+      const barX = pageW - margin - barW;
+      let barY;
+      if(fitsBeside){
+        barY = y - barH + 1;
+      } else {
+        y += 14;
+        barY = y - barH + 1;
+      }
       const pctColor = it.pct >= 80 ? [30,142,90] : it.pct >= 40 ? [199,145,0] : [217,54,54];
       doc.setFillColor(230,230,230);
       doc.roundedRect(barX, barY, barW, barH, 3, 3, 'F');
@@ -5525,7 +5600,7 @@ async function buildDailyReportPDF(sys, dateStr, items, titleOverride, dateLabel
         doc.roundedRect(barX, barY, Math.max(barW*(it.pct/100), 6), barH, 3, 3, 'F');
       }
       doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(pctColor[0], pctColor[1], pctColor[2]);
-      doc.text(`${it.pct}%`, barX - 6, y - 1, { align:'right' });
+      doc.text(`${it.pct}%`, barX - 6, barY + barH - 1, { align:'right' });
     }
     y += 14;
     doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(100,110,120);
