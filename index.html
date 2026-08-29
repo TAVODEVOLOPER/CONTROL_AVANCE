@@ -691,6 +691,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
     <select id="levelSelect"><option value="">Todos los niveles</option></select>
     <select id="areaSelect"><option value="">Todas las áreas</option></select>
     <select id="roomSelect"><option value="">Todos los rooms</option></select>
+    <select id="sistemaOrigenSelect" style="display:none;"><option value="">Todos los sistemas</option></select>
   </div>
   <div class="status-chips" id="statusChips">
     <div class="chip active" data-status="all">Todos</div>
@@ -1036,7 +1037,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v12.0 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v12.1 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1195,7 +1196,7 @@ function emptySide(){
 
 let filters = {
   hvac: { search:'', level:'', area:'', room:'', status:'all' },
-  cableado: { search:'', level:'', area:'', status:'all' },
+  cableado: { search:'', level:'', area:'', status:'all', sistemaOrigen:'' },
   fds: { search:'', level:'', area:'', status:'all' },
   transit: { search:'', level:'', area:'', room:'', status:'all' },
   timbrado: { search:'', level:'', area:'', status:'all' }
@@ -1419,6 +1420,7 @@ function switchSystem(sys){
   document.getElementById('sysSub').textContent = SYS[sys].subtitle + ` · ${state[sys].length} registros`;
   document.documentElement.style.setProperty('--sys-accent', SYS[sys].accent);
   document.getElementById('roomSelect').style.display = SYS[sys].hasRoom ? '' : 'none';
+  document.getElementById('sistemaOrigenSelect').style.display = sys === 'cableado' ? '' : 'none';
   document.getElementById('searchInput').value = filters[sys].search;
   renderSystemTabs();
   populateSelects();
@@ -2407,6 +2409,12 @@ function populateSelects(){
   levelSel.innerHTML = '<option value="">Todos los niveles</option>' + levels.map(l=>`<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');
   levelSel.value = filters[sys].level || '';
   refreshAreaRoomOptions();
+  if(sys === 'cableado'){
+    const sistemaSel = document.getElementById('sistemaOrigenSelect');
+    const sistemas = [...new Set(rows.map(r=>r.sistema_origen).filter(Boolean))].sort();
+    sistemaSel.innerHTML = '<option value="">Todos los sistemas</option>' + sistemas.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    sistemaSel.value = filters.cableado.sistemaOrigen || '';
+  }
 }
 function refreshAreaRoomOptions(){
   const sys = currentSystem;
@@ -2456,6 +2464,7 @@ function getFiltered(){
     }
     if(f.status === 'obs'){ if(!hasObservation(sys, r)) return false; }
     else if(f.status !== 'all' && rowStatus(sys, r) !== f.status) return false;
+    if(sys === 'cableado' && f.sistemaOrigen && r.sistema_origen !== f.sistemaOrigen) return false;
     if(s){
       let hay;
       if(sys === 'hvac') hay = `${r.tag} ${r.item} ${r.room} ${r.area}`.toLowerCase();
@@ -3376,6 +3385,8 @@ function renderDashTabAreas(inner, d){
 let dashImputSearch = '';
 function dashImputIdField(sys){ return sys==='cableado' ? 'id' : (TABLE_CONFIG[sys] ? TABLE_CONFIG[sys].idField : 'id'); }
 function dashImputTagOf(sys, r){ return sys==='cableado' ? r.cable : (r.tag || r.cable || '—'); }
+let dashImputStatusFilter = 'all';
+let dashImputLevelFilter = 'all';
 function renderDashTabImputacion(inner){
   if(dashSys === 'all'){
     inner.innerHTML = `<div style="font-size:12px; color:var(--steel-500);">Elige un sistema específico arriba para ver y marcar la imputación de sus Tags.</div>`;
@@ -3384,17 +3395,40 @@ function renderDashTabImputacion(inner){
   const canEdit = plannerModeActive;
   const rows = dashSys === 'cableado' ? state.cableado : state[dashSys];
   const idField = dashImputIdField(dashSys);
+  const levels = Array.from(new Set(rows.map(r=> normalizeLevel(r.level)))).sort((a,b)=> a.localeCompare(b, undefined, {numeric:true}));
   inner.innerHTML = `
     <input type="text" class="dash-area-search" id="dashImputSearchInput" placeholder="Buscar Tag..." value="${escapeHtml(dashImputSearch)}">
+    <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
+      <select class="insights-sys-select" id="dashImputStatusSelect" style="margin-bottom:0; flex:1; min-width:140px;">
+        <option value="all">Todos (imputados y no)</option>
+        <option value="SI">Solo imputados</option>
+        <option value="NO">Solo no imputados</option>
+      </select>
+      <select class="insights-sys-select" id="dashImputLevelSelect" style="margin-bottom:0; flex:1; min-width:140px;">
+        <option value="all">Todos los niveles</option>
+        ${levels.map(l=>`<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('')}
+      </select>
+    </div>
     ${!canEdit ? '<div class="insights-planning-box" style="margin-bottom:14px;">Solo se puede marcar Imputado en Modo Planificador. Aquí puedes verlo, pero no cambiarlo.</div>' : ''}
+    <div id="dashImputCount" style="font-size:11px; color:var(--steel-500); margin-bottom:8px;"></div>
     <div id="dashImputList"></div>
   `;
+  document.getElementById('dashImputStatusSelect').value = dashImputStatusFilter;
+  document.getElementById('dashImputLevelSelect').value = dashImputLevelFilter;
   const renderList = ()=>{
     let items = rows;
     if(dashImputSearch.trim()){
       const q = dashImputSearch.trim().toLowerCase();
       items = items.filter(r=> dashImputTagOf(dashSys, r).toLowerCase().includes(q));
     }
+    if(dashImputStatusFilter !== 'all'){
+      items = items.filter(r=> (r.imputado === 'SI') === (dashImputStatusFilter === 'SI'));
+    }
+    if(dashImputLevelFilter !== 'all'){
+      items = items.filter(r=> normalizeLevel(r.level) === dashImputLevelFilter);
+    }
+    const totalImputados = rows.filter(r=>r.imputado==='SI').length;
+    document.getElementById('dashImputCount').textContent = `${items.length} Tag(s) en la lista · ${totalImputados} imputado(s) de ${rows.length} en total`;
     document.getElementById('dashImputList').innerHTML = items.length ? items.map(r=>{
       const checked = r.imputado === 'SI';
       return `<div class="dash-imput-row">
@@ -3404,7 +3438,7 @@ function renderDashTabImputacion(inner){
           Imputado
         </label>
       </div>`;
-    }).join('') : '<div style="font-size:12px; color:var(--steel-500);">No hay Tags que coincidan con la búsqueda.</div>';
+    }).join('') : '<div style="font-size:12px; color:var(--steel-500);">No hay Tags que coincidan con el filtro.</div>';
     if(canEdit){
       document.querySelectorAll('[data-imputid]').forEach(chk=>{
         chk.addEventListener('change', (e)=>{
@@ -3413,13 +3447,16 @@ function renderDashTabImputacion(inner){
           if(!row) return;
           row.imputado = e.target.checked ? 'SI' : 'NO';
           scheduleSave();
-          pushRowToSheet(dashSys, row);
+          pushImputadoToSheet(dashSys, row); // envío dedicado — nunca toca Fecha de Edición
           showToast(e.target.checked ? 'Marcado como imputado' : 'Desmarcado');
+          renderList();
         });
       });
     }
   };
   document.getElementById('dashImputSearchInput').addEventListener('input', (e)=>{ dashImputSearch = e.target.value; renderList(); });
+  document.getElementById('dashImputStatusSelect').addEventListener('change', (e)=>{ dashImputStatusFilter = e.target.value; renderList(); });
+  document.getElementById('dashImputLevelSelect').addEventListener('change', (e)=>{ dashImputLevelFilter = e.target.value; renderList(); });
   renderList();
 }
 
@@ -4449,6 +4486,7 @@ document.getElementById('btnFilterToggle').addEventListener('click', (e)=>{
 document.getElementById('levelSelect').addEventListener('change', (e)=>{ filters[currentSystem].level = e.target.value; refreshAreaRoomOptions(); renderAll(); });
 document.getElementById('areaSelect').addEventListener('change', (e)=>{ filters[currentSystem].area = e.target.value; refreshAreaRoomOptions(); renderAll(); });
 document.getElementById('roomSelect').addEventListener('change', (e)=>{ filters[currentSystem].room = e.target.value; renderAll(); });
+document.getElementById('sistemaOrigenSelect').addEventListener('change', (e)=>{ filters.cableado.sistemaOrigen = e.target.value; renderAll(); });
 document.getElementById('statusChips').addEventListener('click', (e)=>{
   const chip = e.target.closest('.chip'); if(!chip) return;
   document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
@@ -4676,6 +4714,20 @@ async function flushSyncQueue(){
     await pushRowToSheet(q.sys, row);
   }
   updateSyncStatusUI();
+}
+// Envío dedicado solo para IMPUTADO — escribe ÚNICAMENTE esa columna por nombre,
+// nunca toca FECHA_EDICION ni ningún otro campo del Tag.
+async function pushImputadoToSheet(sys, row){
+  if(!state.sheetSync.enabled || !state.sheetSync.url) return;
+  const payload = sheetRowPayload(sys, row);
+  try{
+    await fetch(state.sheetSync.url, {
+      method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: sheetPostBody({ action:'upsertFields', sheet:payload.sheet, uid:payload.uid, fields:{ IMPUTADO: row.imputado||'' } })
+    });
+  }catch(e){
+    showToast('Sin conexión: se guardó en el celular y se subirá cuando vuelva la señal');
+  }
 }
 async function pushRowToSheet(sys, row){
   if(!state.sheetSync.enabled || !state.sheetSync.url) return;
