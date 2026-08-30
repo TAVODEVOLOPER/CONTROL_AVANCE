@@ -534,6 +534,10 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
       Dashboard de planificación
     </button>
+    <button class="sidebar-admin-btn" id="btnSidebarAccess" style="display:none; margin-bottom:8px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Accesos y Configuración
+    </button>
     <button class="sidebar-admin-btn" id="btnSidebarAdminMode">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/></svg>
       Modo Administrador
@@ -645,7 +649,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <button class="icon-btn" id="btnReportOpen" title="Informe semanal" style="display:none;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       </button>
-      <button class="icon-btn" id="btnAccessOpen" title="Accesos">
+      <button class="icon-btn" id="btnAccessOpen" title="Accesos" style="display:none;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       </button>
       <button class="icon-btn insights-open-btn" id="btnInsightsOpen" title="Avance y rendimiento">
@@ -768,7 +772,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
     <div class="sheet-body">
       <div class="info-grid" id="fdsInfoGrid"></div>
       <div class="field-group">
-        <label>Fecha soporte <span class="field-legend">— se guarda como fecha corta en Sheets (columna FECHA_SOPORTE)</span></label>
+        <label>Fecha equipo <span class="field-legend">— columna FECHA_EQUIPO en Sheets</span></label>
         <input type="date" class="text-input" id="fdsFechaPick">
         <div class="last-edited-note" id="fdsSemanaPreview" style="margin-top:6px;"></div>
       </div>
@@ -777,15 +781,23 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
         <div class="seg" data-ffield="soporte"><button data-val="SI">Sí</button><button data-val="NO">No</button></div>
         <div class="photo-grid" id="fdsSoportePhotoGrid" style="margin-top:10px;"><label class="photo-add brand-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="fdsSoportePhotoInput"></label></div>
       </div>
+      <div class="field-group"><label>Tierra soporte <span class="field-legend">(cantidad)</span></label><input type="number" min="0" class="text-input" id="fdsTierraSoporte" placeholder="0"></div>
       <div class="field-group">
         <label>Equipo</label>
         <div class="seg" data-ffield="equipo"><button data-val="SI">Sí</button><button data-val="NO">No</button></div>
         <div class="photo-grid" id="fdsEquipoPhotoGrid" style="margin-top:10px;"><label class="photo-add brand-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="fdsEquipoPhotoInput"></label></div>
       </div>
+      <div class="field-group"><label>Tierra equipo <span class="field-legend">(cantidad)</span></label><input type="number" min="0" class="text-input" id="fdsTierraEquipo" placeholder="0"></div>
       <div class="field-group"><label>Mini ruta</label><div class="seg" data-ffield="minirutas"><button data-val="SI">Sí</button><button data-val="NO">No</button></div></div>
       <div class="field-group"><label>Cableado</label><div class="seg" data-ffield="cableado"><button data-val="SI">Sí</button><button data-val="NO">No</button></div></div>
       <div class="field-group"><label>Conexionado</label><div class="seg" data-ffield="conexionado"><button data-val="SI">Sí</button><button data-val="NO">No</button></div></div>
       <div class="field-group"><label>N° Serie equipo <span class="field-legend">(opcional)</span></label><input type="text" class="text-input" id="fdsNSerie" placeholder="N° de serie"></div>
+      <div class="field-group cable-timbrado-block">
+        <label>Timbrado</label>
+        <div class="seg" id="fdsTimbradoSeg"><button data-val="SI">Sí</button><button data-val="NO">No</button></div>
+        <label style="margin-top:8px;">Fecha Timbrado</label>
+        <input type="date" class="text-input" id="fdsFechaTimbrado">
+      </div>
       <div class="incident-block">
         <div class="incident-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Observación / Incidencia</div>
         <div class="field-group" style="margin-bottom:10px;"><label>Motivo por el que no se avanzó <span class="field-legend">(opcional)</span></label><textarea class="text-input" id="fdsObservacion" rows="3" placeholder="Ej: falta de material, detector dañado..."></textarea></div>
@@ -1038,7 +1050,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v13.0 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v14.0 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1154,13 +1166,15 @@ let state = {
     from: emptySide(), to: emptySide()
   })),
   fds: FDS_RAW.map(r => ({
-    id:r.id, item:r.item, tag:r.tag, level:r.level,
+    id:r.id, item:r.item, tag:r.tag, level:r.level, area:r.area || '',
     std_support:r.std_support || '',
     semana:r.semana || '', semana_date:r.semana_date || '',
     soporte:r.soporte || '', soportePhotos:[],
     equipo:r.equipo || '', equipoPhotos:[],
     minirutas:r.minirutas || '', cableado:r.cableado || '', conexionado:r.conexionado || '',
     nserie:r.nserie || '',
+    tierra_soporte:r.tierra_soporte || '', tierra_equipo:r.tierra_equipo || '',
+    timbrado:'', fecha_timbrado:'',
     observacion:r.observacion || '', obsPhotos:[],
     lastEditedAt:'', completedAt:'', fotosLink:'', imputado:'', fecha_imputado:''
   })),
@@ -2867,7 +2881,7 @@ function openAccessSheet(){
   updateSyncStatusUI();
   document.getElementById('accessOverlay').classList.add('open');
 }
-document.getElementById('btnAccessOpen').addEventListener('click', ()=>{
+function openAccessFlow(){
   masterPwIntent = 'accesos';
   if(accessPanelUnlocked){ openAccessSheet(); return; }
   document.getElementById('masterPwInput').value = '';
@@ -2875,7 +2889,9 @@ document.getElementById('btnAccessOpen').addEventListener('click', ()=>{
   document.getElementById('masterPwOverlay').classList.add('open');
   setTimeout(()=>document.getElementById('masterPwInput').focus(), 200);
   refreshBiometricUnlockButton();
-});
+}
+document.getElementById('btnAccessOpen').addEventListener('click', openAccessFlow);
+document.getElementById('btnSidebarAccess').addEventListener('click', ()=>{ closeSidebar(); openAccessFlow(); });
 document.getElementById('btnCloseMasterPw').addEventListener('click', ()=> document.getElementById('masterPwOverlay').classList.remove('open'));
 document.getElementById('masterPwOverlay').addEventListener('click', (e)=>{ if(e.target.id==='masterPwOverlay') document.getElementById('masterPwOverlay').classList.remove('open'); });
 let masterPwIntent = 'accesos'; // 'accesos' | 'unlockAll'
@@ -2924,6 +2940,8 @@ function updateLogoutButton(){
   btn.style.display = anySessionActive ? '' : 'none';
   const dashBtn = document.getElementById('btnSidebarDashboard');
   if(dashBtn) dashBtn.style.display = (plannerModeActive || accessPanelUnlocked) ? '' : 'none';
+  const accessBtn = document.getElementById('btnSidebarAccess');
+  if(accessBtn) accessBtn.style.display = accessPanelUnlocked ? '' : 'none';
 }
 document.getElementById('btnSidebarLogout').addEventListener('click', ()=>{
   plannerModeActive = false;
@@ -4507,10 +4525,18 @@ function openDetailFds(id){
   document.getElementById('fdsInfoGrid').innerHTML = `
     <div class="info-cell"><div class="lbl">Tag equipo</div><div class="val">${escapeHtml(orDash(row.tag))}</div></div>
     <div class="info-cell"><div class="lbl">Nivel</div><div class="val">${escapeHtml(orDash(row.level))}</div></div>
+    <div class="info-cell"><div class="lbl">Área</div><div class="val">${escapeHtml(orDash(row.area))}</div></div>
     <div class="info-cell"><div class="lbl">Std support</div><div class="val">${escapeHtml(orDash(row.std_support))}</div></div>`;
 
   document.getElementById('fdsFechaPick').value = row.semana_date || '';
   document.getElementById('fdsSemanaPreview').textContent = row.semana ? `Semana registrada: ${row.semana}` : 'Sin semana registrada';
+  document.getElementById('fdsTierraSoporte').value = row.tierra_soporte || '';
+  document.getElementById('fdsTierraEquipo').value = row.tierra_equipo || '';
+  document.getElementById('fdsFechaTimbrado').value = row.fecha_timbrado || '';
+  document.querySelectorAll('#fdsTimbradoSeg button').forEach(b=>{
+    b.classList.remove('on-si','on-no');
+    if(row.timbrado === b.dataset.val) b.classList.add(b.dataset.val==='SI'?'on-si':'on-no');
+  });
 
   ['soporte','equipo','minirutas','cableado','conexionado'].forEach(f=>{
     document.querySelectorAll(`#detailOverlayFds .seg[data-ffield="${f}"] button`).forEach(b=>{
@@ -4538,10 +4564,68 @@ wirePhotoInput(document.getElementById('fdsObsPhotoInput'), document.getElementB
   ()=> state.fds.find(r=>r.id===currentDetailItem).obsPhotos, ()=> refreshFdsPhotoGrids());
 
 document.getElementById('fdsFechaPick').addEventListener('change', (e)=>{
-  const val = e.target.value;
-  if(!val){ document.getElementById('fdsSemanaPreview').textContent = 'Sin semana registrada'; return; }
-  const wk = isoWeekInfo(val + 'T00:00:00');
-  document.getElementById('fdsSemanaPreview').textContent = `Semana registrada: SEM${wk.week}`;
+  const row = state.fds.find(r=>r.id===currentDetailItem); if(!row) return;
+  row.semana_date = e.target.value;
+  if(e.target.value){ row.semana = 'SEM' + isoWeekInfo(e.target.value + 'T00:00:00').week; document.getElementById('fdsSemanaPreview').textContent = `Semana registrada: ${row.semana}`; }
+  else { document.getElementById('fdsSemanaPreview').textContent = 'Sin semana registrada'; }
+  syncFdsStatusDate('equipo', row, true);
+});
+function syncFdsStatusDate(field, row, fromDateInput){
+  const dateInputId = 'fdsFechaPick';
+  const input = document.getElementById(dateInputId);
+  const segButtons = document.querySelectorAll(`#detailOverlayFds .seg[data-ffield="${field}"] button`);
+  if(fromDateInput){
+    if(row.semana_date && row[field] !== 'SI'){
+      row[field] = 'SI';
+      segButtons.forEach(b=>{ b.classList.remove('on-si','on-no'); if(b.dataset.val==='SI') b.classList.add('on-si'); });
+    } else if(!row.semana_date && row[field] === 'SI'){
+      row[field] = '';
+      segButtons.forEach(b=>b.classList.remove('on-si','on-no'));
+    }
+  } else {
+    if(row[field] === 'SI'){
+      if(!row.semana_date){
+        row.semana_date = todayLocalISO();
+        row.semana = 'SEM' + isoWeekInfo(row.semana_date + 'T00:00:00').week;
+      }
+    } else {
+      row.semana_date = ''; row.semana = '';
+    }
+  }
+  if(input) input.value = row.semana_date || '';
+  document.getElementById('fdsSemanaPreview').textContent = row.semana ? `Semana registrada: ${row.semana}` : 'Sin semana registrada';
+}
+function syncFdsTimbradoDate(row, fromDateInput){
+  const input = document.getElementById('fdsFechaTimbrado');
+  const segButtons = document.querySelectorAll('#fdsTimbradoSeg button');
+  if(fromDateInput){
+    if(row.fecha_timbrado && row.timbrado !== 'SI'){
+      row.timbrado = 'SI';
+      segButtons.forEach(b=>{ b.classList.remove('on-si','on-no'); if(b.dataset.val==='SI') b.classList.add('on-si'); });
+    } else if(!row.fecha_timbrado && row.timbrado === 'SI'){
+      row.timbrado = '';
+      segButtons.forEach(b=>b.classList.remove('on-si','on-no'));
+    }
+  } else {
+    if(row.timbrado === 'SI'){ if(!row.fecha_timbrado) row.fecha_timbrado = todayLocalISO(); }
+    else { row.fecha_timbrado = ''; }
+  }
+  if(input) input.value = row.fecha_timbrado || '';
+}
+document.getElementById('fdsTimbradoSeg').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button'); if(!btn) return;
+  const row = state.fds.find(r=>r.id===currentDetailItem); if(!row) return;
+  row.timbrado = (row.timbrado === btn.dataset.val) ? '' : btn.dataset.val;
+  row.lastEditedAt = new Date().toISOString();
+  document.querySelectorAll('#fdsTimbradoSeg button').forEach(b=>b.classList.remove('on-si','on-no'));
+  if(row.timbrado) btn.classList.add(btn.dataset.val==='SI'?'on-si':'on-no');
+  syncFdsTimbradoDate(row);
+});
+document.getElementById('fdsFechaTimbrado').addEventListener('change', (e)=>{
+  const row = state.fds.find(r=>r.id===currentDetailItem); if(!row) return;
+  row.fecha_timbrado = e.target.value;
+  row.lastEditedAt = new Date().toISOString();
+  syncFdsTimbradoDate(row, true);
 });
 
 document.querySelectorAll('#detailOverlayFds .seg').forEach(seg=>{
@@ -4552,6 +4636,7 @@ document.querySelectorAll('#detailOverlayFds .seg').forEach(seg=>{
     row[field] = (row[field] === btn.dataset.val) ? '' : btn.dataset.val;
     seg.querySelectorAll('button').forEach(b=>b.classList.remove('on-si','on-no'));
     if(row[field]) btn.classList.add(btn.dataset.val==='SI'?'on-si':'on-no');
+    if(field === 'equipo') syncFdsStatusDate('equipo', row);
   });
 });
 function closeDetailFds(){ document.getElementById('detailOverlayFds').classList.remove('open'); currentDetailItem = null; }
@@ -4567,6 +4652,8 @@ document.getElementById('fdsSaveDetail').addEventListener('click', ()=>{
       row.semana = 'SEM' + isoWeekInfo(dateVal + 'T00:00:00').week;
     }
     row.nserie = document.getElementById('fdsNSerie').value;
+    row.tierra_soporte = document.getElementById('fdsTierraSoporte').value;
+    row.tierra_equipo = document.getElementById('fdsTierraEquipo').value;
     row.observacion = document.getElementById('fdsObservacion').value;
     row.lastEditedAt = new Date().toISOString();
     if(fdsStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt; }
@@ -4914,9 +5001,11 @@ function sheetRowPayload(sys, row){
   }
   if(sys === 'fds'){
     return { sheet:'FDS', uid:'fds-'+row.id, fields: {
-      ITEM: row.item, TAG_EQUIPOS: row.tag, STD_SUPPORT: row.std_support, NIVEL: row.level, FECHA_SOPORTE: row.semana_date,
-      SOPORTE: row.soporte, EQUIPO: row.equipo, MINI_RUTA: row.minirutas, CABLEADO: row.cableado, CONEXIONADO: row.conexionado,
-      N_SERIE_EQUIPO: row.nserie, OBSERVACION: row.observacion, FECHA_EDICION: formatDateTime(row.lastEditedAt), IMPUTADO: row.imputado||''
+      ITEM: row.item, TAG_EQUIPOS: row.tag, STD_SUPPORT: row.std_support, NIVEL: row.level, AREA: row.area||'', FECHA_EQUIPO: row.semana_date,
+      SOPORTE: row.soporte, TIERRA_SOPORTE: row.tierra_soporte||'', EQUIPO: row.equipo, TIERRA_EQUIPO: row.tierra_equipo||'',
+      MINI_RUTA: row.minirutas, CABLEADO: row.cableado, CONEXIONADO: row.conexionado,
+      N_SERIE_EQUIPO: row.nserie, TIMBRADO: row.timbrado||'', FECHA_TIMBRADO: row.fecha_timbrado||'',
+      OBSERVACION: row.observacion, FECHA_EDICION: formatDateTime(row.lastEditedAt), IMPUTADO: row.imputado||''
     } };
   }
   if(sys === 'transit'){
@@ -5299,11 +5388,12 @@ function applySheetRowToFds(obj){
   const row = state.fds.find(r=>r.id===idNum);
   if(!row) return false;
   row.std_support = obj.STD_SUPPORT || obj.STD_SUPORT || obj['STD SUPPORT'] || obj['STD_SUPPORT '] || '';
-  const before = JSON.stringify([row.semana_date,row.soporte,row.equipo,row.minirutas,row.cableado,row.conexionado,row.nserie,row.observacion]);
-  const fechaSoporte = toDateOnly(obj.FECHA_SOPORTE !== undefined ? obj.FECHA_SOPORTE : obj.SEMANA_DATE);
-  if(fechaSoporte){
-    row.semana_date = fechaSoporte;
-    row.semana = 'SEM' + isoWeekInfo(fechaSoporte + 'T00:00:00').week;
+  if(obj.AREA) row.area = obj.AREA;
+  const before = JSON.stringify([row.semana_date,row.soporte,row.equipo,row.minirutas,row.cableado,row.conexionado,row.nserie,row.observacion,row.tierra_soporte,row.tierra_equipo]);
+  const fechaEquipo = toDateOnly(obj.FECHA_EQUIPO !== undefined ? obj.FECHA_EQUIPO : (obj.FECHA_SOPORTE !== undefined ? obj.FECHA_SOPORTE : obj.SEMANA_DATE));
+  if(fechaEquipo){
+    row.semana_date = fechaEquipo;
+    row.semana = 'SEM' + isoWeekInfo(fechaEquipo + 'T00:00:00').week;
   } else {
     row.semana_date = '';
     row.semana = '';
@@ -5314,12 +5404,19 @@ function applySheetRowToFds(obj){
   row.cableado = obj.CABLEADO || '';
   row.conexionado = obj.CONEXIONADO || '';
   row.nserie = (obj.N_SERIE_EQUIPO !== undefined && obj.N_SERIE_EQUIPO !== null) ? String(obj.N_SERIE_EQUIPO) : '';
+  row.tierra_soporte = (obj.TIERRA_SOPORTE !== undefined && obj.TIERRA_SOPORTE !== null) ? String(obj.TIERRA_SOPORTE) : '';
+  row.tierra_equipo = (obj.TIERRA_EQUIPO !== undefined && obj.TIERRA_EQUIPO !== null) ? String(obj.TIERRA_EQUIPO) : '';
   row.observacion = obj.OBSERVACION || '';
-  const after = JSON.stringify([row.semana_date,row.soporte,row.equipo,row.minirutas,row.cableado,row.conexionado,row.nserie,row.observacion]);
+  const after = JSON.stringify([row.semana_date,row.soporte,row.equipo,row.minirutas,row.cableado,row.conexionado,row.nserie,row.observacion,row.tierra_soporte,row.tierra_equipo]);
   if(before !== after) row.lastEditedAt = parseSheetEditDate(obj.FECHA_EDICION) || new Date().toISOString();
   if(obj.FOTOS_LINK) row.fotosLink = obj.FOTOS_LINK;
   if(obj.IMPUTADO !== undefined) row.imputado = obj.IMPUTADO;
   if(obj.FECHA_IMPUTADO !== undefined) row.fecha_imputado = toDateOnly(obj.FECHA_IMPUTADO) || '';
+  const recentlyEditedLocallyFds = row.lastEditedAt && (Date.now() - new Date(row.lastEditedAt).getTime()) < 60000;
+  if(!recentlyEditedLocallyFds){
+    if(obj.TIMBRADO !== undefined) row.timbrado = obj.TIMBRADO || '';
+    if(obj.FECHA_TIMBRADO !== undefined) row.fecha_timbrado = toDateOnly(obj.FECHA_TIMBRADO) || '';
+  }
   if(fdsStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt || new Date().toISOString(); } else { row.completedAt = ''; }
   return true;
 }
@@ -5412,9 +5509,8 @@ async function pushAccessToSheet(sys){
   try{
     await fetch(state.sheetSync.url, {
       method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: sheetPostBody({ action:'upsert', sheet:'ACCESS', uid,
-        headers:['UID','SISTEMA','CODIGO','FECHA_ACTUALIZACION'],
-        values:[uid, SYS[sys].label, "'"+pin, formatDateTime(new Date().toISOString())] })
+      body: sheetPostBody({ action:'upsertFields', sheet:'ACCESS', uid,
+        fields: { SISTEMA: SYS[sys].label, CODIGO: "'"+pin, FECHA_ACTUALIZACION: formatDateTime(new Date().toISOString()) } })
     });
     state.sheetSync.lastSync = new Date().toISOString();
     scheduleSave();
