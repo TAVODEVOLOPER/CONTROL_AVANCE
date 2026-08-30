@@ -772,31 +772,31 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
     <div class="sheet-body">
       <div class="info-grid" id="fdsInfoGrid"></div>
       <div class="field-group">
+        <label>Soporte</label>
+        <div class="seg" data-ffield="soporte"><button data-val="SI">Sí</button><button data-val="NO">No</button></div>
+        <div class="photo-grid" id="fdsSoportePhotoGrid" style="margin-top:10px;"><label class="photo-add brand-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="fdsSoportePhotoInput"></label></div>
+      </div>
+      <div class="field-group">
         <label>Fecha equipo <span class="field-legend">— columna FECHA_EQUIPO en Sheets</span></label>
         <input type="date" class="text-input" id="fdsFechaPick">
         <div class="last-edited-note" id="fdsSemanaPreview" style="margin-top:6px;"></div>
       </div>
       <div class="field-group">
-        <label>Soporte</label>
-        <div class="seg" data-ffield="soporte"><button data-val="SI">Sí</button><button data-val="NO">No</button></div>
-        <div class="photo-grid" id="fdsSoportePhotoGrid" style="margin-top:10px;"><label class="photo-add brand-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="fdsSoportePhotoInput"></label></div>
-      </div>
-      <div class="field-group"><label>Tierra soporte <span class="field-legend">(cantidad)</span></label><input type="number" min="0" class="text-input" id="fdsTierraSoporte" placeholder="0"></div>
-      <div class="field-group">
         <label>Equipo</label>
         <div class="seg" data-ffield="equipo"><button data-val="SI">Sí</button><button data-val="NO">No</button></div>
         <div class="photo-grid" id="fdsEquipoPhotoGrid" style="margin-top:10px;"><label class="photo-add brand-blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Añadir<input type="file" accept="image/*" id="fdsEquipoPhotoInput"></label></div>
       </div>
-      <div class="field-group"><label>Tierra equipo <span class="field-legend">(cantidad)</span></label><input type="number" min="0" class="text-input" id="fdsTierraEquipo" placeholder="0"></div>
       <div class="field-group"><label>Mini ruta</label><div class="seg" data-ffield="minirutas"><button data-val="SI">Sí</button><button data-val="NO">No</button></div></div>
       <div class="field-group"><label>Cableado</label><div class="seg" data-ffield="cableado"><button data-val="SI">Sí</button><button data-val="NO">No</button></div></div>
       <div class="field-group"><label>Conexionado</label><div class="seg" data-ffield="conexionado"><button data-val="SI">Sí</button><button data-val="NO">No</button></div></div>
       <div class="field-group"><label>N° Serie equipo <span class="field-legend">(opcional)</span></label><input type="text" class="text-input" id="fdsNSerie" placeholder="N° de serie"></div>
+      <div class="field-group"><label>Tierra soporte <span class="field-legend">(cantidad)</span></label><input type="number" min="0" class="text-input" id="fdsTierraSoporte" placeholder="0"></div>
+      <div class="field-group"><label>Tierra equipo <span class="field-legend">(cantidad)</span></label><input type="number" min="0" class="text-input" id="fdsTierraEquipo" placeholder="0"></div>
       <div class="field-group cable-timbrado-block">
-        <label>Timbrado</label>
-        <div class="seg" id="fdsTimbradoSeg"><button data-val="SI">Sí</button><button data-val="NO">No</button></div>
-        <label style="margin-top:8px;">Fecha Timbrado</label>
+        <label style="margin-top:0;">Fecha Timbrado</label>
         <input type="date" class="text-input" id="fdsFechaTimbrado">
+        <label style="margin-top:8px;">Timbrado</label>
+        <div class="seg" id="fdsTimbradoSeg"><button data-val="SI">Sí</button><button data-val="NO">No</button></div>
       </div>
       <div class="incident-block">
         <div class="incident-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Observación / Incidencia</div>
@@ -1030,7 +1030,7 @@ const FDS_RAW = [{"item": 1, "tag": "731.CKA00-BR01", "level": "NIVEL 0", "seman
 const SYS = {
   hvac: { label:'HVAC', subtitle:'Control de instalación de equipos', accent:'#07509C', hasRoom:true, hasArea:true },
   cableado: { label:'CONEXIONADO', subtitle:'Conexionado y rotulado de cables', accent:'#E92127', hasRoom:false, hasArea:true },
-  fds: { label:'FDS', subtitle:'Instalación de detectores', accent:'#FFC905', hasRoom:false, hasArea:false },
+  fds: { label:'FDS', subtitle:'Instalación de detectores', accent:'#FFC905', hasRoom:false, hasArea:true },
   transit: { label:'TRANSIT', subtitle:'Cierre y acabado de transits', accent:'#133752', hasRoom:true, hasArea:false },
   timbrado: { label:'TIMBRADO', subtitle:'Ahora dentro de Conexionado — acceso restringido', accent:'#6B3FA0', hasRoom:false, hasArea:true }
 };
@@ -1050,7 +1050,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v14.0 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v14.1 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1338,8 +1338,8 @@ function cableStatus(row){
   return (a === 'complete' && b === 'complete') ? 'complete' : 'empty';
 }
 function fdsStatus(row){
-  const siNoFields = [row.soporte, row.equipo, row.minirutas, row.cableado, row.conexionado];
-  const allFields = [row.semana, row.soporte, row.equipo, row.minirutas, row.cableado, row.conexionado];
+  const siNoFields = [row.soporte, row.equipo, row.minirutas, row.cableado, row.conexionado, row.timbrado];
+  const allFields = [row.semana, row.soporte, row.equipo, row.minirutas, row.cableado, row.conexionado, row.tierra_soporte, row.tierra_equipo, row.timbrado];
   const hasNo = siNoFields.some(v => v === 'NO');
   const filled = allFields.filter(v => v !== '' && v !== null && v !== undefined).length;
   if(!hasNo && filled === allFields.length) return 'complete';
@@ -2442,7 +2442,7 @@ function refreshAreaRoomOptions(){
   areaSel.style.display = SYS[sys].hasArea ? '' : 'none';
   if(SYS[sys].hasArea){
     let areas;
-    if(sys === 'hvac'){
+    if(sys === 'hvac' || sys === 'fds'){
       areas = [...new Set(pool.map(r=>r.area).filter(Boolean))].sort();
     } else {
       areas = [...new Set(pool.flatMap(r=>[r.from_area, r.to_area]).filter(Boolean))].sort();
@@ -2471,7 +2471,7 @@ function getFiltered(){
   const s = f.search.trim().toLowerCase();
   return state[sys].filter(r=>{
     if(f.level && r.level !== f.level) return false;
-    if(sys === 'hvac' || sys === 'transit'){
+    if(sys === 'hvac' || sys === 'transit' || sys === 'fds'){
       if(f.area && r.area !== f.area) return false;
       if(f.room && r.room !== f.room) return false;
     } else if(sys === 'cableado' || sys === 'timbrado'){
@@ -2562,13 +2562,13 @@ function cardTemplateTimbrado(r){
 
 function cardTemplateFds(r){
   const st = fdsStatus(r);
-  const bars = fieldBars([[r.semana,false],[r.soporte,true],[r.equipo,true],[r.minirutas,true],[r.cableado,true],[r.conexionado,true]]);
+  const bars = fieldBars([[r.soporte,true],[r.semana,false],[r.equipo,true],[r.minirutas,true],[r.cableado,true],[r.conexionado,true],[r.tierra_soporte,false],[r.tierra_equipo,false],[r.timbrado,true]]);
   const photoCount = r.soportePhotos.length + r.equipoPhotos.length + r.obsPhotos.length;
   return `<div class="card" data-item="${r.id}">
     <div class="status-pill ${st}"></div>
     <div class="card-body">
       <div class="card-top"><div class="card-tag">${escapeHtml(r.tag||'—')}</div><div class="card-item">#${r.item}</div></div>
-      <div class="card-meta"><span class="tag-pill"><b>${escapeHtml(r.level||'—')}</b></span></div>
+      <div class="card-meta"><span class="tag-pill"><b>${escapeHtml(r.level||'—')}</b></span><span class="tag-pill">Área ${escapeHtml(r.area||'—')}</span></div>
       <div class="card-meta"><span class="tag-pill">STD SUPPORT: ${escapeHtml(orDash(r.std_support))}</span></div>
       <div class="card-progress">${bars}</div>
       <div class="badge-row">
