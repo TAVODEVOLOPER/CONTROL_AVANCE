@@ -111,7 +111,13 @@ input,select,button,textarea{font-family:inherit;font-size:16px;}
 .result-count-row .result-count{margin:2px 0 10px;}
 .table-view-toggle{flex-shrink:0; margin-bottom:8px; padding:7px 12px; border-radius:8px; border:1.5px solid var(--steel-300); background:#fff; font-weight:700; font-size:12px; color:var(--brand-blue);}
 .table-view-toggle.active{background:var(--brand-blue); border-color:var(--brand-blue); color:#fff;}
-.fds-table-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch; border:1.5px solid var(--steel-300); border-radius:10px; background:#fff; margin-bottom:16px; position:relative;}
+.fds-table-wrap{overflow-x:scroll; -webkit-overflow-scrolling:touch; border:1.5px solid var(--steel-300); border-radius:10px; background:#fff; margin-bottom:16px; position:relative; scrollbar-width:auto; scrollbar-color:#07509C #E5EAEF;}
+.fds-table-wrap::-webkit-scrollbar{height:14px;}
+.fds-table-wrap::-webkit-scrollbar-track{background:#E5EAEF; border-radius:0 0 9px 9px;}
+.fds-table-wrap::-webkit-scrollbar-thumb{background:#07509C; border-radius:7px; border:3px solid #E5EAEF;}
+.fds-table-scroll-arrows{display:flex; justify-content:space-between; margin-bottom:6px; gap:8px;}
+.fds-table-scroll-arrow{flex:1; padding:8px; border-radius:8px; border:1.5px solid var(--steel-300); background:#fff; color:var(--brand-blue); font-weight:700; font-size:13px; cursor:pointer;}
+.fds-table-scroll-arrow:active{background:var(--steel-100);}
 .fds-table-scroll-hint{position:sticky; top:0; float:right; margin:-1px -1px 0 0; background:linear-gradient(90deg, transparent, rgba(9,24,35,.75) 60%); color:#fff; font-size:10px; font-weight:600; padding:5px 8px 5px 20px; border-radius:0 9px 0 8px; pointer-events:none; z-index:2;}
 .fds-table{border-collapse:collapse; width:100%; min-width:520px; font-family:var(--font-body);}
 .fds-table thead th{position:sticky; top:0; background:var(--steel-050); color:var(--ink-600); font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.02em; padding:9px 6px; text-align:center; border-bottom:1.5px solid var(--steel-300); white-space:nowrap; z-index:2;}
@@ -1076,7 +1082,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v15.0 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v15.1 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1411,13 +1417,12 @@ function timbradoStatus(row){
   if(!hasNo && filled === allFields.length) return 'complete';
   return 'empty';
 }
-// Completo = Montaje al 100% y sin incidencias activas de soporte ni pintura.
+// Completo = todo en verde: Montaje al 100% y ambas incidencias marcadas explícitamente en "No".
 function vesdaStatus(row){
   const montaje = parseFloat(row.montaje);
   const montajeOk = !isNaN(montaje) && montaje >= 100;
-  const sinIncidencias = row.inc_soporte !== 'SI' && row.inc_pintura !== 'SI';
-  const hayDatos = row.montaje !== '' || row.inc_soporte !== '' || row.inc_pintura !== '';
-  if(montajeOk && sinIncidencias && hayDatos) return 'complete';
+  const sinIncidencias = row.inc_soporte === 'NO' && row.inc_pintura === 'NO';
+  if(montajeOk && sinIncidencias) return 'complete';
   return 'empty';
 }
 function rowStatus(sys, row){
@@ -2557,9 +2562,13 @@ function getFiltered(){
   });
 }
 
-function fieldBar(value, isSiNo){
+function fieldBar(value, mode){
   if(value === '' || value === null || value === undefined) return '<i></i>';
-  if(isSiNo && (value === 'NO' || value === 'TEMPORAL')) return '<i class="on-yellow"></i>';
+  if(mode === 'inverted'){
+    // Para incidencias: "No hay incidencia" es la buena (verde); "Sí hay incidencia" es la de alerta (amarillo).
+    return value === 'SI' ? '<i class="on-yellow"></i>' : '<i class="on-green"></i>';
+  }
+  if(mode && (value === 'NO' || value === 'TEMPORAL')) return '<i class="on-yellow"></i>';
   return '<i class="on-green"></i>';
 }
 function fieldBars(pairs){
@@ -2628,7 +2637,7 @@ function cardTemplateTimbrado(r){
 function cardTemplateVesda(r){
   const st = vesdaStatus(r);
   const montajePct = r.montaje === '' ? '' : `${r.montaje}%`;
-  const bars = fieldBars([[montajePct,false],[r.inc_soporte,true],[r.inc_pintura,true]]);
+  const bars = fieldBars([[montajePct,false],[r.inc_soporte,'inverted'],[r.inc_pintura,'inverted']]);
   const photoCount = r.obsPhotos.length;
   const tieneIncidencia = r.inc_soporte === 'SI' || r.inc_pintura === 'SI';
   return `<div class="card" data-item="${r.id}">
@@ -2768,10 +2777,18 @@ function renderSysTable(sys, list, container){
   const readonlyHeaderCells = readonly.map(f=>`<th>${f.label}</th>`).join('');
   const totalCols = 1 + cfg.fields.length + extra.length + readonly.length;
   const minTableWidth = Math.max(560, totalCols * 92 + 160);
-  container.innerHTML = `<div class="fds-table-wrap">${cfg.nested ? '<div class="fds-table-scroll-hint">⟷ Desliza para ver más</div>' : ''}<table class="fds-table" style="min-width:${minTableWidth}px;">
+  container.innerHTML = `
+    <div class="fds-table-scroll-arrows"><button class="fds-table-scroll-arrow" id="fdsScrollLeft">← Desplazar izquierda</button><button class="fds-table-scroll-arrow" id="fdsScrollRight">Desplazar derecha →</button></div>
+    <div class="fds-table-wrap" id="fdsTableWrap">${cfg.nested ? '<div class="fds-table-scroll-hint">⟷ Desliza para ver más</div>' : ''}<table class="fds-table" style="min-width:${minTableWidth}px;">
     <thead><tr><th>Tag</th>${headerCells}${extraHeaderCells}${readonlyHeaderCells}</tr></thead>
     <tbody>${rowsHtml}</tbody>
   </table></div>`;
+  document.getElementById('fdsScrollLeft').addEventListener('click', ()=>{
+    document.getElementById('fdsTableWrap').scrollBy({ left: -280, behavior:'smooth' });
+  });
+  document.getElementById('fdsScrollRight').addEventListener('click', ()=>{
+    document.getElementById('fdsTableWrap').scrollBy({ left: 280, behavior:'smooth' });
+  });
   container.querySelectorAll('.fds-cell').forEach(td=>{
     td.addEventListener('click', ()=>{
       const id = parseInt(td.dataset.id);
@@ -2991,6 +3008,7 @@ function unlockAllSystems(){
   accessPanelUnlocked = true;
   renderSystemTabs();
   updateAdminModeButton();
+  updateLogoutButton();
   showToast('Modo Administrador activado — todos los sistemas desbloqueados');
 }
 function updateAdminModeButton(){
@@ -2999,6 +3017,7 @@ function updateAdminModeButton(){
   const allUnlocked = SYS_ORDER.every(s=>unlockedSystems.has(s));
   btn.classList.toggle('unlocked', allUnlocked);
   btn.lastChild.textContent = allUnlocked ? ' Administrador activo' : ' Modo Administrador';
+  updateLogoutButton();
 }
 document.getElementById('btnSidebarAdminMode').addEventListener('click', ()=>{
   if(SYS_ORDER.every(s=>unlockedSystems.has(s))){
@@ -3168,6 +3187,9 @@ function normalizeLevel(raw){
   if(m) return `Nivel ${m[1]}`;
   return s;
 }
+// VESDA no tiene Nivel/Área — usa Room/Zona en su lugar. Estas etiquetas se adaptan según el sistema elegido.
+function dashLevelLabel(){ return dashSys === 'vesda' ? 'Room' : 'Nivel'; }
+function dashAreaLabel(){ return dashSys === 'vesda' ? 'Zona' : 'Área'; }
 function dashboardScope(){
   // Devuelve la lista de {sys, rows-planas-con-nivel/area/pct/completedAt} según el sistema elegido.
   const out = [];
@@ -3180,10 +3202,12 @@ function dashboardScope(){
         });
       });
     } else {
-      const statusFn = sys==='hvac'?hvacStatus : sys==='fds'?fdsStatus : sys==='transit'?transitStatus : sys==='timbrado'?timbradoStatus : null;
+      const statusFn = sys==='hvac'?hvacStatus : sys==='fds'?fdsStatus : sys==='transit'?transitStatus : sys==='timbrado'?timbradoStatus : sys==='vesda'?vesdaStatus : null;
       state[sys].forEach(r=>{
         const pct = sys==='timbrado' ? (statusFn(r)==='complete'?100:0) : weightedProgress(sys, r);
-        out.push({ sys, level: normalizeLevel(r.level), area: (r.area||r.from_area)||'—', pct, completedAt: r.completedAt });
+        const level = sys==='vesda' ? (r.room||'—') : normalizeLevel(r.level);
+        const area = sys==='vesda' ? (r.zona||'—') : ((r.area||r.from_area)||'—');
+        out.push({ sys, level, area, pct, completedAt: r.completedAt });
       });
     }
   });
@@ -3535,9 +3559,9 @@ function renderDashTabNiveles(inner, d){
   }
   const { items } = breakdownList(d.scope, 'level', true);
   inner.innerHTML = `
-    <div class="dash-section-label">Mapa de calor — Nivel × Sistema</div>
+    <div class="dash-section-label">Mapa de calor — ${dashLevelLabel()} × Sistema</div>
     ${heatmapHtml}
-    <div class="dash-section-label" style="margin-top:22px;">Desglose por Nivel${dashSys==='all' ? ' (combinado — sin meta editable)' : ' — con meta editable'}</div>
+    <div class="dash-section-label" style="margin-top:22px;">Desglose por ${dashLevelLabel()}${dashSys==='all' ? ' (combinado — sin meta editable)' : ' — con meta editable'}</div>
     ${items.length ? items.map(it=>breakdownRowHtml(it,'level',true)).join('') : '<div style="font-size:12px; color:var(--steel-500);">No hay datos para mostrar.</div>'}
   `;
   wireMetaInputs();
@@ -3545,16 +3569,17 @@ function renderDashTabNiveles(inner, d){
 
 /* ---- Pestaña: Detalle por área ---- */
 function renderDashTabAreas(inner, d){
+  const lbl = dashAreaLabel();
   inner.innerHTML = `
-    <input type="text" class="dash-area-search" id="dashAreaSearchInput" placeholder="Buscar área..." value="${escapeHtml(dashAreaSearch)}">
-    <label class="dash-area-toggle"><input type="checkbox" id="dashAreaHideZeroCheck" ${dashAreaHideZero?'checked':''}> Ocultar áreas con 0% de avance</label>
+    <input type="text" class="dash-area-search" id="dashAreaSearchInput" placeholder="Buscar ${lbl.toLowerCase()}..." value="${escapeHtml(dashAreaSearch)}">
+    <label class="dash-area-toggle"><input type="checkbox" id="dashAreaHideZeroCheck" ${dashAreaHideZero?'checked':''}> Ocultar ${lbl.toLowerCase()}s con 0% de avance</label>
     <div id="dashAreaList"></div>
   `;
   const renderList = ()=>{
     let { items } = breakdownList(d.scope, 'area', true);
     if(dashAreaSearch.trim()) items = items.filter(it=> it.key.toLowerCase().includes(dashAreaSearch.trim().toLowerCase()));
     if(dashAreaHideZero) items = items.filter(it=> it.pct > 0);
-    document.getElementById('dashAreaList').innerHTML = items.length ? items.map(it=>breakdownRowHtml(it,'area',true)).join('') : '<div style="font-size:12px; color:var(--steel-500);">No hay áreas que coincidan con el filtro.</div>';
+    document.getElementById('dashAreaList').innerHTML = items.length ? items.map(it=>breakdownRowHtml(it,'area',true)).join('') : `<div style="font-size:12px; color:var(--steel-500);">No hay ${lbl.toLowerCase()}s que coincidan con el filtro.</div>`;
     wireMetaInputs();
   };
   document.getElementById('dashAreaSearchInput').addEventListener('input', (e)=>{ dashAreaSearch = e.target.value; renderList(); });
@@ -3642,7 +3667,8 @@ function renderDashTabImputacion(inner){
   const canEdit = plannerModeActive;
   const rows = dashSys === 'cableado' ? state.cableado : state[dashSys];
   const idField = dashImputIdField(dashSys);
-  const levels = Array.from(new Set(rows.map(r=> normalizeLevel(r.level)))).sort((a,b)=> a.localeCompare(b, undefined, {numeric:true}));
+  const levelOf = r => dashSys==='vesda' ? (r.room||'—') : normalizeLevel(r.level);
+  const levels = Array.from(new Set(rows.map(levelOf))).sort((a,b)=> a.localeCompare(b, undefined, {numeric:true}));
   inner.innerHTML = chartSectionHtml + `
     <input type="text" class="dash-area-search" id="dashImputSearchInput" placeholder="Buscar Tag..." value="${escapeHtml(dashImputSearch)}">
     <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
@@ -3652,7 +3678,7 @@ function renderDashTabImputacion(inner){
         <option value="NO">Solo no imputados</option>
       </select>
       <select class="insights-sys-select" id="dashImputLevelSelect" style="margin-bottom:0; flex:1; min-width:140px;">
-        <option value="all">Todos los niveles</option>
+        <option value="all">Todos (${dashLevelLabel().toLowerCase()})</option>
         ${levels.map(l=>`<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('')}
       </select>
     </div>
@@ -3675,7 +3701,7 @@ function renderDashTabImputacion(inner){
       items = items.filter(r=> (r.imputado === 'SI') === (dashImputStatusFilter === 'SI'));
     }
     if(dashImputLevelFilter !== 'all'){
-      items = items.filter(r=> normalizeLevel(r.level) === dashImputLevelFilter);
+      items = items.filter(r=> levelOf(r) === dashImputLevelFilter);
     }
     const totalImputados = rows.filter(r=>r.imputado==='SI').length;
     document.getElementById('dashImputCount').textContent = `${items.length} Tag(s) en la lista · ${totalImputados} imputado(s) de ${rows.length} en total`;
@@ -5185,7 +5211,7 @@ function sheetRowPayload(sys, row){
     return { sheet:'VESDA', uid:'vesda-'+row.id, fields: {
       ROOM: row.room, ZONA: row.zona, CABINET: row.cabinet, LINE: row.line, 'DMS IDENTIFIER': row.dms,
       MONTAJE: row.montaje===''?'':(parseFloat(row.montaje)/100), 'INCIDENCIA DE SOPORTE': row.inc_soporte,
-      'INCIDENCIA PINTURA': row.inc_pintura, 'OBESERVACIÓN ': row.observacion,
+      'INCIDENCIA PINTURA': row.inc_pintura, OBSERVACION: row.observacion,
       FECHA_EDICION: formatDateTime(row.lastEditedAt), IMPUTADO: row.imputado||'', FECHA_IMPUTADO: row.fecha_imputado||''
     } };
   }
@@ -5686,7 +5712,7 @@ function applySheetRowToVesda(obj){
   }
   row.inc_soporte = obj['INCIDENCIA DE SOPORTE'] || '';
   row.inc_pintura = obj['INCIDENCIA PINTURA'] || '';
-  row.observacion = obj['OBESERVACIÓN '] !== undefined ? (obj['OBESERVACIÓN ']||'') : (obj['OBESERVACIÓN'] || obj.OBSERVACION || '');
+  row.observacion = obj.OBSERVACION !== undefined ? (obj.OBSERVACION||'') : (obj['OBESERVACIÓN '] || obj['OBESERVACIÓN'] || '');
   const after = JSON.stringify([row.montaje,row.inc_soporte,row.inc_pintura,row.observacion]);
   if(before !== after) row.lastEditedAt = parseSheetEditDate(obj.FECHA_EDICION) || new Date().toISOString();
   if(obj.FOTOS_LINK) row.fotosLink = obj.FOTOS_LINK;
