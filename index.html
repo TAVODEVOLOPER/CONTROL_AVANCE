@@ -1082,7 +1082,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v15.1 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v15.2 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -3470,9 +3470,9 @@ function renderDashTabGeneral(inner, d){
 
 /* ---- Pestaña: Mapa de niveles ---- */
 // Gráfico de columnas flexible: Hitos / Imputados / Semana / Sistema / General.
-function renderDashBarChart(scope){
-  const canvas = document.getElementById('dashBarChart');
-  if(!canvas) return;
+// Cálculo de datos del gráfico de columnas — separado del renderizado, así el PDF puede generar
+// su propio gráfico sin depender de que la pestaña "Vista general" esté en pantalla.
+function computeDashBarChartData(scope){
   let labels = [], data = [], label = 'Avance %', color = '#07509C', suffix = '%';
 
   if(dashBarMode === 'hitos'){
@@ -3526,6 +3526,12 @@ function renderDashBarChart(scope){
     labels = ['Avance general'];
     data = [scope.length ? Math.round(scope.reduce((a,r)=>a+r.pct,0)/scope.length) : 0];
   }
+  return { labels, data, label, color, suffix };
+}
+function renderDashBarChart(scope){
+  const canvas = document.getElementById('dashBarChart');
+  if(!canvas) return;
+  const { labels, data, label, color, suffix } = computeDashBarChartData(scope);
 
   if(dashBarChartInstance) dashBarChartInstance.destroy();
   dashBarChartInstance = new Chart(canvas, {
@@ -3929,13 +3935,25 @@ async function exportDashboardPDF(){
   });
   y += kpiH + 24;
 
-  // Gráfico de columnas (Hitos/Imputados/Semana/Sistema/General) — imagen real del gráfico ya renderizado
-  const barCanvas = document.getElementById('dashBarChart');
-  if(barCanvas && dashBarChartInstance){
+  // Gráfico de columnas (Hitos/Imputados/Semana/Sistema/General) — se genera aparte,
+  // funciona sin importar en qué pestaña del Dashboard estés parado al exportar.
+  {
+    const barData = computeDashBarChartData(scope);
+    const tmpBarCanvas = document.createElement('canvas');
+    tmpBarCanvas.width = 640; tmpBarCanvas.height = 320;
+    const tmpBarChart = new Chart(tmpBarCanvas, {
+      type:'bar',
+      data:{ labels: barData.labels, datasets:[{ label: barData.label, data: barData.data, backgroundColor: barData.color, borderRadius:4 }] },
+      options:{ responsive:false, animation:false,
+        plugins:{ legend:{ display:false } },
+        scales:{ y:{ beginAtZero:true, ...(barData.suffix==='%' ? {max:100} : {}), ticks:{ callback:v=>v+barData.suffix } } } }
+    });
+    await new Promise(r=>setTimeout(r, 200));
     doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(9,24,35);
     doc.text('Avance — gráfico de columnas', margin, y); y += 10;
-    const imgW = pageW - margin*2, imgH = imgW * (barCanvas.height/barCanvas.width) * 0.6;
-    try{ doc.addImage(dashBarChartInstance.toBase64Image(), 'PNG', margin, y, imgW, imgH); }catch(e){}
+    const imgW = pageW - margin*2, imgH = imgW * (tmpBarCanvas.height/tmpBarCanvas.width) * 0.6;
+    try{ doc.addImage(tmpBarChart.toBase64Image(), 'PNG', margin, y, imgW, imgH); }catch(e){}
+    tmpBarChart.destroy();
     y += imgH + 20;
   }
 
@@ -3973,13 +3991,36 @@ async function exportDashboardPDF(){
 
   if(y > pageH - footerH - 160) { doc.addPage(); y = margin; }
 
-  // Pareto de restricciones — imagen real del gráfico ya renderizado
-  const paretoCanvas = document.getElementById('dashPareto');
-  if(paretoCanvas && dashParetoChart){
+  // Pareto de restricciones — se genera aparte, funciona sin importar la pestaña activa
+  {
+    const restSystems = dashSys === 'all' ? DASHBOARD_SYS_ORDER : [dashSys];
+    let restAll = [];
+    restSystems.forEach(s=>{ if(state.restricciones && state.restricciones[s]) restAll = restAll.concat(state.restricciones[s]); });
+    const paretoCounts = { MAT:0, INT:0, PRE:0, DOC:0 };
+    restAll.forEach(r=>{ if(paretoCounts[r.categoria]!==undefined) paretoCounts[r.categoria]++; });
+    const catLabels = ['MAT','INT','PRE','DOC'];
+    const catData = catLabels.map(c=>paretoCounts[c]);
+    const totalRest = catData.reduce((a,b)=>a+b,0) || 1;
+    let acc = 0;
+    const cumData = catData.map(v=>{ acc += v; return Math.round((acc/totalRest)*100); });
+
+    const tmpParetoCanvas = document.createElement('canvas');
+    tmpParetoCanvas.width = 640; tmpParetoCanvas.height = 320;
+    const tmpParetoChart = new Chart(tmpParetoCanvas, {
+      data:{ labels:catLabels, datasets:[
+        { type:'bar', label:'Cantidad', data:catData, backgroundColor:'#07509C', borderRadius:4, yAxisID:'y' },
+        { type:'line', label:'% Acumulado', data:cumData, borderColor:'#E92127', borderWidth:2, pointRadius:3, pointBackgroundColor:'#E92127', yAxisID:'y1' }
+      ]},
+      options:{ responsive:false, animation:false,
+        plugins:{ legend:{ display:true, position:'bottom', labels:{ boxWidth:10, font:{size:10.5} } } },
+        scales:{ y:{ position:'left', beginAtZero:true }, y1:{ position:'right', min:0, max:100, grid:{display:false}, ticks:{ callback:v=>v+'%' } } } }
+    });
+    await new Promise(r=>setTimeout(r, 200));
     doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(9,24,35);
     doc.text('Restricciones por categoría (Pareto)', margin, y); y += 10;
-    const imgW = pageW - margin*2, imgH = imgW * (paretoCanvas.height/paretoCanvas.width) * 0.6;
-    try{ doc.addImage(dashParetoChart.toBase64Image(), 'PNG', margin, y, imgW, imgH); }catch(e){}
+    const imgW = pageW - margin*2, imgH = imgW * (tmpParetoCanvas.height/tmpParetoCanvas.width) * 0.6;
+    try{ doc.addImage(tmpParetoChart.toBase64Image(), 'PNG', margin, y, imgW, imgH); }catch(e){}
+    tmpParetoChart.destroy();
     y += imgH + 20;
   }
 
