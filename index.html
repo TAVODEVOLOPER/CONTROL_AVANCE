@@ -435,10 +435,6 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .dash-program-hito-row{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:5px 0;}
 .dash-program-hito-name{font-size:11.5px; color:var(--steel-600); flex:1;}
 .dash-program-hito-row input{width:130px; padding:5px 7px; border-radius:6px; border:1px solid var(--steel-300); font-size:11px;}
-.dash-heatmap{border-collapse:collapse; width:100%; font-size:11px;}
-.dash-heatmap th{padding:6px 8px; font-size:10px; color:var(--steel-500); font-weight:600; text-align:center;}
-.dash-heatmap-row-label{font-size:11px; font-weight:600; color:var(--navy-900); padding:6px 10px 6px 0; white-space:nowrap;}
-.dash-heatmap-cell{text-align:center; padding:8px 10px; font-weight:700; color:var(--navy-900); min-width:56px; border:2px solid #fff;}
 .reminder-banner.show{top:0;}
 .reminder-banner button{border:none; background:rgba(138,99,0,.12); color:#8A6300; padding:6px 12px; border-radius:7px; font-weight:700; font-size:12.5px; flex:none;}
 @media(min-width:900px){ .reminder-banner{left:300px;} }
@@ -1083,7 +1079,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v15.5 · 26 ago 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v15.6 · 1 sep 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -2892,13 +2888,15 @@ function renderGauge(){
   const rows = state[sys];
   const total = rows.length;
   const complete = rows.filter(r=>rowStatus(sys,r)==='complete').length;
-  const pct = total ? Math.round((complete/total)*100) : 0;
+  // "Progreso general" = avance ponderado por hitos (mismo cálculo que en Avance/Insights),
+  // no el % de Tags 100% completos — así el gráfico se mueve campo a campo, no solo al cerrar un Tag.
+  const pct = weightedSystemAverage(sys, rows);
   const circumference = 132;
   document.getElementById('gaugeFill').style.strokeDashoffset = circumference - (circumference * pct/100);
   document.getElementById('gaugeNum').textContent = pct + '%';
   document.getElementById('statCompleted').textContent = complete;
   document.getElementById('statTotal').textContent = total;
-  document.getElementById('segComplete').style.width = (total?complete/total*100:0)+'%';
+  document.getElementById('segComplete').style.width = pct+'%';
   document.getElementById('exportProgressSub').textContent = `${total} registros · ${pct}% completo`;
   document.getElementById('exportSysName').textContent = SYS[sys].label;
 }
@@ -3280,34 +3278,42 @@ function buildCurvaSData(sys){
   }
   return { labels: weekKeys.map(k=>byWeek[k].label.replace('Semana ','S')), real: realLine, plan: planLine };
 }
-// ---- Mapa de calor Sistema × Nivel ----
-function buildHeatmapData(){
-  const grid = {};
-  DASHBOARD_SYS_ORDER.forEach(sys=>{
-    const rows = sys==='cableado' ? state.cableado : state[sys];
-    const scoped = dashboardScope().filter(r=>r.sys===sys);
-    scoped.forEach(r=>{
-      const key = r.level || '—';
-      if(!grid[key]) grid[key] = {};
-      if(!grid[key][sys]) grid[key][sys] = [];
-      grid[key][sys].push(r.pct);
-    });
-  });
-  const levels = Object.keys(grid).sort((a,b)=> a.localeCompare(b, undefined, {numeric:true}));
-  return { levels, grid };
+// ---- Avance por Nivel, comparado entre sistemas ----
+// Reemplaza al viejo "mapa de calor Nivel × Sistema": ese mapa mezclaba en un mismo eje de
+// "Nivel" los Room de VESDA (que no son niveles de edificio y no coinciden con las Áreas de
+// los demás sistemas), así que la comparación no tenía sentido. Ahora VESDA se muestra aparte,
+// agrupado por su propio Room — ver buildVesdaRoomChartData más abajo.
+function buildLevelSysChartData(){
+  const sysList = DASHBOARD_SYS_ORDER.filter(s=>s!=='vesda');
+  const scope = dashboardScope().filter(r=> sysList.includes(r.sys));
+  const levels = Array.from(new Set(scope.map(r=>r.level||'—'))).sort((a,b)=> a.localeCompare(b, undefined, {numeric:true}));
+  const datasets = sysList.map(s=>({
+    label: SYS[s].label,
+    backgroundColor: SYS[s].accent,
+    borderRadius: 4,
+    data: levels.map(lvl=>{
+      const vals = scope.filter(r=>r.sys===s && (r.level||'—')===lvl).map(r=>r.pct);
+      return vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : 0;
+    })
+  }));
+  return { levels, datasets };
 }
-function heatColor(pct){
-  if(pct === null || pct === undefined) return '#F1EFE8';
-  if(pct >= 80) return '#97C459';
-  if(pct >= 50) return '#EF9F27';
-  if(pct >= 1) return '#F0997B';
-  return '#E1E0D9';
+// ---- VESDA: avance por Room (no comparte eje con el Nivel/Área de los demás sistemas) ----
+function buildVesdaRoomChartData(){
+  const scope = dashboardScope().filter(r=>r.sys==='vesda');
+  const groups = {};
+  scope.forEach(r=>{ const key = r.level || '—'; if(!groups[key]) groups[key] = []; groups[key].push(r.pct); });
+  const rooms = Object.keys(groups).sort((a,b)=> a.localeCompare(b, undefined, {numeric:true}));
+  const data = rooms.map(r=> Math.round(groups[r].reduce((a,b)=>a+b,0)/groups[r].length));
+  return { rooms, data };
 }
 let dashRestCatFilter = 'all';
 let dashRestEstadoFilter = 'all';
 let dashCurvaSChart = null;
 let dashParetoChart = null;
 let dashBarChartInstance = null;
+let dashLevelSysChartInstance = null;
+let dashVesdaRoomChartInstance = null;
 let dashBarMode = 'hitos';
 let dashTab = 'general';
 let dashAreaSearch = '';
@@ -3331,8 +3337,12 @@ function renderDashboard(){
   else renderDashTabImputacion(inner);
 }
 function breakdownList(scope, groupBy, showMeta){
+  // En modo "Todos los sistemas", VESDA no comparte el eje de Nivel con los demás (su "level" es
+  // en realidad su Room) — se excluye acá para no listar Rooms de VESDA como si fueran Niveles.
+  // Elegido un sistema puntual (incluido VESDA solo) esto no aplica: ahí el scope ya es de un solo sistema.
+  const effectiveScope = (groupBy === 'level' && dashSys === 'all') ? scope.filter(r=>r.sys!=='vesda') : scope;
   const groups = {};
-  scope.forEach(r=>{
+  effectiveScope.forEach(r=>{
     const key = groupBy === 'level' ? r.level : r.area;
     if(!groups[key]) groups[key] = [];
     groups[key].push(r);
@@ -3550,34 +3560,71 @@ function renderDashBarChart(scope){
   });
 }
 function renderDashTabNiveles(inner, d){
-  let heatmapHtml = '<div style="font-size:12px; color:var(--steel-500);">Elige "Todos los sistemas" arriba para ver el mapa de calor comparado.</div>';
-  if(dashSys === 'all'){
-    const { levels, grid } = buildHeatmapData();
-    if(levels.length){
-      heatmapHtml = `<div style="overflow-x:auto;"><table class="dash-heatmap">
-        <tr><th></th>${DASHBOARD_SYS_ORDER.map(s=>`<th>${SYS[s].label}</th>`).join('')}</tr>
-        ${levels.map(lvl=>`<tr><td class="dash-heatmap-row-label">${escapeHtml(lvl)}</td>${DASHBOARD_SYS_ORDER.map(s=>{
-          const vals = (grid[lvl] && grid[lvl][s]) ? grid[lvl][s] : null;
-          const pct = vals ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null;
-          return `<td class="dash-heatmap-cell" style="background:${heatColor(pct)};">${pct===null?'—':pct+'%'}</td>`;
-        }).join('')}</tr>`).join('')}
-      </table></div>
-      <div style="display:flex; gap:12px; font-size:10px; color:var(--steel-500); margin-top:6px;">
-        <span><span style="display:inline-block; width:9px; height:9px; background:#97C459; border-radius:2px; margin-right:3px;"></span>≥80%</span>
-        <span><span style="display:inline-block; width:9px; height:9px; background:#EF9F27; border-radius:2px; margin-right:3px;"></span>50-79%</span>
-        <span><span style="display:inline-block; width:9px; height:9px; background:#F0997B; border-radius:2px; margin-right:3px;"></span>&lt;50%</span>
-        <span><span style="display:inline-block; width:9px; height:9px; background:#F1EFE8; border-radius:2px; margin-right:3px;"></span>Sin datos</span>
-      </div>`;
-    }
-  }
   const { items } = breakdownList(d.scope, 'level', true);
+  const showLevelSysChart = dashSys === 'all';
+  const showVesdaRoomChart = dashSys === 'all' || dashSys === 'vesda';
+  const vesdaRoomCount = showVesdaRoomChart ? buildVesdaRoomChartData().rooms.length : 0;
+
+  let topHtml;
+  if(showLevelSysChart){
+    topHtml = `
+      <div class="dash-section-label">Avance por Nivel — HVAC / CONEXIONADO / FDS</div>
+      <div style="font-size:11px; color:var(--steel-500); margin:-4px 0 10px;">VESDA no tiene Niveles/Áreas como los demás sistemas (usa Room), así que se compara aparte, abajo.</div>
+      <div style="position:relative; height:220px; margin-bottom:22px;">
+        <canvas id="dashLevelSysChart" role="img" aria-label="Avance por nivel, comparado por sistema"></canvas>
+      </div>
+      <div class="dash-section-label">VESDA — Avance por Room</div>
+      ${vesdaRoomCount ? `<div style="max-height:340px; overflow-y:auto; margin-bottom:10px;">
+        <div style="position:relative; height:${Math.max(160, vesdaRoomCount*26)}px;">
+          <canvas id="dashVesdaRoomChart" role="img" aria-label="Avance VESDA por Room"></canvas>
+        </div>
+      </div>` : '<div style="font-size:12px; color:var(--steel-500); margin-bottom:10px;">No hay datos de VESDA para mostrar.</div>'}`;
+  } else if(dashSys === 'vesda'){
+    topHtml = `
+      <div class="dash-section-label">VESDA — Avance por Room</div>
+      ${vesdaRoomCount ? `<div style="max-height:340px; overflow-y:auto; margin-bottom:10px;">
+        <div style="position:relative; height:${Math.max(160, vesdaRoomCount*26)}px;">
+          <canvas id="dashVesdaRoomChart" role="img" aria-label="Avance VESDA por Room"></canvas>
+        </div>
+      </div>` : '<div style="font-size:12px; color:var(--steel-500); margin-bottom:10px;">No hay datos de VESDA para mostrar.</div>'}`;
+  } else {
+    topHtml = '<div style="font-size:12px; color:var(--steel-500);">Elige "Todos los sistemas" arriba para ver el comparativo de Nivel entre sistemas.</div>';
+  }
+
   inner.innerHTML = `
-    <div class="dash-section-label">Mapa de calor — ${dashLevelLabel()} × Sistema</div>
-    ${heatmapHtml}
-    <div class="dash-section-label" style="margin-top:22px;">Desglose por ${dashLevelLabel()}${dashSys==='all' ? ' (combinado — sin meta editable)' : ' — con meta editable'}</div>
+    ${topHtml}
+    <div class="dash-section-label" style="margin-top:22px;">Desglose por ${dashLevelLabel()}${dashSys==='all' ? ' (HVAC/CONEXIONADO/FDS combinados — sin meta editable, sin VESDA)' : ' — con meta editable'}</div>
     ${items.length ? items.map(it=>breakdownRowHtml(it,'level',true)).join('') : '<div style="font-size:12px; color:var(--steel-500);">No hay datos para mostrar.</div>'}
   `;
+  if(showLevelSysChart) renderDashLevelSysChart();
+  if(showVesdaRoomChart && vesdaRoomCount) renderDashVesdaRoomChart();
   wireMetaInputs();
+}
+function renderDashLevelSysChart(){
+  const canvas = document.getElementById('dashLevelSysChart');
+  if(!canvas) return;
+  const { levels, datasets } = buildLevelSysChartData();
+  if(dashLevelSysChartInstance) dashLevelSysChartInstance.destroy();
+  dashLevelSysChartInstance = new Chart(canvas, {
+    type:'bar',
+    data:{ labels: levels, datasets },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:true, position:'bottom', labels:{ boxWidth:10, font:{size:10.5} } } },
+      scales:{ y:{ beginAtZero:true, max:100, ticks:{ callback:v=>v+'%' } }, x:{ grid:{display:false}, ticks:{ font:{size:10} } } } }
+  });
+}
+function renderDashVesdaRoomChart(){
+  const canvas = document.getElementById('dashVesdaRoomChart');
+  if(!canvas) return;
+  const { rooms, data } = buildVesdaRoomChartData();
+  if(dashVesdaRoomChartInstance) dashVesdaRoomChartInstance.destroy();
+  dashVesdaRoomChartInstance = new Chart(canvas, {
+    type:'bar',
+    data:{ labels: rooms, datasets:[{ label:'Avance %', data, backgroundColor: SYS.vesda.accent, borderRadius:4 }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales:{ x:{ beginAtZero:true, max:100, ticks:{ callback:v=>v+'%' } }, y:{ grid:{display:false}, ticks:{ font:{size:10} } } } }
+  });
 }
 
 /* ---- Pestaña: Detalle por área ---- */
@@ -4019,33 +4066,55 @@ async function exportDashboardPDF(){
 
   if(y > pageH - footerH - 160) { doc.addPage(); y = margin; }
 
-  // Mapa de calor Nivel × Sistema (solo en modo "todos los sistemas")
-  if(dashSys === 'all'){
-    const { levels, grid } = buildHeatmapData();
-    if(levels.length){
-      doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(9,24,35);
-      doc.text('Mapa de calor — Nivel × Sistema', margin, y); y += 14;
-      const colW = (pageW - margin*2 - 70) / DASHBOARD_SYS_ORDER.length;
-      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(100,110,120);
-      DASHBOARD_SYS_ORDER.forEach((s,i)=> doc.text(SYS[s].label, margin+70+i*colW+colW/2, y, { align:'center' }));
-      y += 10;
-      levels.forEach(lvl=>{
-        if(y > pageH - footerH - 20){ doc.addPage(); y = margin; }
-        doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(9,24,35);
-        doc.text(String(lvl), margin, y+10);
-        DASHBOARD_SYS_ORDER.forEach((s,i)=>{
-          const vals = (grid[lvl] && grid[lvl][s]) ? grid[lvl][s] : null;
-          const pct = vals ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null;
-          const hex = heatColor(pct).replace('#','');
-          const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
-          doc.setFillColor(r,g,b);
-          doc.rect(margin+70+i*colW, y-8, colW-3, 16, 'F');
-          doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(9,24,35);
-          doc.text(pct===null?'—':pct+'%', margin+70+i*colW+(colW-3)/2, y+2, { align:'center' });
+  // Avance por Nivel comparado entre sistemas — reemplaza al viejo "mapa de calor Nivel × Sistema".
+  // Ese mapa mezclaba en el mismo eje los Room de VESDA con el Nivel/Área de los demás sistemas,
+  // que no coinciden entre sí, así que la comparación no aplicaba. Ahora VESDA se exporta aparte,
+  // agrupado por su propio Room.
+  if(dashSys === 'all' || dashSys === 'vesda'){
+    if(dashSys === 'all'){
+      const { levels, datasets } = buildLevelSysChartData();
+      if(levels.length){
+        const tmpLevelCanvas = document.createElement('canvas');
+        tmpLevelCanvas.width = 640; tmpLevelCanvas.height = 320;
+        const tmpLevelChart = new Chart(tmpLevelCanvas, {
+          type:'bar',
+          data:{ labels: levels, datasets },
+          options:{ responsive:false, animation:false,
+            plugins:{ legend:{ display:true, position:'bottom' } },
+            scales:{ y:{ beginAtZero:true, max:100, ticks:{ callback:v=>v+'%' } } } }
         });
-        y += 20;
+        await new Promise(r=>setTimeout(r, 200));
+        if(y > pageH - footerH - 160) { doc.addPage(); y = margin; }
+        doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(9,24,35);
+        doc.text('Avance por Nivel — HVAC / CONEXIONADO / FDS', margin, y); y += 10;
+        const levelChartW = pageW - margin*2;
+        const levelImgH = levelChartW * (tmpLevelCanvas.height/tmpLevelCanvas.width) * 0.6;
+        try{ doc.addImage(tmpLevelChart.toBase64Image(), 'PNG', margin, y, levelChartW, levelImgH); }catch(e){}
+        tmpLevelChart.destroy();
+        y += levelImgH + 20;
+      }
+    }
+    const { rooms, data } = buildVesdaRoomChartData();
+    if(rooms.length){
+      if(y > pageH - footerH - 160) { doc.addPage(); y = margin; }
+      const tmpRoomCanvas = document.createElement('canvas');
+      tmpRoomCanvas.width = 640; tmpRoomCanvas.height = Math.max(320, rooms.length*28);
+      const tmpRoomChart = new Chart(tmpRoomCanvas, {
+        type:'bar',
+        data:{ labels: rooms, datasets:[{ label:'Avance %', data, backgroundColor: SYS.vesda.accent, borderRadius:4 }] },
+        options:{ indexAxis:'y', responsive:false, animation:false,
+          plugins:{ legend:{ display:false } },
+          scales:{ x:{ beginAtZero:true, max:100, ticks:{ callback:v=>v+'%' } } } }
       });
-      y += 14;
+      await new Promise(r=>setTimeout(r, 200));
+      doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(9,24,35);
+      doc.text('VESDA — Avance por Room', margin, y); y += 10;
+      const roomChartW = pageW - margin*2;
+      const roomImgH = roomChartW * (tmpRoomCanvas.height/tmpRoomCanvas.width) * 0.6;
+      if(y + roomImgH > pageH - footerH - 20){ doc.addPage(); y = margin; }
+      try{ doc.addImage(tmpRoomChart.toBase64Image(), 'PNG', margin, y, roomChartW, roomImgH); }catch(e){}
+      tmpRoomChart.destroy();
+      y += roomImgH + 20;
     }
   }
 
