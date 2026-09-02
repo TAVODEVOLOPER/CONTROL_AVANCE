@@ -1079,7 +1079,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v15.6 · 1 sep 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v15.7 · 2 sep 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -2480,15 +2480,23 @@ function addVoiceButtonTo(textareaId){
 })();
 
 /* ===================== Filter selects ===================== */
+// VESDA no tiene Nivel/Área — reusa los mismos selects (levelSelect → Room, areaSelect → Zona),
+// igual que ya se hace en el Dashboard (dashLevelLabel/dashAreaLabel), para poder filtrar
+// la pantalla principal de VESDA por Room y por Zona.
 function populateSelects(){
   const sys = currentSystem;
   const rows = state[sys];
-  const levels = [...new Set(rows.map(r=>r.level).filter(Boolean))].sort((a,b)=>{
-    const na = parseInt(String(a).replace(/\D/g,''))||0, nb = parseInt(String(b).replace(/\D/g,''))||0;
-    return na-nb;
-  });
   const levelSel = document.getElementById('levelSelect');
-  levelSel.innerHTML = '<option value="">Todos los niveles</option>' + levels.map(l=>`<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');
+  if(sys === 'vesda'){
+    const rooms = [...new Set(rows.map(r=>r.room).filter(Boolean))].sort((a,b)=> a.localeCompare(b, undefined, {numeric:true}));
+    levelSel.innerHTML = '<option value="">Todos los rooms</option>' + rooms.map(r=>`<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+  } else {
+    const levels = [...new Set(rows.map(r=>r.level).filter(Boolean))].sort((a,b)=>{
+      const na = parseInt(String(a).replace(/\D/g,''))||0, nb = parseInt(String(b).replace(/\D/g,''))||0;
+      return na-nb;
+    });
+    levelSel.innerHTML = '<option value="">Todos los niveles</option>' + levels.map(l=>`<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join('');
+  }
   levelSel.value = filters[sys].level || '';
   refreshAreaRoomOptions();
   if(sys === 'cableado'){
@@ -2503,6 +2511,17 @@ function refreshAreaRoomOptions(){
   const rows = state[sys];
   const areaSel = document.getElementById('areaSelect');
   const roomSel = document.getElementById('roomSelect');
+
+  if(sys === 'vesda'){
+    let pool = rows;
+    if(filters.vesda.level) pool = pool.filter(r=>r.room===filters.vesda.level);
+    areaSel.style.display = '';
+    const zonas = [...new Set(pool.map(r=>r.zona).filter(Boolean))].sort((a,b)=> a.localeCompare(b, undefined, {numeric:true}));
+    areaSel.innerHTML = '<option value="">Todas las zonas</option>' + zonas.map(z=>`<option value="${escapeHtml(z)}">${escapeHtml(z)}</option>`).join('');
+    if(zonas.includes(filters.vesda.area)) areaSel.value = filters.vesda.area; else filters.vesda.area = '';
+    return;
+  }
+
   let pool = rows;
   if(filters[sys].level) pool = pool.filter(r=>r.level===filters[sys].level);
 
@@ -2537,12 +2556,19 @@ function getFiltered(){
   const f = filters[sys];
   const s = f.search.trim().toLowerCase();
   return state[sys].filter(r=>{
-    if(f.level && r.level !== f.level) return false;
-    if(sys === 'hvac' || sys === 'transit' || sys === 'fds'){
-      if(f.area && r.area !== f.area) return false;
-      if(f.room && r.room !== f.room) return false;
-    } else if(sys === 'cableado' || sys === 'timbrado'){
-      if(f.area && r.from_area !== f.area && r.to_area !== f.area) return false;
+    if(sys === 'vesda'){
+      // Acá filters.vesda.level guarda el Room elegido y filters.vesda.area guarda la Zona
+      // (mismos nombres de campo que usan los demás sistemas, mismo truco que en el Dashboard).
+      if(f.level && r.room !== f.level) return false;
+      if(f.area && r.zona !== f.area) return false;
+    } else {
+      if(f.level && r.level !== f.level) return false;
+      if(sys === 'hvac' || sys === 'transit' || sys === 'fds'){
+        if(f.area && r.area !== f.area) return false;
+        if(f.room && r.room !== f.room) return false;
+      } else if(sys === 'cableado' || sys === 'timbrado'){
+        if(f.area && r.from_area !== f.area && r.to_area !== f.area) return false;
+      }
     }
     if(f.status === 'obs'){ if(!hasObservation(sys, r)) return false; }
     else if(f.status !== 'all' && rowStatus(sys, r) !== f.status) return false;
@@ -2552,6 +2578,7 @@ function getFiltered(){
       if(sys === 'hvac') hay = `${r.tag} ${r.item} ${r.room} ${r.area}`.toLowerCase();
       else if(sys === 'cableado' || sys === 'timbrado') hay = `${r.cable} ${r.from_tag} ${r.to_tag}`.toLowerCase();
       else if(sys === 'transit') hay = `${r.tag} ${r.id} ${r.room} ${r.hole_name}`.toLowerCase();
+      else if(sys === 'vesda') hay = `${r.dms||''} ${r.cabinet||''} ${r.line||''} ${r.room||''} ${r.zona||''}`.toLowerCase();
       else hay = `${r.tag} ${r.item}`.toLowerCase();
       if(!hay.includes(s)) return false;
     }
@@ -3314,7 +3341,7 @@ let dashParetoChart = null;
 let dashBarChartInstance = null;
 let dashLevelSysChartInstance = null;
 let dashVesdaRoomChartInstance = null;
-let dashBarMode = 'hitos';
+let dashBarMode = 'semana'; // por defecto compara avance por semana (antes era "Por Hitos", que en modo "Todos los sistemas" no mostraba nada útil)
 let dashTab = 'general';
 let dashAreaSearch = '';
 let dashAreaHideZero = true;
@@ -3426,7 +3453,7 @@ function renderDashTabGeneral(inner, d){
       <div>
         <div class="dash-section-label">Avance — gráfico de columnas</div>
         <select class="insights-sys-select" id="dashBarModeSelect" style="margin-bottom:8px;">
-          <option value="hitos">Por Hitos</option>
+          ${dashSys !== 'vesda' ? '<option value="hitos">Por Hitos</option>' : ''}
           <option value="imputados">Imputados vs. No imputados</option>
           <option value="semana">Por Semana</option>
           <option value="sistema">Por Sistema</option>
@@ -3459,6 +3486,9 @@ function renderDashTabGeneral(inner, d){
   document.getElementById('dashRestCatSelect').addEventListener('change', (e)=>{ dashRestCatFilter = e.target.value; renderDashboard(); });
   document.getElementById('dashRestEstadoSelect').addEventListener('change', (e)=>{ dashRestEstadoFilter = e.target.value; renderDashboard(); });
 
+  // VESDA no tiene hitos (solo el campo Montaje) — no se le ofrece esa opción; si venía elegida
+  // de otro sistema, se cae a "Por Semana" para no dejar el selector en un valor que ya no existe.
+  if(dashSys === 'vesda' && dashBarMode === 'hitos') dashBarMode = 'semana';
   document.getElementById('dashBarModeSelect').value = dashBarMode;
   document.getElementById('dashBarModeSelect').addEventListener('change', (e)=>{ dashBarMode = e.target.value; renderDashboard(); });
   renderDashBarChart(d.scope);
@@ -3811,7 +3841,11 @@ document.getElementById('btnDashboardRefresh').addEventListener('click', async (
   showToast('Dashboard actualizado');
 });
 document.getElementById('btnDashboardClose').addEventListener('click', closeDashboard);
-document.getElementById('dashSysSelect').addEventListener('change', (e)=>{ dashSys = e.target.value; renderDashboard(); });
+document.getElementById('dashSysSelect').addEventListener('change', (e)=>{
+  dashSys = e.target.value;
+  if(dashSys === 'vesda' && dashBarMode === 'hitos') dashBarMode = 'semana'; // VESDA no tiene hitos
+  renderDashboard();
+});
 document.getElementById('btnDashboardExport').addEventListener('click', (e)=>{
   e.stopPropagation();
   document.getElementById('dashboardExportMenu').classList.toggle('open');
@@ -5280,6 +5314,11 @@ function weeklySummaryRows(sys){
     state.timbrado.forEach(r=>{
       if(!r.lastEditedAt) return;
       addToWeek(r.lastEditedAt, timbradoStatus(r) === 'complete');
+    });
+  } else if(sys === 'vesda'){
+    state.vesda.forEach(r=>{
+      if(!r.lastEditedAt) return;
+      addToWeek(r.lastEditedAt, vesdaStatus(r) === 'complete');
     });
   }
   return [...byWeek.values()].sort((a,b)=> a.key.localeCompare(b.key));
