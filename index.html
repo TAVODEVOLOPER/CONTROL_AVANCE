@@ -500,6 +500,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
     </button>
     <div class="landing-footer-note">Puedes ver los registros sin código; para editar necesitas el código del sistema.</div>
     <div class="landing-version" id="landingVersion"></div>
+    <div class="landing-version" id="landingSyncStatus" style="display:none;"></div>
     <div class="landing-version">BY GUSTAVO_DEVELOPER</div>
   </div>
 </div>
@@ -1079,7 +1080,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v15.7 · 2 sep 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v15.8 · 2 sep 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -3325,6 +3326,50 @@ function buildLevelSysChartData(){
   }));
   return { levels, datasets };
 }
+// ---- Avance ponderado acumulado por semana ("curva" real de avance, no solo conteo de Tags) ----
+// Cada Tag aporta su % de avance ponderado actual (el mismo que usa el gauge y "Avance por Nivel")
+// a la semana en que se editó por última vez. El acumulado semana a semana, dividido por el total
+// de Tags del registro, arma una curva de avance real — al llegar a la última semana con actividad,
+// da el mismo % que el gauge "Progreso general" de ese sistema (o el promedio si es "Todos").
+function buildWeeklyAvanceCumData(sys){
+  const systems = sys === 'all' ? DASHBOARD_SYS_ORDER : [sys];
+  let totalTags = 0;
+  const entries = [];
+  systems.forEach(s=>{
+    if(s === 'cableado'){
+      totalTags += state.cableado.length * 2; // From y To cuentan como dos "lados" independientes
+      state.cableado.forEach(r=>{
+        ['from','to'].forEach(side=>{
+          const obj = r[side];
+          if(!obj.lastEditedAt) return;
+          const wk = isoWeekInfo(obj.lastEditedAt);
+          entries.push({ key:wk.key, label:wk.label, pct: weightedProgressCable(r)[side] });
+        });
+      });
+    } else {
+      const rows = state[s];
+      totalTags += rows.length;
+      rows.forEach(r=>{
+        if(!r.lastEditedAt) return;
+        const wk = isoWeekInfo(r.lastEditedAt);
+        entries.push({ key:wk.key, label:wk.label, pct: weightedProgress(s, r) });
+      });
+    }
+  });
+  if(!totalTags || !entries.length) return { labels:[], data:[] };
+  const byWeek = {};
+  entries.forEach(e=>{
+    if(!byWeek[e.key]) byWeek[e.key] = { label:e.label, sumPct:0 };
+    byWeek[e.key].sumPct += e.pct;
+  });
+  const allWeekKeys = Object.keys(byWeek).sort();
+  let cumSum = 0;
+  const cumByWeek = allWeekKeys.map(k=>{ cumSum += byWeek[k].sumPct; return Math.round(cumSum/totalTags); });
+  const weekKeys = allWeekKeys.slice(-8);
+  const data = cumByWeek.slice(-8);
+  const labels = weekKeys.map(k=>byWeek[k].label.replace('Semana ','S'));
+  return { labels, data };
+}
 // ---- VESDA: avance por Room (no comparte eje con el Nivel/Área de los demás sistemas) ----
 function buildVesdaRoomChartData(){
   const scope = dashboardScope().filter(r=>r.sys==='vesda');
@@ -3551,18 +3596,12 @@ function computeDashBarChartData(scope){
       return total ? Math.round((imputados/total)*100) : 0;
     });
   } else if(dashBarMode === 'semana'){
-    const weeksSource = dashSys === 'all'
-      ? DASHBOARD_SYS_ORDER.flatMap(s=> weeklySummaryRows(s).map(w=>({...w, sys:s})))
-      : weeklySummaryRows(dashSys).map(w=>({...w, sys:dashSys}));
-    const byWeek = {};
-    weeksSource.forEach(w=>{
-      if(!byWeek[w.key]) byWeek[w.key] = { label:w.label, complete:0 };
-      byWeek[w.key].complete += w.complete;
-    });
-    const weekKeys = Object.keys(byWeek).sort().slice(-8);
-    labels = weekKeys.map(k=>byWeek[k].label.replace('Semana ','S'));
-    data = weekKeys.map(k=>byWeek[k].complete);
-    label = 'Completados'; suffix = ''; color = '#07509C';
+    // Avance ponderado acumulado, semana a semana (no un conteo de Tags completados) — así se puede
+    // comparar el % de avance real entre una semana y la siguiente, igual métrica que el gauge de arriba.
+    const weekly = buildWeeklyAvanceCumData(dashSys);
+    labels = weekly.labels;
+    data = weekly.data;
+    label = 'Avance acumulado %'; suffix = '%'; color = '#07509C';
   } else if(dashBarMode === 'sistema'){
     labels = DASHBOARD_SYS_ORDER.map(s=>SYS[s].label);
     data = DASHBOARD_SYS_ORDER.map(s=>{
@@ -6915,10 +6954,16 @@ async function init(){
   if(banner) banner.remove();
 
   // Auto-actualización silenciosa desde Google Sheets al abrir la app (sin tocar ningún botón),
-  // para que un celular nuevo o recién actualizado ya traiga los últimos datos (ej. STD SUPPORT de FDS).
+  // para que un celular o PC nuevo, o uno que ya tenía la app abierta, traiga automáticamente lo
+  // último que hayan cargado los demás equipos (ej. STD SUPPORT de FDS, avance de VESDA, etc.).
+  // Incluye los 6 sistemas — VESDA se había quedado afuera de esta lista antes de V15.8.
   if(state.sheetSync.url){
-    for(const sys of ['hvac','fds','cableado','transit','timbrado']){
-      await pullFromSheet(sys, true);
+    const syncStatusEl = document.getElementById('landingSyncStatus');
+    if(syncStatusEl){ syncStatusEl.textContent = '⟳ Sincronizando con Google Sheets...'; syncStatusEl.style.display = ''; }
+    let syncOk = true;
+    for(const sys of ['hvac','fds','cableado','transit','timbrado','vesda']){
+      const ok = await pullFromSheet(sys, true);
+      if(!ok) syncOk = false;
     }
     await pullAccessFromSheet(true);
     await pullNotesFromSheet(true);
@@ -6927,6 +6972,10 @@ async function init(){
     await pullMetasFromSheet(true);
     renderAll();
     populateSelects();
+    if(syncStatusEl){
+      const now = new Date().toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
+      syncStatusEl.textContent = syncOk ? `✓ Datos actualizados · ${now}` : '⚠ No se pudo sincronizar (revisa tu conexión)';
+    }
   }
   await flushSyncQueue();
 }
