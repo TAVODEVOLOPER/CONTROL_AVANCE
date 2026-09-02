@@ -1080,11 +1080,11 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v15.8 · 2 sep 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v15.9 · 2 sep 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
-const viewMode = { hvac:'cards', cableado:'cards', fds:'cards', transit:'cards', timbrado:'cards' };
+const viewMode = { hvac:'cards', cableado:'cards', fds:'cards', transit:'cards', timbrado:'cards', vesda:'cards' };
 const TABLE_CONFIG = {
   hvac: {
     idField:'uid', tagField:'tag',
@@ -4544,8 +4544,8 @@ document.querySelectorAll('[data-pull-sys]').forEach(btn=>{
   btn.addEventListener('click', async ()=>{
     state.sheetSync.url = document.getElementById('sheetSyncUrl').value.trim();
     btn.classList.add('syncing');
-    const ok = await pullFromSheet(btn.dataset.pullSys);
-    flashBtnState(btn, ok !== false);
+    const res = await pullFromSheet(btn.dataset.pullSys);
+    flashBtnState(btn, res.ok !== false);
   });
 });
 
@@ -6064,14 +6064,24 @@ async function pullAccessFromSheet(silent){
     return false;
   }
 }
+// Devuelve { ok, received, applied }: "received" es cuántas filas mandó Sheets para esa pestaña
+// (0 casi siempre significa que la pestaña no existe, tiene otro nombre, o todavía no se cargó
+// nada ahí — no es un error de red, por eso antes pasaba desapercibido); "applied" es cuántas de
+// esas filas realmente matchearon con un Tag local y se aplicaron (menos que "received" si hay
+// UIDs que ya no existen del lado de la app).
 async function pullFromSheet(sys, silent){
-  if(!state.sheetSync.url){ showToast('Primero guarda la URL de Google Sheets'); return false; }
+  if(!state.sheetSync.url){ showToast('Primero guarda la URL de Google Sheets'); return { ok:false, received:0, applied:0 }; }
   const sheetName = sys === 'hvac' ? 'HVAC' : sys === 'cableado' ? 'CONEXIONADO' : sys === 'transit' ? 'TRANSIT' : sys === 'timbrado' ? 'TIMBRADO' : sys === 'vesda' ? 'VESDA' : 'FDS';
   const progressEl = document.getElementById('syncBulkProgress');
   if(progressEl) progressEl.textContent = `Leyendo ${SYS[sys].label} desde Google Sheets...`;
   try{
     const res = await fetch(sheetUrl(`?sheet=${encodeURIComponent(sheetName)}`), { method:'GET' });
     const rows = await res.json();
+    if(!Array.isArray(rows)){
+      // La pestaña no existe, o Apps Script devolvió un error/HTML en vez de JSON (ej. permisos).
+      if(progressEl) progressEl.textContent = `✗ ${SYS[sys].label}: Google Sheets no devolvió datos válidos (revisa que exista la pestaña "${sheetName}" y que el script esté bien implementado).`;
+      return { ok:false, received:0, applied:0 };
+    }
     let applied = 0;
     rows.forEach(obj=>{
       const ok = sys === 'hvac' ? applySheetRowToHvac(obj) : sys === 'fds' ? applySheetRowToFds(obj) : sys === 'transit' ? applySheetRowToTransit(obj) : sys === 'timbrado' ? applySheetRowToTimbrado(obj) : sys === 'vesda' ? applySheetRowToVesda(obj) : applySheetRowToCable(obj);
@@ -6091,12 +6101,12 @@ async function pullFromSheet(sys, silent){
       }
     }
     scheduleSave(); renderAll();
-    if(progressEl) progressEl.textContent = `Importados ${applied} registros de ${SYS[sys].label} desde Google Sheets.${removed?` (${removed} eliminados por ya no estar en Sheets)`:''}`;
+    if(progressEl) progressEl.textContent = `Importados ${applied} registros de ${SYS[sys].label} desde Google Sheets (${rows.length} recibidos).${removed?` (${removed} eliminados por ya no estar en Sheets)`:''}`;
     if(!silent) showToast(`Importados ${applied} registros desde Google Sheets${removed?`, ${removed} eliminados`:''}`);
-    return true;
+    return { ok:true, received: rows.length, applied };
   }catch(e){
     if(progressEl) progressEl.textContent = '✗ No se pudo leer desde Google Sheets. Revisa que el script tenga la función doGet actualizada (con soporte de lectura) y que hayas creado una nueva versión al implementar.';
-    return false;
+    return { ok:false, received:0, applied:0 };
   }
 }
 
@@ -6507,7 +6517,9 @@ function drawReportSummary(doc, margin, pageW, y, sys, dateStr, isWeekly, rangeS
       completedInRange = rows.filter(r=> r.fecha_timbrado === dateStr && timbradoStatus(r) === 'complete').length;
     }
   } else {
-    const statusFn = sys==='hvac'?hvacStatus : sys==='fds'?fdsStatus : transitStatus;
+    // sys==='transit' cae acá también, pero antes cualquier sistema nuevo que no fuera hvac/fds
+    // (por ejemplo VESDA) terminaba usando transitStatus por error — ya no.
+    const statusFn = sys==='hvac'?hvacStatus : sys==='fds'?fdsStatus : sys==='vesda'?vesdaStatus : transitStatus;
     total = rows.length;
     completeCount = rows.filter(r=>statusFn(r)==='complete').length;
     obsCount = rows.filter(r=>r.observacion).length;
@@ -6855,10 +6867,10 @@ document.getElementById('btnRefreshNow').addEventListener('click', async (e)=>{
     return;
   }
   btn.classList.add('spinning');
-  const ok = await pullFromSheet(currentSystem, true);
+  const res = await pullFromSheet(currentSystem, true);
   btn.classList.remove('spinning');
   populateSelects();
-  showToast(ok ? `${SYS[currentSystem].label} actualizado con lo último de Google Sheets` : 'No se pudo actualizar — revisa tu conexión');
+  showToast(res.ok ? `${SYS[currentSystem].label} actualizado (${res.received} en Sheets, ${res.applied} aplicados)` : 'No se pudo actualizar — revisa tu conexión');
 });
 
 /* ===================== Init ===================== */
@@ -6896,7 +6908,10 @@ const EDITABLE_FIELDS = {
   hvac: ['soporte','fecha','tagged_items','tierra_soporte','tierra_equipos','miniruta','conexionado','megado','tubing','photos','observacion','obsPhotos','lastEditedAt','completedAt'],
   fds: ['std_support','semana','semana_date','soporte','soportePhotos','equipo','equipoPhotos','minirutas','cableado','conexionado','nserie','observacion','obsPhotos','lastEditedAt','completedAt'],
   transit: ['construccion','limpieza','pintura','cables_correcto','etiquetas_cables','identificacion_transit','fotografia','fotografiaPhotos','estado_final','observacion','obsPhotos','lastEditedAt','completedAt'],
-  timbrado: ['timbrado','fecha_timbrado','observacion','obsPhotos','lastEditedAt','completedAt']
+  timbrado: ['timbrado','fecha_timbrado','observacion','obsPhotos','lastEditedAt','completedAt'],
+  // VESDA se había quedado afuera de este objeto — sus ediciones locales (hechas offline, antes
+  // de que la sincronización con Sheets llegara a guardarlas) no se recuperaban al reabrir la app.
+  vesda: ['montaje','inc_soporte','inc_pintura','observacion','obsPhotos','lastEditedAt','completedAt']
 };
 const CABLE_SIDE_EDITABLE_FIELDS = ['minirutas','tendido','marca_gland','gland','fecha_gland','conexionado','fecha_conexionado','conexionadoPhotos','observacion','obsPhotos','lastEditedAt','completedAt'];
 function mergeSavedState(saved){
@@ -6909,7 +6924,7 @@ function mergeSavedState(saved){
   if(saved.restricciones) state.restricciones = saved.restricciones;
   if(saved.metas) state.metas = saved.metas;
 
-  const idFieldOf = { hvac:'uid', fds:'id', transit:'id', timbrado:'id' };
+  const idFieldOf = { hvac:'uid', fds:'id', transit:'id', timbrado:'id', vesda:'id' };
   let mergedAny = false;
   Object.keys(idFieldOf).forEach(sys=>{
     if(!Array.isArray(saved[sys])) return;
@@ -6957,14 +6972,13 @@ async function init(){
   // para que un celular o PC nuevo, o uno que ya tenía la app abierta, traiga automáticamente lo
   // último que hayan cargado los demás equipos (ej. STD SUPPORT de FDS, avance de VESDA, etc.).
   // Incluye los 6 sistemas — VESDA se había quedado afuera de esta lista antes de V15.8.
+  // Los 6 se piden en paralelo (antes era uno por uno, en fila) — mucho más rápido, así hay
+  // menos chance de que alguien cambie de pantalla antes de que termine de traer todo.
   if(state.sheetSync.url){
     const syncStatusEl = document.getElementById('landingSyncStatus');
     if(syncStatusEl){ syncStatusEl.textContent = '⟳ Sincronizando con Google Sheets...'; syncStatusEl.style.display = ''; }
-    let syncOk = true;
-    for(const sys of ['hvac','fds','cableado','transit','timbrado','vesda']){
-      const ok = await pullFromSheet(sys, true);
-      if(!ok) syncOk = false;
-    }
+    const syncSystems = ['hvac','fds','cableado','transit','timbrado','vesda'];
+    const results = await Promise.all(syncSystems.map(sys=> pullFromSheet(sys, true).then(res=>({sys, ...res}))));
     await pullAccessFromSheet(true);
     await pullNotesFromSheet(true);
     await pullDocumentsFromSheet(true);
@@ -6974,7 +6988,19 @@ async function init(){
     populateSelects();
     if(syncStatusEl){
       const now = new Date().toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
-      syncStatusEl.textContent = syncOk ? `✓ Datos actualizados · ${now}` : '⚠ No se pudo sincronizar (revisa tu conexión)';
+      const failed = results.filter(r=> !r.ok);
+      // "received===0" con datos locales ya cargados = casi siempre la pestaña de Sheets para
+      // ese sistema no existe, tiene otro nombre, o nunca se le hizo "Sincronizar todo" — no es
+      // un error de red, por eso antes pasaba desapercibido (la sincronización "terminaba bien"
+      // sin traer nada). Se avisa para poder revisar esa pestaña puntual en vez de adivinar.
+      const empty = results.filter(r=> r.ok && r.received === 0 && state[r.sys] && state[r.sys].length > 0);
+      if(failed.length){
+        syncStatusEl.textContent = `⚠ No se pudo traer de Sheets: ${failed.map(r=>SYS[r.sys].label).join(', ')} (revisa tu conexión)`;
+      } else if(empty.length){
+        syncStatusEl.textContent = `⚠ Sheets no tiene datos para: ${empty.map(r=>SYS[r.sys].label).join(', ')} (revisa el nombre de esa(s) pestaña(s))`;
+      } else {
+        syncStatusEl.textContent = `✓ Datos actualizados · ${now}`;
+      }
     }
   }
   await flushSyncQueue();
