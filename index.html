@@ -1125,10 +1125,11 @@ const SYS = {
 };
 const SYS_ORDER = ['hvac','cableado','fds','transit','timbrado','vesda','tendido'];
 // El Dashboard no necesita ver Timbrado (ahora vive dentro de Conexionado) ni Transit por ahora.
-// TENDIDO CABLES tampoco entra: su unidad de avance es por tramo de recorrido (cantidad variable
-// por cable), no por Nivel/Área como el resto, así que mezclarlo en las comparaciones del
-// Dashboard daría lecturas sin sentido — tiene su propio gauge y sus propios informes.
-const DASHBOARD_SYS_ORDER = SYS_ORDER.filter(s => s !== 'timbrado' && s !== 'transit' && s !== 'tendido');
+// TENDIDO CABLES sí entra al Dashboard, pero igual que VESDA no comparte el eje de "Nivel" con
+// el resto (su unidad de avance es por tramo de recorrido, agrupado por Sistema/Área) — se excluye
+// puntualmente del comparativo Nivel×Sistema y tiene su propio gráfico "Avance por Sistema" (ver
+// buildTendidoSistemaChartData).
+const DASHBOARD_SYS_ORDER = SYS_ORDER.filter(s => s !== 'timbrado' && s !== 'transit');
 const MASTER_PASSWORD = 'DRAGADOS-ADMIN'; // cámbiala antes de repartir el archivo — solo tú debes conocerla
 const PLANNER_PASSWORD = 'DRAGADOS-PLANNER'; // acceso de solo lectura: Avance, Informes, Documentos, Restricciones — sin editar datos de campo
 let plannerModeActive = false;
@@ -1144,7 +1145,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v15.10 · 5 sep 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v15.11 · 5 sep 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -3371,8 +3372,9 @@ function normalizeLevel(raw){
   if(m) return `Nivel ${m[1]}`;
   return s;
 }
-// VESDA no tiene Nivel/Área — usa Room/Zona en su lugar. Estas etiquetas se adaptan según el sistema elegido.
-function dashLevelLabel(){ return dashSys === 'vesda' ? 'Room' : 'Nivel'; }
+// VESDA no tiene Nivel/Área — usa Room/Zona en su lugar. TENDIDO CABLES usa su subcategoría
+// "Sistema" en el lugar del Nivel. Estas etiquetas se adaptan según el sistema elegido.
+function dashLevelLabel(){ return dashSys === 'vesda' ? 'Room' : dashSys === 'tendido' ? 'Sistema' : 'Nivel'; }
 function dashAreaLabel(){ return dashSys === 'vesda' ? 'Zona' : 'Área'; }
 function dashboardScope(){
   // Devuelve la lista de {sys, rows-planas-con-nivel/area/pct/completedAt} según el sistema elegido.
@@ -3389,8 +3391,10 @@ function dashboardScope(){
       const statusFn = sys==='hvac'?hvacStatus : sys==='fds'?fdsStatus : sys==='transit'?transitStatus : sys==='timbrado'?timbradoStatus : sys==='vesda'?vesdaStatus : null;
       state[sys].forEach(r=>{
         const pct = sys==='timbrado' ? (statusFn(r)==='complete'?100:0) : weightedProgress(sys, r);
-        const level = sys==='vesda' ? (r.room||'—') : normalizeLevel(r.level);
-        const area = sys==='vesda' ? (r.zona||'—') : ((r.area||r.from_area)||'—');
+        // VESDA no tiene Nivel/Área (usa Room/Zona). TENDIDO CABLES tampoco tiene Nivel (usa su
+        // subcategoría "Sistema" — ACS/SIEMENS/etc. — como agrupador, y el Área de origen del cable).
+        const level = sys==='vesda' ? (r.room||'—') : sys==='tendido' ? (r.sistema||'—') : normalizeLevel(r.level);
+        const area = sys==='vesda' ? (r.zona||'—') : sys==='tendido' ? (r.from_area||'—') : ((r.area||r.from_area)||'—');
         out.push({ sys, level, area, pct, completedAt: r.completedAt });
       });
     }
@@ -3466,9 +3470,10 @@ function buildCurvaSData(sys){
 // Reemplaza al viejo "mapa de calor Nivel × Sistema": ese mapa mezclaba en un mismo eje de
 // "Nivel" los Room de VESDA (que no son niveles de edificio y no coinciden con las Áreas de
 // los demás sistemas), así que la comparación no tenía sentido. Ahora VESDA se muestra aparte,
-// agrupado por su propio Room — ver buildVesdaRoomChartData más abajo.
+// agrupado por su propio Room — ver buildVesdaRoomChartData más abajo. TENDIDO CABLES tampoco
+// entra: su "Nivel" es en realidad su subcategoría Sistema — ver buildTendidoSistemaChartData.
 function buildLevelSysChartData(){
-  const sysList = DASHBOARD_SYS_ORDER.filter(s=>s!=='vesda');
+  const sysList = DASHBOARD_SYS_ORDER.filter(s=>s!=='vesda' && s!=='tendido');
   const scope = dashboardScope().filter(r=> sysList.includes(r.sys));
   const levels = Array.from(new Set(scope.map(r=>r.level||'—'))).sort((a,b)=> a.localeCompare(b, undefined, {numeric:true}));
   const datasets = sysList.map(s=>({
@@ -3535,6 +3540,16 @@ function buildVesdaRoomChartData(){
   const data = rooms.map(r=> Math.round(groups[r].reduce((a,b)=>a+b,0)/groups[r].length));
   return { rooms, data };
 }
+// TENDIDO CABLES no tiene Nivel de edificio — se agrupa por su subcategoría "Sistema"
+// (ACS/SIEMENS/etc., guardada en dashboardScope() como "level") en su lugar.
+function buildTendidoSistemaChartData(){
+  const scope = dashboardScope().filter(r=>r.sys==='tendido');
+  const groups = {};
+  scope.forEach(r=>{ const key = r.level || '—'; if(!groups[key]) groups[key] = []; groups[key].push(r.pct); });
+  const sistemas = Object.keys(groups).sort((a,b)=> a.localeCompare(b, undefined, {numeric:true}));
+  const data = sistemas.map(s=> Math.round(groups[s].reduce((a,b)=>a+b,0)/groups[s].length));
+  return { sistemas, data };
+}
 let dashRestCatFilter = 'all';
 let dashRestEstadoFilter = 'all';
 let dashCurvaSChart = null;
@@ -3565,10 +3580,11 @@ function renderDashboard(){
   else renderDashTabImputacion(inner);
 }
 function breakdownList(scope, groupBy, showMeta){
-  // En modo "Todos los sistemas", VESDA no comparte el eje de Nivel con los demás (su "level" es
-  // en realidad su Room) — se excluye acá para no listar Rooms de VESDA como si fueran Niveles.
-  // Elegido un sistema puntual (incluido VESDA solo) esto no aplica: ahí el scope ya es de un solo sistema.
-  const effectiveScope = (groupBy === 'level' && dashSys === 'all') ? scope.filter(r=>r.sys!=='vesda') : scope;
+  // En modo "Todos los sistemas", VESDA y TENDIDO CABLES no comparten el eje de Nivel con los demás
+  // (su "level" es en realidad Room / subcategoría Sistema) — se excluyen acá para no listar esos
+  // valores como si fueran Niveles de edificio.
+  // Elegido un sistema puntual (incluido VESDA o TENDIDO solo) esto no aplica: ahí el scope ya es de un solo sistema.
+  const effectiveScope = (groupBy === 'level' && dashSys === 'all') ? scope.filter(r=>r.sys!=='vesda' && r.sys!=='tendido') : scope;
   const groups = {};
   effectiveScope.forEach(r=>{
     const key = groupBy === 'level' ? r.level : r.area;
@@ -3593,7 +3609,9 @@ function breakdownList(scope, groupBy, showMeta){
 }
 function breakdownRowHtml(item, groupBy, showMeta){
   const color = item.pct >= 80 ? 'var(--green-600)' : item.pct >= 40 ? '#C79100' : 'var(--brand-red)';
-  const canProgram = showMeta && dashSys !== 'all';
+  // TENDIDO CABLES no tiene un hito fijo que programar (su avance es por tramo, cantidad variable
+  // por cable) — se oculta el botón "Programar" igual que se excluye del modo "Por Hitos".
+  const canProgram = showMeta && dashSys !== 'all' && dashSys !== 'tendido';
   const rowId = 'dashrow-' + groupBy + '-' + String(item.key).replace(/[^a-zA-Z0-9]+/g,'_');
   const hitos = canProgram ? hitosForSys(dashSys) : [];
   return `<div class="dash-breakdown-row">
@@ -3654,7 +3672,7 @@ function renderDashTabGeneral(inner, d){
       <div>
         <div class="dash-section-label">Avance — gráfico de columnas</div>
         <select class="insights-sys-select" id="dashBarModeSelect" style="margin-bottom:8px;">
-          ${dashSys !== 'vesda' ? '<option value="hitos">Por Hitos</option>' : ''}
+          ${dashSys !== 'vesda' && dashSys !== 'tendido' ? '<option value="hitos">Por Hitos</option>' : ''}
           <option value="imputados">Imputados vs. No imputados</option>
           <option value="semana">Por Semana</option>
           <option value="sistema">Por Sistema</option>
@@ -3687,9 +3705,10 @@ function renderDashTabGeneral(inner, d){
   document.getElementById('dashRestCatSelect').addEventListener('change', (e)=>{ dashRestCatFilter = e.target.value; renderDashboard(); });
   document.getElementById('dashRestEstadoSelect').addEventListener('change', (e)=>{ dashRestEstadoFilter = e.target.value; renderDashboard(); });
 
-  // VESDA no tiene hitos (solo el campo Montaje) — no se le ofrece esa opción; si venía elegida
-  // de otro sistema, se cae a "Por Semana" para no dejar el selector en un valor que ya no existe.
-  if(dashSys === 'vesda' && dashBarMode === 'hitos') dashBarMode = 'semana';
+  // VESDA no tiene hitos (solo el campo Montaje) y TENDIDO CABLES tampoco (su avance es por tramo,
+  // no por hito fijo) — no se les ofrece esa opción; si venía elegida de otro sistema, se cae a
+  // "Por Semana" para no dejar el selector en un valor que ya no existe.
+  if((dashSys === 'vesda' || dashSys === 'tendido') && dashBarMode === 'hitos') dashBarMode = 'semana';
   document.getElementById('dashBarModeSelect').value = dashBarMode;
   document.getElementById('dashBarModeSelect').addEventListener('change', (e)=>{ dashBarMode = e.target.value; renderDashboard(); });
   renderDashBarChart(d.scope);
@@ -3788,41 +3807,51 @@ function renderDashTabNiveles(inner, d){
   const { items } = breakdownList(d.scope, 'level', true);
   const showLevelSysChart = dashSys === 'all';
   const showVesdaRoomChart = dashSys === 'all' || dashSys === 'vesda';
+  const showTendidoSistemaChart = dashSys === 'all' || dashSys === 'tendido';
   const vesdaRoomCount = showVesdaRoomChart ? buildVesdaRoomChartData().rooms.length : 0;
+  const tendidoSistemaCount = showTendidoSistemaChart ? buildTendidoSistemaChartData().sistemas.length : 0;
+
+  const vesdaBlockHtml = `
+      <div class="dash-section-label">VESDA — Avance por Room</div>
+      ${vesdaRoomCount ? `<div style="max-height:340px; overflow-y:auto; margin-bottom:10px;">
+        <div style="position:relative; height:${Math.max(160, vesdaRoomCount*26)}px;">
+          <canvas id="dashVesdaRoomChart" role="img" aria-label="Avance VESDA por Room"></canvas>
+        </div>
+      </div>` : '<div style="font-size:12px; color:var(--steel-500); margin-bottom:10px;">No hay datos de VESDA para mostrar.</div>'}`;
+  const tendidoBlockHtml = `
+      <div class="dash-section-label">TENDIDO CABLES — Avance por Sistema</div>
+      ${tendidoSistemaCount ? `<div style="max-height:340px; overflow-y:auto; margin-bottom:10px;">
+        <div style="position:relative; height:${Math.max(160, tendidoSistemaCount*26)}px;">
+          <canvas id="dashTendidoSistemaChart" role="img" aria-label="Avance TENDIDO CABLES por Sistema"></canvas>
+        </div>
+      </div>` : '<div style="font-size:12px; color:var(--steel-500); margin-bottom:10px;">No hay datos de TENDIDO CABLES para mostrar.</div>'}`;
 
   let topHtml;
   if(showLevelSysChart){
     topHtml = `
       <div class="dash-section-label">Avance por Nivel — HVAC / CONEXIONADO / FDS</div>
-      <div style="font-size:11px; color:var(--steel-500); margin:-4px 0 10px;">VESDA no tiene Niveles/Áreas como los demás sistemas (usa Room), así que se compara aparte, abajo.</div>
+      <div style="font-size:11px; color:var(--steel-500); margin:-4px 0 10px;">VESDA y TENDIDO CABLES no tienen Niveles/Áreas como los demás sistemas, así que se comparan aparte, abajo.</div>
       <div style="position:relative; height:220px; margin-bottom:22px;">
         <canvas id="dashLevelSysChart" role="img" aria-label="Avance por nivel, comparado por sistema"></canvas>
       </div>
-      <div class="dash-section-label">VESDA — Avance por Room</div>
-      ${vesdaRoomCount ? `<div style="max-height:340px; overflow-y:auto; margin-bottom:10px;">
-        <div style="position:relative; height:${Math.max(160, vesdaRoomCount*26)}px;">
-          <canvas id="dashVesdaRoomChart" role="img" aria-label="Avance VESDA por Room"></canvas>
-        </div>
-      </div>` : '<div style="font-size:12px; color:var(--steel-500); margin-bottom:10px;">No hay datos de VESDA para mostrar.</div>'}`;
+      ${vesdaBlockHtml}
+      ${tendidoBlockHtml}`;
   } else if(dashSys === 'vesda'){
-    topHtml = `
-      <div class="dash-section-label">VESDA — Avance por Room</div>
-      ${vesdaRoomCount ? `<div style="max-height:340px; overflow-y:auto; margin-bottom:10px;">
-        <div style="position:relative; height:${Math.max(160, vesdaRoomCount*26)}px;">
-          <canvas id="dashVesdaRoomChart" role="img" aria-label="Avance VESDA por Room"></canvas>
-        </div>
-      </div>` : '<div style="font-size:12px; color:var(--steel-500); margin-bottom:10px;">No hay datos de VESDA para mostrar.</div>'}`;
+    topHtml = vesdaBlockHtml;
+  } else if(dashSys === 'tendido'){
+    topHtml = tendidoBlockHtml;
   } else {
     topHtml = '<div style="font-size:12px; color:var(--steel-500);">Elige "Todos los sistemas" arriba para ver el comparativo de Nivel entre sistemas.</div>';
   }
 
   inner.innerHTML = `
     ${topHtml}
-    <div class="dash-section-label" style="margin-top:22px;">Desglose por ${dashLevelLabel()}${dashSys==='all' ? ' (HVAC/CONEXIONADO/FDS combinados — sin meta editable, sin VESDA)' : ' — con meta editable'}</div>
+    <div class="dash-section-label" style="margin-top:22px;">Desglose por ${dashLevelLabel()}${dashSys==='all' ? ' (HVAC/CONEXIONADO/FDS combinados — sin meta editable, sin VESDA ni TENDIDO CABLES)' : ' — con meta editable'}</div>
     ${items.length ? items.map(it=>breakdownRowHtml(it,'level',true)).join('') : '<div style="font-size:12px; color:var(--steel-500);">No hay datos para mostrar.</div>'}
   `;
   if(showLevelSysChart) renderDashLevelSysChart();
   if(showVesdaRoomChart && vesdaRoomCount) renderDashVesdaRoomChart();
+  if(showTendidoSistemaChart && tendidoSistemaCount) renderDashTendidoSistemaChart();
   wireMetaInputs();
 }
 function renderDashLevelSysChart(){
@@ -3851,6 +3880,20 @@ function renderDashVesdaRoomChart(){
       scales:{ x:{ beginAtZero:true, max:100, ticks:{ callback:v=>v+'%' } }, y:{ grid:{display:false}, ticks:{ font:{size:10} } } } }
   });
 }
+let dashTendidoSistemaChartInstance = null;
+function renderDashTendidoSistemaChart(){
+  const canvas = document.getElementById('dashTendidoSistemaChart');
+  if(!canvas) return;
+  const { sistemas, data } = buildTendidoSistemaChartData();
+  if(dashTendidoSistemaChartInstance) dashTendidoSistemaChartInstance.destroy();
+  dashTendidoSistemaChartInstance = new Chart(canvas, {
+    type:'bar',
+    data:{ labels: sistemas, datasets:[{ label:'Avance %', data, backgroundColor: SYS.tendido.accent, borderRadius:4 }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales:{ x:{ beginAtZero:true, max:100, ticks:{ callback:v=>v+'%' } }, y:{ grid:{display:false}, ticks:{ font:{size:10} } } } }
+  });
+}
 
 /* ---- Pestaña: Detalle por área ---- */
 function renderDashTabAreas(inner, d){
@@ -3874,7 +3917,7 @@ function renderDashTabAreas(inner, d){
 
 let dashImputSearch = '';
 function dashImputIdField(sys){ return sys==='cableado' ? 'id' : (TABLE_CONFIG[sys] ? TABLE_CONFIG[sys].idField : 'id'); }
-function dashImputTagOf(sys, r){ return sys==='cableado' ? r.cable : sys==='vesda' ? (r.dms || '—') : (r.tag || r.cable || '—'); }
+function dashImputTagOf(sys, r){ return sys==='cableado' ? r.cable : sys==='vesda' ? (r.dms || '—') : sys==='tendido' ? (r.cableNumber || '—') : (r.tag || r.cable || '—'); }
 let dashImputStatusFilter = 'all';
 let dashImputLevelFilter = 'all';
 let dashImputChartMode = 'sistema';
@@ -3896,7 +3939,10 @@ function renderDashImputChart(){
     const groupBy = dashImputChartMode === 'area' ? 'area' : 'level';
     const groups = {};
     rows.forEach(r=>{
-      const key = groupBy === 'level' ? normalizeLevel(r.level) : (r.area || r.from_area || '—');
+      // VESDA usa Room/Zona y TENDIDO CABLES usa Sistema/Área de origen en vez de Nivel/Área reales.
+      const key = groupBy === 'level'
+        ? (dashSys==='vesda' ? (r.room||'—') : dashSys==='tendido' ? (r.sistema||'—') : normalizeLevel(r.level))
+        : (dashSys==='vesda' ? (r.zona||'—') : dashSys==='tendido' ? (r.from_area||'—') : (r.area || r.from_area || '—'));
       if(!groups[key]) groups[key] = { total:0, imp:0 };
       groups[key].total++;
       if(r.imputado === 'SI') groups[key].imp++;
@@ -3952,7 +3998,7 @@ function renderDashTabImputacion(inner){
   const canEdit = plannerModeActive;
   const rows = dashSys === 'cableado' ? state.cableado : state[dashSys];
   const idField = dashImputIdField(dashSys);
-  const levelOf = r => dashSys==='vesda' ? (r.room||'—') : normalizeLevel(r.level);
+  const levelOf = r => dashSys==='vesda' ? (r.room||'—') : dashSys==='tendido' ? (r.sistema||'—') : normalizeLevel(r.level);
   const levels = Array.from(new Set(rows.map(levelOf))).sort((a,b)=> a.localeCompare(b, undefined, {numeric:true}));
   inner.innerHTML = chartSectionHtml + `
     <input type="text" class="dash-area-search" id="dashImputSearchInput" placeholder="Buscar Tag..." value="${escapeHtml(dashImputSearch)}">
@@ -4038,7 +4084,7 @@ document.getElementById('btnDashboardRefresh').addEventListener('click', async (
 document.getElementById('btnDashboardClose').addEventListener('click', closeDashboard);
 document.getElementById('dashSysSelect').addEventListener('change', (e)=>{
   dashSys = e.target.value;
-  if(dashSys === 'vesda' && dashBarMode === 'hitos') dashBarMode = 'semana'; // VESDA no tiene hitos
+  if((dashSys === 'vesda' || dashSys === 'tendido') && dashBarMode === 'hitos') dashBarMode = 'semana'; // ninguno tiene hitos fijos
   renderDashboard();
 });
 document.getElementById('btnDashboardExport').addEventListener('click', (e)=>{
@@ -4095,7 +4141,7 @@ async function exportImputadosPDF(){
     const enRango = imp.filter(r=> r.fecha_imputado && r.fecha_imputado >= start && r.fecha_imputado <= end);
     imputadosEnRango += enRango.length;
     porSistema.push({ sistema: SYS[s].label, total: rows.length, imputados: imp.length });
-    enRango.forEach(r=> itemsEnRango.push({ sistema: SYS[s].label, tag: s==='cableado' ? r.cable : (r.tag||r.cable||'—'), fecha: r.fecha_imputado }));
+    enRango.forEach(r=> itemsEnRango.push({ sistema: SYS[s].label, tag: s==='cableado' ? r.cable : s==='tendido' ? (r.cableNumber||'—') : (r.tag||r.cable||'—'), fecha: r.fecha_imputado }));
   });
   const totalPct = totalTags ? Math.round((totalImputados/totalTags)*100) : 0;
 
@@ -4298,8 +4344,8 @@ async function exportDashboardPDF(){
   // Avance por Nivel comparado entre sistemas — reemplaza al viejo "mapa de calor Nivel × Sistema".
   // Ese mapa mezclaba en el mismo eje los Room de VESDA con el Nivel/Área de los demás sistemas,
   // que no coinciden entre sí, así que la comparación no aplicaba. Ahora VESDA se exporta aparte,
-  // agrupado por su propio Room.
-  if(dashSys === 'all' || dashSys === 'vesda'){
+  // agrupado por su propio Room, y TENDIDO CABLES también aparte, agrupado por su Sistema.
+  if(dashSys === 'all' || dashSys === 'vesda' || dashSys === 'tendido'){
     if(dashSys === 'all'){
       const { levels, datasets } = buildLevelSysChartData();
       if(levels.length){
@@ -4323,27 +4369,53 @@ async function exportDashboardPDF(){
         y += levelImgH + 20;
       }
     }
-    const { rooms, data } = buildVesdaRoomChartData();
-    if(rooms.length){
-      if(y > pageH - footerH - 160) { doc.addPage(); y = margin; }
-      const tmpRoomCanvas = document.createElement('canvas');
-      tmpRoomCanvas.width = 640; tmpRoomCanvas.height = Math.max(320, rooms.length*28);
-      const tmpRoomChart = new Chart(tmpRoomCanvas, {
-        type:'bar',
-        data:{ labels: rooms, datasets:[{ label:'Avance %', data, backgroundColor: SYS.vesda.accent, borderRadius:4 }] },
-        options:{ indexAxis:'y', responsive:false, animation:false,
-          plugins:{ legend:{ display:false } },
-          scales:{ x:{ beginAtZero:true, max:100, ticks:{ callback:v=>v+'%' } } } }
-      });
-      await new Promise(r=>setTimeout(r, 200));
-      doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(9,24,35);
-      doc.text('VESDA — Avance por Room', margin, y); y += 10;
-      const roomChartW = pageW - margin*2;
-      const roomImgH = roomChartW * (tmpRoomCanvas.height/tmpRoomCanvas.width) * 0.6;
-      if(y + roomImgH > pageH - footerH - 20){ doc.addPage(); y = margin; }
-      try{ doc.addImage(tmpRoomChart.toBase64Image(), 'PNG', margin, y, roomChartW, roomImgH); }catch(e){}
-      tmpRoomChart.destroy();
-      y += roomImgH + 20;
+    if(dashSys === 'all' || dashSys === 'vesda'){
+      const { rooms, data } = buildVesdaRoomChartData();
+      if(rooms.length){
+        if(y > pageH - footerH - 160) { doc.addPage(); y = margin; }
+        const tmpRoomCanvas = document.createElement('canvas');
+        tmpRoomCanvas.width = 640; tmpRoomCanvas.height = Math.max(320, rooms.length*28);
+        const tmpRoomChart = new Chart(tmpRoomCanvas, {
+          type:'bar',
+          data:{ labels: rooms, datasets:[{ label:'Avance %', data, backgroundColor: SYS.vesda.accent, borderRadius:4 }] },
+          options:{ indexAxis:'y', responsive:false, animation:false,
+            plugins:{ legend:{ display:false } },
+            scales:{ x:{ beginAtZero:true, max:100, ticks:{ callback:v=>v+'%' } } } }
+        });
+        await new Promise(r=>setTimeout(r, 200));
+        doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(9,24,35);
+        doc.text('VESDA — Avance por Room', margin, y); y += 10;
+        const roomChartW = pageW - margin*2;
+        const roomImgH = roomChartW * (tmpRoomCanvas.height/tmpRoomCanvas.width) * 0.6;
+        if(y + roomImgH > pageH - footerH - 20){ doc.addPage(); y = margin; }
+        try{ doc.addImage(tmpRoomChart.toBase64Image(), 'PNG', margin, y, roomChartW, roomImgH); }catch(e){}
+        tmpRoomChart.destroy();
+        y += roomImgH + 20;
+      }
+    }
+    if(dashSys === 'all' || dashSys === 'tendido'){
+      const { sistemas, data } = buildTendidoSistemaChartData();
+      if(sistemas.length){
+        if(y > pageH - footerH - 160) { doc.addPage(); y = margin; }
+        const tmpTendidoCanvas = document.createElement('canvas');
+        tmpTendidoCanvas.width = 640; tmpTendidoCanvas.height = Math.max(320, sistemas.length*28);
+        const tmpTendidoChart = new Chart(tmpTendidoCanvas, {
+          type:'bar',
+          data:{ labels: sistemas, datasets:[{ label:'Avance %', data, backgroundColor: SYS.tendido.accent, borderRadius:4 }] },
+          options:{ indexAxis:'y', responsive:false, animation:false,
+            plugins:{ legend:{ display:false } },
+            scales:{ x:{ beginAtZero:true, max:100, ticks:{ callback:v=>v+'%' } } } }
+        });
+        await new Promise(r=>setTimeout(r, 200));
+        doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(9,24,35);
+        doc.text('TENDIDO CABLES — Avance por Sistema', margin, y); y += 10;
+        const tendidoChartW = pageW - margin*2;
+        const tendidoImgH = tendidoChartW * (tmpTendidoCanvas.height/tmpTendidoCanvas.width) * 0.6;
+        if(y + tendidoImgH > pageH - footerH - 20){ doc.addPage(); y = margin; }
+        try{ doc.addImage(tmpTendidoChart.toBase64Image(), 'PNG', margin, y, tendidoChartW, tendidoImgH); }catch(e){}
+        tmpTendidoChart.destroy();
+        y += tendidoImgH + 20;
+      }
     }
   }
 
