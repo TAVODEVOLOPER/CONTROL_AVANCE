@@ -239,6 +239,10 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .tendido-seg-btn.st-bad .state{background:var(--brand-red); color:#fff;}
 .tendido-seg-note{margin-top:-4px; width:100%; border:1px solid var(--steel-300); border-radius:7px; padding:6px 8px; font-size:11.5px; color:var(--ink-600); background:var(--steel-050);}
 .tendido-seg-item{display:flex; flex-direction:column; gap:6px;}
+.tendido-seg-row{display:flex; align-items:stretch; gap:6px;}
+.tendido-seg-row .tendido-seg-btn{width:auto; flex:1;}
+.tendido-extra-del{flex:none; width:36px; background:var(--red-100); color:var(--brand-red-dark); border:none; border-radius:9px; font-size:14px; font-weight:700;}
+.tendido-extra-del:active{background:var(--brand-red); color:#fff;}
 .tendido-extra-tag{font-size:8.5px; font-weight:700; color:var(--brand-blue-dark); background:var(--brand-blue-light,#EDF5FC); border-radius:5px; padding:2px 6px; flex:none; white-space:nowrap;}
 .tendido-seg-motivo{width:100%; border:1px solid var(--steel-300); border-radius:7px; padding:6px 8px; font-size:11.5px; color:var(--ink-600); background:#fff;}
 .tendido-seg-ing-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
@@ -1183,7 +1187,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v15.13 · 6 sep 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v15.14 · 6 sep 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -2420,7 +2424,13 @@ function renderIngenieriaPanel(){
       const formEl = document.getElementById('ingModifForm_'+id);
       if(!formEl) return;
       if(formEl.style.display !== 'none' && formEl.innerHTML){ formEl.style.display = 'none'; formEl.innerHTML = ''; return; }
+      const row = state.tendido.find(r=>r.id===item.cableId);
+      if(!row){ showToast('No se encontró el cable en este celular'); return; }
       const defaultType = item.motivo==='falta_pintura_soldadura' ? 'transit' : 'bandeja';
+      // Por defecto se propone insertar justo después del tramo que originó el hallazgo (si
+      // todavía existe en el recorrido fijo) — pero se puede elegir cualquier otra posición,
+      // no solo inicio/final, para poder agregar la bandeja/transit en medio del recorrido.
+      const baseIdxDefault = (()=>{ const bi = row.route.indexOf(item.tramoCodigo); return bi >= 0 ? bi+1 : row.route.length; })();
       formEl.style.display = '';
       formEl.innerHTML = `
         <div class="field-group" style="margin-bottom:8px;"><label>Tipo de tramo</label>
@@ -2431,10 +2441,7 @@ function renderIngenieriaPanel(){
           </select>
         </div>
         <div class="field-group" style="margin-bottom:8px;"><label>Ubicación en el recorrido</label>
-          <select class="insights-sys-select" id="ingModifPos_${id}">
-            <option value="inicio">Al inicio</option>
-            <option value="final">Al final</option>
-          </select>
+          ${tendidoBaseIdxSelectHtml(row, 'ingModifPos_'+id, baseIdxDefault)}
         </div>
         <div class="field-group" style="margin-bottom:8px;"><label>Código / descripción del tramo nuevo</label><input type="text" class="text-input" id="ingModifCode_${id}" placeholder="Ej: nueva bandeja UG04.WGxx"></div>
         <button class="insights-save-btn" style="width:100%; padding:10px;" id="ingModifConfirm_${id}">Agregar al recorrido y marcar Implementado</button>
@@ -2443,13 +2450,12 @@ function renderIngenieriaPanel(){
         const code = document.getElementById('ingModifCode_'+id).value.trim();
         if(!code){ showToast('Escribe el código del tramo nuevo'); return; }
         const type = document.getElementById('ingModifType_'+id).value;
-        const pos = document.getElementById('ingModifPos_'+id).value;
-        const row = state.tendido.find(r=>r.id===item.cableId);
-        if(!row){ showToast('No se encontró el cable en este celular'); return; }
-        tendidoAddTramo(row, code, type, pos);
+        const baseIdx = parseInt(document.getElementById('ingModifPos_'+id).value);
+        tendidoAddTramo(row, code, type, baseIdx);
         stampEdit(row);
         item.estado = 'Implementado';
-        item.resolucion = `Recorrido modificado: agregado "${code}" (${TENDIDO_EXTRA_TYPE_LABEL[type]||type}, ${pos==='inicio'?'al inicio':'al final'})`;
+        const posLabel = baseIdx === 0 ? 'al inicio' : baseIdx === row.route.length ? 'al final' : `antes del tramo fijo ${baseIdx+1}`;
+        item.resolucion = `Recorrido modificado: agregado "${code}" (${TENDIDO_EXTRA_TYPE_LABEL[type]||type}, ${posLabel})`;
         item.date = new Date().toISOString();
         scheduleSave();
         pushRowToSheet('tendido', row);
@@ -5837,42 +5843,84 @@ const TENDIDO_SEG_LABEL = { pend:'PENDIENTE', ok:'TENDIDO', bad:'FALTA CONSTRUIR
 // disponible como nota aparte, por si el motivo predefinido no alcanza para explicar el caso.
 const TENDIDO_MOTIVOS = {
   falta_bandeja: 'Falta bandeja',
+  modificar_bandeja: 'Modificar bandeja',
   falta_pintura_soldadura: 'Falta pintar/soldar transit',
   falta_miniruta: 'Falta miniruta',
   sin_acceso: 'Sin acceso al área',
   otro: 'Otro'
 };
 const TENDIDO_EXTRA_TYPE_LABEL = { bandeja:'Bandeja', transit:'Transit', miniruta:'Miniruta', otro:'Otro' };
-// routeExtra = tramos agregados a mano (bandeja/transit tras aprobación de Ingeniería, o
-// miniruta directo, opcional) al inicio o al final del recorrido fijo (route, dato del Excel).
-// routeStates/routeNotes/routeReasons cubren SIEMPRE el recorrido efectivo completo (inicio-extras
-// + route + final-extras), en ese orden — por eso alcanza con su .length para saber el total de
-// tramos, sin tener que recalcular el recorrido efectivo cada vez.
-function tendidoInicioExtras(row){ return (row.routeExtra||[]).filter(e=>e && e.pos==='inicio'); }
-function tendidoFinalExtras(row){ return (row.routeExtra||[]).filter(e=>e && e.pos==='final'); }
-function tendidoEffectiveRoute(row){
-  const inicio = tendidoInicioExtras(row).map(e=>({ code:e.code, type:e.type||'otro', extra:true }));
-  const base = row.route.map(code=>({ code, type:'base', extra:false }));
-  const final = tendidoFinalExtras(row).map(e=>({ code:e.code, type:e.type||'otro', extra:true }));
-  return [...inicio, ...base, ...final];
+// routeExtra = tramos agregados a mano al recorrido fijo (route, dato del Excel, nunca cambia):
+// bandeja/transit (tras aprobación de un hallazgo de Ingeniería) o miniruta (directo, opcional).
+// Cada entrada ancla su posición con "baseIdx": el índice de route (0..route.length) antes del
+// cual se inserta — baseIdx=0 es "al inicio", baseIdx=route.length es "al final", y cualquier
+// valor intermedio inserta el tramo EN MEDIO del recorrido (ej. justo después del tramo con el
+// problema) — así no queda limitado a solo inicio/final. Si dos extras comparten el mismo
+// baseIdx, se muestran en el orden en que se agregaron. Compatibilidad: entradas viejas (antes de
+// este cambio) traían {pos:'inicio'|'final'} en vez de baseIdx — se siguen leyendo igual.
+// routeStates/routeNotes/routeReasons cubren SIEMPRE el recorrido efectivo completo resultante,
+// en ese mismo orden — por eso alcanza con su .length para saber el total de tramos.
+function tendidoNormalizeExtra(row, e){
+  const baseIdx = (e.baseIdx !== undefined && e.baseIdx !== null) ? e.baseIdx : (e.pos === 'inicio' ? 0 : row.route.length);
+  return { code:e.code, type:e.type||'otro', baseIdx };
 }
-// Agrega un tramo manual al recorrido: 'inicio' se inserta justo antes del recorrido fijo (después
-// de los demás extras de inicio ya agregados), 'final' se agrega al final de todo. Mantiene
-// routeStates/routeNotes/routeReasons alineados, insertando un 'pend' en el mismo índice.
-function tendidoAddTramo(row, code, type, pos){
+// Recorrido efectivo, con el índice real dentro de routeExtra para cada tramo agregado a mano
+// (arrIdx=-1 para los tramos fijos del Excel, que no se pueden quitar).
+function tendidoEffectiveRoute(row){
+  const rawExtra = Array.isArray(row.routeExtra) ? row.routeExtra : [];
+  const normExtra = rawExtra.map((e,arrIdx)=> ({ ...tendidoNormalizeExtra(row, e), arrIdx }));
+  const segments = [];
+  for(let i=0;i<=row.route.length;i++){
+    normExtra.filter(e=>e.baseIdx===i).forEach(e=> segments.push({ code:e.code, type:e.type, extra:true, arrIdx:e.arrIdx }));
+    if(i<row.route.length) segments.push({ code:row.route[i], type:'base', extra:false, arrIdx:-1 });
+  }
+  return segments;
+}
+// Índice dentro del arreglo combinado (routeStates/routeNotes/routeReasons) que corresponde a
+// "justo antes de route[baseIdx]" (o al final de todo si baseIdx===route.length), después de los
+// demás extras ya anclados en ese mismo punto.
+function tendidoCombinedIndexForBaseIdx(row, baseIdx){
+  const rawExtra = Array.isArray(row.routeExtra) ? row.routeExtra : [];
+  const normExtra = rawExtra.map(e=> tendidoNormalizeExtra(row, e));
+  let idx = 0;
+  for(let i=0;i<baseIdx;i++){ idx += normExtra.filter(e=>e.baseIdx===i).length + 1; }
+  idx += normExtra.filter(e=>e.baseIdx===baseIdx).length;
+  return idx;
+}
+// Agrega un tramo manual al recorrido en la posición baseIdx (0..route.length — ver comentario
+// arriba). Mantiene routeStates/routeNotes/routeReasons alineados, insertando un 'pend' en el
+// mismo índice del arreglo combinado.
+function tendidoAddTramo(row, code, type, baseIdx){
   if(!Array.isArray(row.routeExtra)) row.routeExtra = [];
   if(!Array.isArray(row.routeReasons) || row.routeReasons.length !== row.routeStates.length) row.routeReasons = row.routeStates.map(()=>'');
-  let insertIdx;
-  if(pos === 'inicio'){
-    insertIdx = tendidoInicioExtras(row).length;
-    row.routeExtra.splice(insertIdx, 0, { code, type, pos });
-  } else {
-    insertIdx = row.routeStates.length;
-    row.routeExtra.push({ code, type, pos });
-  }
-  row.routeStates.splice(insertIdx, 0, 'pend');
-  row.routeNotes.splice(insertIdx, 0, '');
-  row.routeReasons.splice(insertIdx, 0, '');
+  baseIdx = Math.max(0, Math.min(row.route.length, parseInt(baseIdx) || 0));
+  const combinedIdx = tendidoCombinedIndexForBaseIdx(row, baseIdx);
+  row.routeExtra.push({ code, type, baseIdx });
+  row.routeStates.splice(combinedIdx, 0, 'pend');
+  row.routeNotes.splice(combinedIdx, 0, '');
+  row.routeReasons.splice(combinedIdx, 0, '');
+}
+// Quita un tramo agregado a mano (nunca uno del recorrido fijo del Excel).
+function tendidoRemoveTramo(row, idx){
+  const effRoute = tendidoEffectiveRoute(row);
+  const seg = effRoute[idx];
+  if(!seg || !seg.extra || seg.arrIdx < 0 || !Array.isArray(row.routeExtra)) return false;
+  row.routeExtra.splice(seg.arrIdx, 1);
+  row.routeStates.splice(idx, 1);
+  row.routeNotes.splice(idx, 1);
+  if(Array.isArray(row.routeReasons)) row.routeReasons.splice(idx, 1);
+  return true;
+}
+// Select con una opción por cada posible punto de inserción del recorrido FIJO (0..route.length):
+// permite agregar un tramo en cualquier parte del recorrido, no solo al inicio o al final.
+function tendidoBaseIdxSelectHtml(row, selectId, defaultBaseIdx){
+  const opts = row.route.map((code,i)=>{
+    const label = i===0 ? `Al inicio del recorrido (antes de ${escapeHtml(code)})` : `Antes del tramo ${i+1} (${escapeHtml(code)})`;
+    return `<option value="${i}" ${defaultBaseIdx===i?'selected':''}>${label}</option>`;
+  });
+  const finalSelected = defaultBaseIdx === undefined || defaultBaseIdx === row.route.length;
+  opts.push(`<option value="${row.route.length}" ${finalSelected?'selected':''}>Al final del recorrido</option>`);
+  return `<select class="insights-sys-select" id="${selectId}">${opts.join('')}</select>`;
 }
 // Busca si un tramo (por cable + código, no por índice — el índice se corre cuando se agregan
 // tramos al inicio) ya tiene un hallazgo de Ingeniería, y devuelve el más reciente.
@@ -5912,6 +5960,7 @@ function renderTendidoSegGrid(){
     const note = row.routeNotes[idx] || '';
     const motivo = (row.routeReasons && row.routeReasons[idx]) || '';
     const extraTag = seg.extra ? `<span class="tendido-extra-tag">➕ ${TENDIDO_EXTRA_TYPE_LABEL[seg.type]||'Extra'}</span>` : '';
+    const extraDelBtn = seg.extra ? `<button type="button" class="tendido-extra-del" data-del-idx="${idx}" title="Quitar este tramo agregado">✕</button>` : '';
     let badBlock = '';
     if(st === 'bad'){
       const finding = ingenieriaFindingForTramo(row.id, seg.code);
@@ -5929,12 +5978,29 @@ function renderTendidoSegGrid(){
         </div>`;
     }
     return `<div class="tendido-seg-item">
-      <button type="button" class="tendido-seg-btn st-${st}" data-idx="${idx}">
-        <span class="idx">${idx+1}</span><span class="code">${escapeHtml(seg.code)}</span>${extraTag}<span class="state">${TENDIDO_SEG_LABEL[st]}</span>
-      </button>
+      <div class="tendido-seg-row">
+        <button type="button" class="tendido-seg-btn st-${st}" data-idx="${idx}">
+          <span class="idx">${idx+1}</span><span class="code">${escapeHtml(seg.code)}</span>${extraTag}<span class="state">${TENDIDO_SEG_LABEL[st]}</span>
+        </button>
+        ${extraDelBtn}
+      </div>
       ${badBlock}
     </div>`;
   }).join('');
+  grid.querySelectorAll('.tendido-extra-del').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.delIdx);
+      if(tendidoRemoveTramo(row, idx)){
+        stampEdit(row);
+        scheduleSave();
+        renderTendidoSegGrid();
+        updateTendidoProgressUI(row);
+        showToast('Tramo agregado eliminado del recorrido');
+        pushRowToSheet('tendido', row);
+      }
+    });
+  });
   grid.querySelectorAll('.tendido-seg-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const idx = parseInt(btn.dataset.idx);
@@ -6033,7 +6099,8 @@ document.getElementById('tendidoExtraConfirm').addEventListener('click', ()=>{
   if(!row || !tendidoExtraPendingPos) return;
   const code = document.getElementById('tendidoExtraCodeInput').value.trim();
   if(!code){ showToast('Escribe un código o descripción para la miniruta'); return; }
-  tendidoAddTramo(row, code, 'miniruta', tendidoExtraPendingPos);
+  const baseIdx = tendidoExtraPendingPos === 'inicio' ? 0 : row.route.length;
+  tendidoAddTramo(row, code, 'miniruta', baseIdx);
   stampEdit(row);
   scheduleSave();
   document.getElementById('tendidoExtraForm').style.display = 'none';
@@ -6335,6 +6402,11 @@ function sheetRowPayloadRaw(sys, row){
       Cable_Routing_Produc: row.design_length, REAL_LENGTH: row.real_length, COIL: row.coil,
       ROUTE_STATUS: JSON.stringify(row.routeStates), ROUTE_NOTES: JSON.stringify(row.routeNotes),
       ROUTE_REASONS: JSON.stringify(row.routeReasons||[]), ROUTE_EXTRA: JSON.stringify(row.routeExtra||[]),
+      // Columnas de solo lectura para poder ver el recorrido a simple vista en Sheets (sin
+      // decodificar JSON), con los códigos de bandeja/transit separados por "/" — mismo estilo
+      // que la columna ROUTE_CODES del Excel original. No se leen de vuelta, son solo para mirar.
+      ROUTE_CODES: tendidoEffectiveRoute(row).map(s=>s.code).join('/'),
+      ROUTE_EXTRA_CODES: (row.routeExtra||[]).map(e=>e.code).join('/'),
       OBSERVACION: row.observacion, FECHA_EDICION: formatDateTime(row.lastEditedAt), IMPUTADO: row.imputado||'', FECHA_IMPUTADO: row.fecha_imputado||''
     } };
   }
@@ -6862,13 +6934,14 @@ function applySheetRowToTendido(obj){
   const before = JSON.stringify([row.routeStates,row.routeNotes,row.routeReasons,row.routeExtra,row.real_length,row.coil,row.observacion]);
   if(obj.REAL_LENGTH !== undefined) row.real_length = obj.REAL_LENGTH === '' ? '' : (parseFloat(obj.REAL_LENGTH) || 0);
   if(obj.COIL !== undefined) row.coil = obj.COIL || '';
-  // ROUTE_EXTRA (tramos agregados a mano: bandeja/transit/miniruta al inicio o final) se aplica
+  // ROUTE_EXTRA (tramos agregados a mano: bandeja/transit/miniruta en cualquier punto del
+  // recorrido, con baseIdx, o {pos:'inicio'|'final'} de versiones anteriores a V15.14) se aplica
   // primero, porque ROUTE_STATUS/ROUTE_NOTES/ROUTE_REASONS deben coincidir en largo con
   // route.length + routeExtra.length, no solo con route.length (dato fijo original).
   if(obj.ROUTE_EXTRA){
     try{
       const arr = JSON.parse(obj.ROUTE_EXTRA);
-      if(Array.isArray(arr) && arr.every(e=> e && typeof e.code==='string' && (e.pos==='inicio'||e.pos==='final'))) row.routeExtra = arr;
+      if(Array.isArray(arr) && arr.every(e=> e && typeof e.code==='string' && (typeof e.baseIdx==='number' || e.pos==='inicio' || e.pos==='final'))) row.routeExtra = arr;
     }catch(e){ /* se ignora, se conserva lo que ya había localmente */ }
   }
   const expectedLen = row.route.length + (Array.isArray(row.routeExtra) ? row.routeExtra.length : 0);
