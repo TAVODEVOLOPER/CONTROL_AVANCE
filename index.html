@@ -755,6 +755,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
     <div class="chip" data-status="empty">Pendientes</div>
     <div class="chip" data-status="complete">Completos</div>
     <div class="chip" data-status="obs">Con observación</div>
+    <div class="chip" data-status="reallength" id="chipRealLength" style="display:none;">Real Length medido</div>
   </div>
   <button class="clear-filters" id="btnClearFilters" style="display:none;">Limpiar filtros</button>
 </div>
@@ -1187,7 +1188,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v15.14 · 6 sep 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v15.15 · 6 sep 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1650,6 +1651,16 @@ function switchSystem(sys){
   document.documentElement.style.setProperty('--sys-accent', SYS[sys].accent);
   document.getElementById('roomSelect').style.display = SYS[sys].hasRoom ? '' : 'none';
   document.getElementById('sistemaOrigenSelect').style.display = sys === 'cableado' ? '' : 'none';
+  // El chip "Real Length medido" solo tiene sentido en TENDIDO CABLES — si se venía de ese
+  // sistema con ese filtro activo, se vuelve a "Todos" para no dejar un filtro invisible puesto.
+  const chipRL = document.getElementById('chipRealLength');
+  if(chipRL) chipRL.style.display = sys === 'tendido' ? '' : 'none';
+  if(sys !== 'tendido' && filters[sys] && filters[sys].status === 'reallength'){
+    filters[sys].status = 'all';
+    if(chipRL) chipRL.classList.remove('active');
+    const allChip = document.querySelector('#statusChips .chip[data-status="all"]');
+    if(allChip) allChip.classList.add('active');
+  }
   document.getElementById('searchInput').value = filters[sys].search;
   renderSystemTabs();
   populateSelects();
@@ -2941,6 +2952,7 @@ function getFiltered(){
       }
     }
     if(f.status === 'obs'){ if(!hasObservation(sys, r)) return false; }
+    else if(f.status === 'reallength'){ if(r.real_length === '' || r.real_length === null || r.real_length === undefined) return false; }
     else if(f.status !== 'all' && rowStatus(sys, r) !== f.status) return false;
     if(sys === 'cableado' && f.sistemaOrigen && r.sistema_origen !== f.sistemaOrigen) return false;
     if(s){
@@ -5922,6 +5934,19 @@ function tendidoBaseIdxSelectHtml(row, selectId, defaultBaseIdx){
   opts.push(`<option value="${row.route.length}" ${finalSelected?'selected':''}>Al final del recorrido</option>`);
   return `<select class="insights-sys-select" id="${selectId}">${opts.join('')}</select>`;
 }
+// Línea legible con CADA tag de bandeja/transit del recorrido efectivo, en orden, con su estado
+// — para el Informe (diario/semanal, en pantalla y en PDF): a pedido del usuario, no alcanza con
+// un conteo ("31/33 tramos"), tienen que figurar los códigos completos, en orden, incluyendo los
+// que se agregaron o modificaron a mano.
+function tendidoRouteSummaryLine(row){
+  const eff = tendidoEffectiveRoute(row);
+  return eff.map((seg, idx)=>{
+    const st = row.routeStates[idx] || 'pend';
+    const stLabel = TENDIDO_SEG_LABEL[st] || 'PENDIENTE';
+    const extraMark = seg.extra ? ` (agregado — ${TENDIDO_EXTRA_TYPE_LABEL[seg.type]||'tramo'})` : '';
+    return `${idx+1}) ${seg.code}${extraMark}: ${stLabel}`;
+  }).join(' | ');
+}
 // Busca si un tramo (por cable + código, no por índice — el índice se corre cuando se agregan
 // tramos al inicio) ya tiene un hallazgo de Ingeniería, y devuelve el más reciente.
 function ingenieriaFindingForTramo(cableId, code){
@@ -6320,14 +6345,18 @@ function buildWorkbook(sys){
     ws['!cols'] = [{wch:12},{wch:14},{wch:20},{wch:24},{wch:34},{wch:10},{wch:16},{wch:16},{wch:34},{wch:16},{wch:12}];
     XLSX.utils.book_append_sheet(wb, ws, 'VESDA');
   } else if(sys === 'tendido'){
-    const header = ['CABLE_NUMBER','INSTALLER','DISCIPLINE','SISTEMA','From_Tag','From_Description','From_Area','To_Tag','To_Description','To_Area','TRAMOS_TOTAL','TRAMOS_TENDIDO','TRAMOS_FALTA_CONSTRUIR','CABLE_ROUTING_PRODUC','REAL_LENGTH','COIL','OBSERVACION','FECHA_EDICION'];
+    // RECORRIDO_COMPLETO y TRAMOS_AGREGADOS: los códigos de bandeja/transit completos, en el
+    // orden real del recorrido (incluye lo agregado/modificado a mano), separados por "/" —
+    // a pedido del usuario, no alcanza con los conteos de TRAMOS_TOTAL/TENDIDO/FALTA_CONSTRUIR.
+    const header = ['CABLE_NUMBER','INSTALLER','DISCIPLINE','SISTEMA','From_Tag','From_Description','From_Area','To_Tag','To_Description','To_Area','TRAMOS_TOTAL','TRAMOS_TENDIDO','TRAMOS_FALTA_CONSTRUIR','RECORRIDO_COMPLETO','TRAMOS_AGREGADOS','CABLE_ROUTING_PRODUC','REAL_LENGTH','COIL','OBSERVACION','FECHA_EDICION'];
     const data = [header, ...state.tendido.map(r=>[
       r.cableNumber, r.installer, r.discipline, r.sistema, r.from_tag, r.from_description, r.from_area, r.to_tag, r.to_description, r.to_area,
       r.routeStates.length, r.routeStates.filter(s=>s==='ok').length, r.routeStates.filter(s=>s==='bad').length,
+      tendidoEffectiveRoute(r).map(s=>s.code).join('/'), (r.routeExtra||[]).map(e=>e.code).join('/'),
       r.design_length, r.real_length, r.coil, r.observacion, formatDateTime(r.lastEditedAt)
     ])];
     const ws = XLSX.utils.aoa_to_sheet(data);
-    ws['!cols'] = [{wch:34},{wch:20},{wch:10},{wch:10},{wch:28},{wch:30},{wch:10},{wch:28},{wch:24},{wch:10},{wch:10},{wch:10},{wch:12},{wch:14},{wch:12},{wch:8},{wch:34},{wch:16}];
+    ws['!cols'] = [{wch:34},{wch:20},{wch:10},{wch:10},{wch:28},{wch:30},{wch:10},{wch:28},{wch:24},{wch:10},{wch:10},{wch:10},{wch:12},{wch:50},{wch:24},{wch:14},{wch:12},{wch:8},{wch:34},{wch:16}];
     XLSX.utils.book_append_sheet(wb, ws, 'TENDIDO');
   }
   const weeks = weeklySummaryRows(sys);
@@ -7460,7 +7489,7 @@ function dailyReportItems(sys, dateStr){
     state.tendido.forEach(r=>{
       if(!sameLocalDate(r.lastEditedAt, dateStr)) return;
       const tendidos = r.routeStates.filter(s=>s==='ok').length;
-      const cambios = fieldChanges([['Tramos tendidos', `${tendidos}/${r.routeStates.length}`],['Real Length',r.real_length],['COIL',r.coil]]);
+      const cambios = fieldChanges([['Tramos tendidos', `${tendidos}/${r.routeStates.length}`],['Recorrido (tramos, en orden)', tendidoRouteSummaryLine(r)],['Real Length',r.real_length],['COIL',r.coil]]);
       if(cambios.length === 0) return;
       out.push({ tag:r.cableNumber||('Cable #'+r.id), nivel:'', area:(r.from_area||r.to_area)?('Área '+(r.from_area||r.to_area)):'', estado: tendidoStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Observación',r.obsPhotos]]), date:r.lastEditedAt, sistema:SYS.tendido.label, uid:r.id, fotosLink:r.fotosLink, pct:weightedProgress('tendido', r) });
     });
