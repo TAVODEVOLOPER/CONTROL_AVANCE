@@ -238,6 +238,20 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .tendido-seg-btn.st-bad .idx{background:var(--brand-red-dark);}
 .tendido-seg-btn.st-bad .state{background:var(--brand-red); color:#fff;}
 .tendido-seg-note{margin-top:-4px; width:100%; border:1px solid var(--steel-300); border-radius:7px; padding:6px 8px; font-size:11.5px; color:var(--ink-600); background:var(--steel-050);}
+.tendido-seg-item{display:flex; flex-direction:column; gap:6px;}
+.tendido-extra-tag{font-size:8.5px; font-weight:700; color:var(--brand-blue-dark); background:var(--brand-blue-light,#EDF5FC); border-radius:5px; padding:2px 6px; flex:none; white-space:nowrap;}
+.tendido-seg-motivo{width:100%; border:1px solid var(--steel-300); border-radius:7px; padding:6px 8px; font-size:11.5px; color:var(--ink-600); background:#fff;}
+.tendido-seg-ing-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.tendido-seg-send-ing{background:var(--steel-100); color:var(--ink-600); border:none; border-radius:7px; padding:6px 10px; font-size:10.5px; font-weight:600;}
+.tendido-ing-badge{font-size:9.5px; font-weight:700; padding:3px 8px; border-radius:6px; white-space:nowrap;}
+.tendido-ing-badge.est-pendiente{background:#FFF3CD; color:#8A6300;}
+.tendido-ing-badge.est-aprobado{background:#E1F5E9; color:#0B6B33;}
+.tendido-ing-badge.est-rechazado{background:#FCE4E4; color:#B81219;}
+.tendido-ing-badge.est-implementado{background:#EDF5FC; color:#053E7A;}
+.tendido-extra-toolbar{display:flex; gap:8px; margin-top:8px;}
+.btn-ghost-sm{flex:1; background:var(--steel-100); color:var(--ink-600); border:none; border-radius:8px; padding:8px 10px; font-weight:600; font-size:11.5px;}
+.btn-ghost-sm:active{background:var(--steel-300);}
+.tendido-extra-form{margin-top:10px; padding:10px; border-radius:9px; background:var(--steel-050); border:1px solid var(--steel-200);}
 .incident-title{display:flex; align-items:center; gap:7px; font-family:var(--font-display); font-weight:600; font-size:12.5px; color:var(--brand-yellow-dark); margin-bottom:10px;}
 .last-edited-note{font-size:11px; color:var(--steel-500); margin-top:3px; font-family:var(--font-mono);}
 .drive-link-note{font-size:11px; color:var(--brand-blue); margin-top:3px; font-weight:600; display:inline-block; text-decoration:none;}
@@ -315,7 +329,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
 .access-row .tx .d{font-size:11.5px; color:var(--steel-500); margin-top:1px;}
 .access-row input{width:90px; padding:9px 10px; border-radius:8px; border:1.5px solid var(--steel-300); text-align:center; font-family:var(--font-mono); letter-spacing:1px;}
 .pin-pad-wrap{display:flex; flex-direction:column; align-items:center; padding:10px 0 6px;}
-.pin-pad-wrap .pin-input{width:180px; text-align:center; font-size:22px; letter-spacing:8px; padding:14px; font-family:var(--font-mono);}
+.pin-pad-wrap .pin-input{width:220px; max-width:90%; text-align:center; font-size:20px; letter-spacing:2px; padding:14px; font-family:var(--font-mono);}
 .pin-err{color:var(--brand-red-dark); font-size:12.5px; margin-top:8px; min-height:16px; font-weight:600;}
 .warn-note{background:var(--warn-100); border:1px solid #F0D68A; border-radius:10px; padding:11px 13px; font-size:12px; color:#7A5B00; line-height:1.5; margin-bottom:14px;}
 
@@ -655,6 +669,11 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <div><div class="t">Restricciones</div><div class="s">Bloqueos MAT / INT / PRE / DOC</div></div>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chev"><polyline points="9 18 15 12 9 6"/></svg>
     </button>
+    <button class="insights-menu-btn" id="btnGoIngenieria" style="display:none;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      <div><div class="t">Listado de Ingeniería</div><div class="s">Hallazgos de tramos y modificación de recorrido</div></div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chev"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
   </div>
   <div class="insights-body" id="insightsBody" style="display:none;"></div>
 </div>
@@ -930,6 +949,17 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <div class="field-group">
         <label>Recorrido <span class="field-legend">(tocá un tramo para cambiar su estado)</span></label>
         <div class="tendido-seg-grid" id="tendidoSegGrid"></div>
+        <div class="tendido-extra-toolbar">
+          <button type="button" class="btn-ghost-sm" id="tendidoAddMinirutaInicio">+ Miniruta al inicio</button>
+          <button type="button" class="btn-ghost-sm" id="tendidoAddMinirutaFinal">+ Miniruta al final</button>
+        </div>
+        <div class="tendido-extra-form" id="tendidoExtraForm" style="display:none;">
+          <div class="field-group" style="margin-bottom:8px;"><label>Código / descripción de la miniruta</label><input type="text" class="text-input" id="tendidoExtraCodeInput" placeholder="Ej: miniruta hacia UH03..."></div>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="btn-ghost" id="tendidoExtraCancel" style="flex:1;">Cancelar</button>
+            <button type="button" class="btn-primary" id="tendidoExtraConfirm" style="flex:1;">Agregar</button>
+          </div>
+        </div>
       </div>
       <div class="field-group"><label>Real Length <span class="field-legend">(medición real en campo, metros)</span></label><input type="number" min="0" class="text-input" id="tendidoRealLength" placeholder="0"></div>
       <div class="field-group"><label>COIL</label><div class="seg" data-vfield="coil"><button data-val="SI">Sí</button><button data-val="NO">No</button></div></div>
@@ -953,7 +983,7 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
     </div>
     <div class="sheet-body">
       <div class="pin-pad-wrap">
-        <input type="password" inputmode="numeric" class="text-input pin-input" id="pinInput" maxlength="8" placeholder="••••" autocomplete="off">
+        <input type="password" inputmode="text" class="text-input pin-input" id="pinInput" maxlength="20" placeholder="Fotocheck" autocomplete="off">
         <div class="pin-err" id="pinErr"></div>
         <button class="btn-ghost" id="btnBiometricUnlockSys" style="display:none; margin-top:14px; width:100%;">👆 Usar huella / Face ID</button>
       </div>
@@ -990,11 +1020,19 @@ textarea.text-input{resize:vertical; line-height:1.4; font-size:14px;}
       <button class="sheet-close" id="btnCloseAccess"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="sheet-body">
-      <div class="warn-note">Estos códigos solo son visibles aquí, tras ingresar la contraseña de administrador. Aun así, quedan guardados en el archivo — esto evita ediciones accidentales del equipo, pero no reemplaza un control de acceso real con usuarios y contraseñas en un servidor. Cambia la contraseña maestra y estos códigos antes de repartir el archivo.</div>
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
-        <div class="report-section-title" style="margin:0;">Códigos por sistema</div>
+        <div class="report-section-title" style="margin:0;">Operadores (fotocheck)</div>
+        <button class="btn-ghost sync-btn" id="btnRefreshOperadores" style="padding:6px 12px; font-size:12px;">🔄 Sincronizar</button>
+      </div>
+      <div class="warn-note" style="background:var(--steel-100); border-color:var(--steel-300); color:var(--ink-600);">Para entrar a editar cada sistema, cada trabajador usa su código de fotocheck (no un código fijo). Administra quién tiene acceso a qué sistema directo en la pestaña <b>OPERADORES</b> de tu Google Sheet — columnas: <b>FOTOCHECK</b>, <b>NOMBRE</b>, y una columna Sí/No por cada sistema (ej. <b>HVAC</b>, <b>CABLEADO</b>, <b>FDS</b>, <b>TRANSIT</b>, <b>TIMBRADO</b>, <b>VESDA</b>, <b>TENDIDO</b>). Columna <b>ACTIVO</b> opcional (Sí/No) para dar de baja a alguien sin borrar su fila.</div>
+      <div class="last-edited-note" id="operadoresSyncNote" style="margin-bottom:10px;"></div>
+      <div id="operadoresList" style="max-height:220px; overflow-y:auto; margin-bottom:16px;"></div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+        <div class="report-section-title" style="margin:0;">Códigos por sistema (respaldo)</div>
         <button class="btn-ghost sync-btn" id="btnRefreshAccess" style="padding:6px 12px; font-size:12px;">🔄 Actualizar</button>
       </div>
+      <div class="warn-note">Estos códigos ya no se usan para entrar a los sistemas — ahora se usa el fotocheck de cada trabajador (arriba), con la contraseña maestra como único respaldo si alguien todavía no está cargado en OPERADORES o falla la sincronización. Estos campos quedan solo de referencia (por si en el futuro se vuelven a usar) y son visibles únicamente aquí, tras ingresar la contraseña de administrador.</div>
       <div class="last-edited-note" id="accessSyncNote" style="margin-bottom:10px;"></div>
       <div id="accessList"></div>
 
@@ -1145,7 +1183,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v15.11 · 5 sep 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v15.13 · 6 sep 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1272,17 +1310,20 @@ const TABLE_CONFIG = {
 let unlockedSystems = new Set();
 let pendingUnlockAction = null; // function to run once unlocked
 let accessPanelUnlocked = false;
+// Trabajador que desbloqueó el sistema actual con su fotocheck (o null si entró con la contraseña
+// maestra, o si todavía no se implementó operadores en este dispositivo). Se estampa en cada guardado.
+let currentOperator = null; // {fotocheck, nombre}
 
 let state = {
   hvac: HVAC_RAW.map(r => ({
     uid:r.uid, item:r.item, tag:r.tag, elev:r.elev, std_support:r.std_support, fixing:r.fixing,
     hook_up:r.hook_up, room:r.room, area:r.area, level:r.level, subcontractor:r.subcontractor||'', description:r.description||'',
     soporte:'', fecha:'', tagged_items:'', tierra_soporte:'', tierra_equipos:'', miniruta:'', conexionado:'', megado:'', tubing:'',
-    photos:[], observacion:'', obsPhotos:[], lastEditedAt:'', completedAt:'', fotosLink:'', imputado:'', fecha_imputado:''
+    photos:[], observacion:'', obsPhotos:[], lastEditedAt:'', lastEditedBy:'', completedAt:'', fotosLink:'', imputado:'', fecha_imputado:''
   })),
   cableado: CABLE_RAW.map(r => ({
     id:r.id, cable:r.cable, from_tag:r.from_tag, from_area:r.from_area, level:r.level, to_tag:r.to_tag, to_area:r.to_area,
-    sistema_origen: r.sistema_origen || 'FDS', timbrado:'', fecha_timbrado:'', imputado:'', fecha_imputado:'', lastEditedAt:'',
+    sistema_origen: r.sistema_origen || 'FDS', timbrado:'', fecha_timbrado:'', imputado:'', fecha_imputado:'', lastEditedAt:'', lastEditedBy:'',
     from: emptySide(), to: emptySide()
   })),
   fds: FDS_RAW.map(r => ({
@@ -1296,7 +1337,7 @@ let state = {
     tierra_soporte:r.tierra_soporte || '', tierra_equipo:r.tierra_equipo || '',
     timbrado:'', fecha_timbrado:'',
     observacion:r.observacion || '', obsPhotos:[],
-    lastEditedAt:'', completedAt:'', fotosLink:'', imputado:'', fecha_imputado:''
+    lastEditedAt:'', lastEditedBy:'', completedAt:'', fotosLink:'', imputado:'', fecha_imputado:''
   })),
   transit: TRANSIT_RAW.map(r => ({
     id:r.id, rev:r.rev, installer:r.installer, tag:r.tag, hole_name:r.hole_name, level:r.level,
@@ -1306,20 +1347,20 @@ let state = {
     identificacion_transit:'', fotografia:'', fotografiaPhotos:[],
     estado_final:'',
     observacion:'', obsPhotos:[],
-    lastEditedAt:'', completedAt:'', fotosLink:'', imputado:'', fecha_imputado:''
+    lastEditedAt:'', lastEditedBy:'', completedAt:'', fotosLink:'', imputado:'', fecha_imputado:''
   })),
   timbrado: TIMBRADO_RAW.map(r => ({
     id:r.id, cable:r.cable, from_tag:r.from_tag, from_description:r.from_description, from_area:r.from_area,
     to_tag:r.to_tag, to_description:r.to_description, to_area:r.to_area,
     timbrado:'', fecha_timbrado:'', observacion:'', obsPhotos:[],
-    lastEditedAt:'', completedAt:'', fotosLink:'', imputado:'', fecha_imputado:''
+    lastEditedAt:'', lastEditedBy:'', completedAt:'', fotosLink:'', imputado:'', fecha_imputado:''
   })),
   vesda: VESDA_RAW.map(r => ({
     id:r.id, room:r.room, zona:r.zona, cabinet:r.cabinet, line:r.line, dms:r.dms,
     montaje: r.montaje===''||r.montaje===undefined ? '' : String(r.montaje),
     inc_soporte: r.inc_soporte || '', inc_pintura: r.inc_pintura || '',
     observacion: r.observacion || '', obsPhotos:[],
-    lastEditedAt:'', completedAt:'', fotosLink:'', imputado:'', fecha_imputado:''
+    lastEditedAt:'', lastEditedBy:'', completedAt:'', fotosLink:'', imputado:'', fecha_imputado:''
   })),
   // TENDIDO CABLES: route/design_length son datos fijos de referencia (del Excel, nunca se editan
   // en campo). routeStates/routeNotes son paralelos a route (mismo índice) y sí se editan: cada
@@ -1329,10 +1370,10 @@ let state = {
     from_tag:r.from_tag, from_description:r.from_description, from_area:r.from_area,
     to_tag:r.to_tag, to_description:r.to_description, to_area:r.to_area,
     route:r.route, design_length:r.design_length,
-    routeStates: r.route.map(()=>'pend'), routeNotes: r.route.map(()=>''),
+    routeStates: r.route.map(()=>'pend'), routeNotes: r.route.map(()=>''), routeReasons: r.route.map(()=>''), routeExtra:[],
     real_length:'', coil:'',
     observacion:'', obsPhotos:[],
-    lastEditedAt:'', completedAt:'', fotosLink:'', imputado:'', fecha_imputado:''
+    lastEditedAt:'', lastEditedBy:'', completedAt:'', fotosLink:'', imputado:'', fecha_imputado:''
   })),
   access: {
     hvac: { pin:'1234' },
@@ -1344,11 +1385,15 @@ let state = {
     tendido: { pin:'1357' }
   },
   sheetSync: { url:'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec', enabled:true, lastSync:'' },
-  syncQueue: []
+  syncQueue: [],
+  // Hallazgos de Ingeniería de TENDIDO CABLES (motivo "Falta bandeja", etc.) — flujo
+  // Pendiente → Aprobado/Rechazado → Implementado. No es por sistema (solo aplica a tendido),
+  // por eso va como lista plana y no dentro de un objeto por sys como restricciones/metas.
+  tendidoIngenieria: []
 };
 function emptySide(){
   return { minirutas:'', tendido:'', marca_gland:'', gland:'', fecha_gland:'', conexionado:'', fecha_conexionado:'',
-    conexionadoPhotos:[], observacion:'', obsPhotos:[], lastEditedAt:'', completedAt:'', fotosLink:'', imputado:'' };
+    conexionadoPhotos:[], observacion:'', obsPhotos:[], lastEditedAt:'', lastEditedBy:'', completedAt:'', fotosLink:'', imputado:'' };
 }
 
 let filters = {
@@ -1685,7 +1730,9 @@ function weightedProgress(sys, row){
   if(sys === 'tendido'){
     // Cada tramo cuenta como un "hito" más, igual que Real Length y COIL: avance = (tramos en
     // Tendido + Real Length cargado + COIL respondido) / (total de tramos + 2).
-    const total = row.route.length + 2;
+    // routeStates ya incluye los tramos agregados manualmente (bandeja/transit/miniruta vía
+    // routeExtra), por eso el total se saca de su largo y no de route.length (dato fijo original).
+    const total = row.routeStates.length + 2;
     if(!total) return 0;
     const tendidos = row.routeStates.filter(s=>s==='ok').length;
     const lengthOk = row.real_length !== '' && row.real_length !== null && row.real_length !== undefined ? 1 : 0;
@@ -1853,6 +1900,9 @@ function showInsightsMenu(){
   const exportBtn = document.getElementById('btnGoExport');
   if(notasBtn) notasBtn.style.display = plannerModeActive ? 'none' : '';
   if(exportBtn) exportBtn.style.display = plannerModeActive ? 'none' : '';
+  // Listado de Ingeniería solo tiene sentido para TENDIDO CABLES (motivos de tramo, recorrido).
+  const ingBtn = document.getElementById('btnGoIngenieria');
+  if(ingBtn) ingBtn.style.display = (currentSystem === 'tendido') ? '' : 'none';
 }
 function openInsights(){
   if(!isUnlocked(currentSystem) && !accessPanelUnlocked && !plannerModeActive){
@@ -2284,6 +2334,188 @@ async function buildRestriccionesPDFAll(){
   }
   doc.save(`Restricciones_TODOS_LOS_SISTEMAS_${dateStamp()}.pdf`);
   showToast('PDF combinado descargado');
+}
+
+/* ===================== Listado de Ingeniería (solo TENDIDO CABLES) ===================== */
+// Hallazgos que se mandan a Ingeniería desde un tramo "Falta construir" (ej. falta bandeja).
+// Flujo: Pendiente → Aprobado/Rechazado (solo Modo Planificador/Administrador) → Implementado
+// (cualquiera con acceso a Tendido, una vez aprobado, modifica el recorrido con "Modificar
+// recorrido" y eso agrega el tramo nuevo vía tendidoAddTramo). No es por sistema como
+// Restricciones — solo aplica a TENDIDO CABLES — por eso el botón del menú se oculta para el
+// resto de los sistemas.
+const TENDIDO_ING_ESTADOS = {
+  Pendiente: { color:'#8A6300', bg:'#FFF3CD' },
+  Aprobado: { color:'#0B6B33', bg:'#E1F5E9' },
+  Rechazado: { color:'#B81219', bg:'#FCE4E4' },
+  Implementado: { color:'#053E7A', bg:'#EDF5FC' }
+};
+document.getElementById('btnGoIngenieria').addEventListener('click', ()=>{
+  document.getElementById('insightsTitle').textContent = 'Listado de Ingeniería';
+  document.getElementById('insightsMenu').style.display = 'none';
+  const body = document.getElementById('insightsBody');
+  body.style.display = '';
+  renderIngenieriaPanel();
+  pullIngenieriaFromSheet(true).then(ok=>{ if(ok) renderIngenieriaPanel(); });
+});
+function renderIngenieriaPanel(){
+  if(!Array.isArray(state.tendidoIngenieria)) state.tendidoIngenieria = [];
+  const items = state.tendidoIngenieria;
+  const canDecide = plannerModeActive || accessPanelUnlocked;
+  const pendientes = items.filter(i=>i.estado==='Pendiente').length;
+  document.getElementById('insightsBody').innerHTML = `
+    <button class="insights-back-btn" id="btnIngBack"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Volver</button>
+    <div class="insights-planning-box" style="margin-bottom:14px;">${pendientes} hallazgo(s) pendiente(s) de ${items.length} registrados en TENDIDO CABLES.</div>
+    ${!canDecide ? '<div class="insights-planning-box" style="margin-bottom:14px;">Aprobar o rechazar es solo para Modo Planificador o Administrador. Cualquiera puede enviar hallazgos, y modificar el recorrido una vez que un hallazgo queda Aprobado.</div>' : ''}
+    <div class="insights-section-label">Hallazgos reportados</div>
+    <div id="ingList">${items.length ? items.slice().reverse().map(it=>{
+      const est = TENDIDO_ING_ESTADOS[it.estado] || TENDIDO_ING_ESTADOS.Pendiente;
+      return `<div class="rest-item" style="border-left-color:${est.color};">
+        <div class="rest-item-top">
+          <span class="rest-cat-tag" style="background:${est.bg}; color:${est.color};">${escapeHtml(it.motivoLabel||'Otro')}</span>
+          <span class="rest-estado-tag ${it.estado==='Implementado'?'liberada':''}">${it.estado}</span>
+        </div>
+        <div class="rest-tag-name">${escapeHtml(it.cableNumber||'—')} <span style="font-weight:400; font-size:10.5px; color:var(--steel-500);">· Tramo ${escapeHtml(it.tramoCodigo||'—')}</span></div>
+        ${it.descripcion ? `<div class="rest-desc">${escapeHtml(it.descripcion)}</div>` : ''}
+        <div class="rest-frente"><b>Reportado por:</b> ${escapeHtml(it.reportadoPor || 'Sin identificar')}</div>
+        ${it.resolucion ? `<div class="rest-accion"><b>Resolución:</b> ${escapeHtml(it.resolucion)}</div>` : ''}
+        <div class="insights-note-date">${formatDateTime(it.date)}</div>
+        <div class="rest-actions">
+          ${it.estado==='Pendiente' && canDecide ? `<button class="rest-btn-liberar" data-ing-aprobar="${it.id}">Aprobar</button><button class="rest-btn-del" data-ing-rechazar="${it.id}">Rechazar</button>` : ''}
+          ${it.estado==='Aprobado' ? `<button class="rest-btn-liberar" data-ing-modif="${it.id}">Modificar recorrido</button>` : ''}
+          <button class="rest-btn-del" data-ing-del="${it.id}">Borrar</button>
+        </div>
+        <div class="tendido-extra-form" id="ingModifForm_${it.id}" style="display:none;"></div>
+      </div>`;
+    }).join('') : '<div style="font-size:12px; color:var(--steel-500);">Todavía no hay hallazgos de Ingeniería registrados.</div>'}</div>
+  `;
+  document.getElementById('btnIngBack').addEventListener('click', showInsightsMenu);
+  document.querySelectorAll('[data-ing-aprobar]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const item = items.find(i=>i.id===btn.dataset.ingAprobar); if(!item) return;
+      item.estado = 'Aprobado'; item.date = new Date().toISOString();
+      scheduleSave(); pushIngenieriaToSheet(item);
+      showToast('Hallazgo aprobado'); renderIngenieriaPanel();
+    });
+  });
+  document.querySelectorAll('[data-ing-rechazar]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const item = items.find(i=>i.id===btn.dataset.ingRechazar); if(!item) return;
+      item.estado = 'Rechazado'; item.date = new Date().toISOString();
+      scheduleSave(); pushIngenieriaToSheet(item);
+      showToast('Hallazgo rechazado'); renderIngenieriaPanel();
+    });
+  });
+  document.querySelectorAll('[data-ing-del]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.dataset.ingDel;
+      state.tendidoIngenieria = items.filter(i=>i.id!==id);
+      scheduleSave(); deleteIngenieriaFromSheet(id);
+      showToast('Hallazgo borrado'); renderIngenieriaPanel();
+    });
+  });
+  document.querySelectorAll('[data-ing-modif]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.dataset.ingModif;
+      const item = items.find(i=>i.id===id); if(!item) return;
+      const formEl = document.getElementById('ingModifForm_'+id);
+      if(!formEl) return;
+      if(formEl.style.display !== 'none' && formEl.innerHTML){ formEl.style.display = 'none'; formEl.innerHTML = ''; return; }
+      const defaultType = item.motivo==='falta_pintura_soldadura' ? 'transit' : 'bandeja';
+      formEl.style.display = '';
+      formEl.innerHTML = `
+        <div class="field-group" style="margin-bottom:8px;"><label>Tipo de tramo</label>
+          <select class="insights-sys-select" id="ingModifType_${id}">
+            <option value="bandeja" ${defaultType==='bandeja'?'selected':''}>Bandeja</option>
+            <option value="transit" ${defaultType==='transit'?'selected':''}>Transit</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+        <div class="field-group" style="margin-bottom:8px;"><label>Ubicación en el recorrido</label>
+          <select class="insights-sys-select" id="ingModifPos_${id}">
+            <option value="inicio">Al inicio</option>
+            <option value="final">Al final</option>
+          </select>
+        </div>
+        <div class="field-group" style="margin-bottom:8px;"><label>Código / descripción del tramo nuevo</label><input type="text" class="text-input" id="ingModifCode_${id}" placeholder="Ej: nueva bandeja UG04.WGxx"></div>
+        <button class="insights-save-btn" style="width:100%; padding:10px;" id="ingModifConfirm_${id}">Agregar al recorrido y marcar Implementado</button>
+      `;
+      document.getElementById('ingModifConfirm_'+id).addEventListener('click', ()=>{
+        const code = document.getElementById('ingModifCode_'+id).value.trim();
+        if(!code){ showToast('Escribe el código del tramo nuevo'); return; }
+        const type = document.getElementById('ingModifType_'+id).value;
+        const pos = document.getElementById('ingModifPos_'+id).value;
+        const row = state.tendido.find(r=>r.id===item.cableId);
+        if(!row){ showToast('No se encontró el cable en este celular'); return; }
+        tendidoAddTramo(row, code, type, pos);
+        stampEdit(row);
+        item.estado = 'Implementado';
+        item.resolucion = `Recorrido modificado: agregado "${code}" (${TENDIDO_EXTRA_TYPE_LABEL[type]||type}, ${pos==='inicio'?'al inicio':'al final'})`;
+        item.date = new Date().toISOString();
+        scheduleSave();
+        pushRowToSheet('tendido', row);
+        pushIngenieriaToSheet(item);
+        showToast('Recorrido modificado');
+        renderIngenieriaPanel();
+      });
+    });
+  });
+}
+async function pushIngenieriaToSheet(item){
+  if(!state.sheetSync.enabled || !state.sheetSync.url) return;
+  try{
+    await fetch(state.sheetSync.url, {
+      method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: sheetPostBody({ action:'upsertFields', sheet:'TENDIDO_INGENIERIA', uid: item.id,
+        fields: { CABLE_ID: item.cableId, CABLE: item.cableNumber, TRAMO: item.tramoCodigo, MOTIVO: item.motivoLabel,
+          DESCRIPCION: item.descripcion, REPORTADO_POR: item.reportadoPor, ESTADO: item.estado,
+          RESOLUCION: item.resolucion || '', FECHA: formatDateTime(item.date) } })
+    });
+    state.sheetSync.lastSync = new Date().toISOString();
+    scheduleSave();
+  }catch(e){
+    showToast('Sin conexión: se guardó en el celular y se subirá cuando vuelva la señal');
+  }
+}
+async function deleteIngenieriaFromSheet(id){
+  if(!state.sheetSync.enabled || !state.sheetSync.url) return;
+  try{
+    await fetch(state.sheetSync.url, {
+      method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: sheetPostBody({ action:'deleteRow', sheet:'TENDIDO_INGENIERIA', uid: id })
+    });
+  }catch(e){}
+}
+async function pullIngenieriaFromSheet(silent){
+  if(!state.sheetSync.url) return false;
+  try{
+    const res = await fetch(sheetUrl(`?sheet=${encodeURIComponent('TENDIDO_INGENIERIA')}`), { method:'GET' });
+    const rows = await res.json();
+    if(!Array.isArray(state.tendidoIngenieria)) state.tendidoIngenieria = [];
+    const byCableName = {}; state.tendido.forEach(r=>{ byCableName[r.cableNumber] = r.id; });
+    const motivoKeyByLabel = {}; Object.keys(TENDIDO_MOTIVOS).forEach(k=>{ motivoKeyByLabel[TENDIDO_MOTIVOS[k]] = k; });
+    const idsInSheet = new Set();
+    let changed = false;
+    rows.forEach(obj=>{
+      const id = obj.UID; if(!id) return;
+      idsInSheet.add(id);
+      let cableId = obj.CABLE_ID !== undefined && obj.CABLE_ID !== '' ? parseInt(obj.CABLE_ID) : NaN;
+      if(isNaN(cableId)) cableId = byCableName[obj.CABLE] !== undefined ? byCableName[obj.CABLE] : null;
+      const entry = { id, cableId, cableNumber: obj.CABLE||'', tramoCodigo: obj.TRAMO||'',
+        motivo: motivoKeyByLabel[obj.MOTIVO] || 'otro', motivoLabel: obj.MOTIVO||'Otro', descripcion: obj.DESCRIPCION||'',
+        reportadoPor: obj.REPORTADO_POR||'', estado: obj.ESTADO||'Pendiente', resolucion: obj.RESOLUCION||'',
+        date: parseSheetEditDate(obj.FECHA) || new Date().toISOString() };
+      const existing = state.tendidoIngenieria.find(r=>r.id===id);
+      const recentlyEditedLocally = existing && (Date.now() - new Date(existing.date).getTime()) < 60000;
+      if(existing){ if(!recentlyEditedLocally){ Object.assign(existing, entry); changed = true; } }
+      else { state.tendidoIngenieria.push(entry); changed = true; }
+    });
+    const cutoff = Date.now() - 60000;
+    const before = state.tendidoIngenieria.length;
+    state.tendidoIngenieria = state.tendidoIngenieria.filter(r=> idsInSheet.has(r.id) || (Date.now() - new Date(r.date).getTime()) < cutoff);
+    if(state.tendidoIngenieria.length !== before) changed = true;
+    if(changed) scheduleSave();
+    return true;
+  }catch(e){ return false; }
 }
 
 function renderDocsPanel(){
@@ -2824,7 +3056,7 @@ function cardTemplateTendido(r){
     <div class="status-pill ${st}"></div>
     <div class="card-body">
       <div class="card-top"><div class="card-tag">${escapeHtml(r.cableNumber||'—')}</div><div class="card-item">${escapeHtml(r.sistema||'—')}</div></div>
-      <div class="card-meta"><span class="tag-pill">${escapeHtml(r.from_area||'—')} → ${escapeHtml(r.to_area||'—')}</span><span class="tag-pill">${tendidos}/${r.route.length} tramos</span></div>
+      <div class="card-meta"><span class="tag-pill">${escapeHtml(r.from_area||'—')} → ${escapeHtml(r.to_area||'—')}</span><span class="tag-pill">${tendidos}/${r.routeStates.length} tramos</span></div>
       <div class="card-progress-track"><div class="fill" style="width:${pct}%"></div></div>
       <div class="badge-row">
       <span class="tag-pill">${pct}% avance</span>
@@ -3000,7 +3232,7 @@ function renderSysTable(sys, list, container){
 }
 function requestSysUnlock(sys, onUnlocked){
   pendingUnlockAction = onUnlocked;
-  document.getElementById('pinSub').textContent = `Ingresa el código para editar ${SYS[sys].label}`;
+  document.getElementById('pinSub').textContent = `Ingresa tu código de fotocheck para editar ${SYS[sys].label}`;
   document.getElementById('pinInput').value = '';
   document.getElementById('pinErr').textContent = '';
   document.getElementById('pinOverlay').classList.add('open');
@@ -3021,10 +3253,12 @@ function saveSysTableTextField(sys, id, field, side, value){
     const obj = row[side];
     obj[field] = value;
     obj.lastEditedAt = now;
+    if(currentOperator && currentOperator.nombre) obj.lastEditedBy = currentOperator.nombre;
     if(sideStatus(obj) === 'complete'){ if(!obj.completedAt) obj.completedAt = now; } else { obj.completedAt = ''; }
   } else {
     row[field] = value;
     row.lastEditedAt = now;
+    if(currentOperator && currentOperator.nombre) row.lastEditedBy = currentOperator.nombre;
     if(cfg.statusFn(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt; } else { row.completedAt = ''; }
   }
   scheduleSave();
@@ -3048,6 +3282,7 @@ function toggleSysTableField(sys, id, field, side, cellEl, fieldCfg){
     const obj = row[side];
     obj[field] = nextStateFor(fieldCfg||{}, obj[field]);
     obj.lastEditedAt = now;
+    if(currentOperator && currentOperator.nombre) obj.lastEditedBy = currentOperator.nombre;
     if(sideStatus(obj) === 'complete'){ if(!obj.completedAt) obj.completedAt = now; } else { obj.completedAt = ''; }
     if(cellEl && cellEl.isConnected){
       cellEl.className = cellClassFor(obj[field]);
@@ -3056,6 +3291,7 @@ function toggleSysTableField(sys, id, field, side, cellEl, fieldCfg){
   } else {
     row[field] = nextStateFor(fieldCfg||{}, row[field]);
     row.lastEditedAt = now;
+    if(currentOperator && currentOperator.nombre) row.lastEditedBy = currentOperator.nombre;
     if(cfg.statusFn(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt; } else { row.completedAt = ''; }
     if(cellEl && cellEl.isConnected){
       cellEl.className = cellClassFor(row[field]);
@@ -3093,6 +3329,54 @@ function updateFilterDot(){
 function renderAll(){ renderList(); renderGauge(); updateFilterDot(); }
 
 /* ===================== Access control ===================== */
+// Estampa quién y cuándo editó un registro. currentOperator lo llena el desbloqueo por fotocheck
+// (o queda null si se entró con la contraseña maestra, o en dispositivos aún sin operadores cargados).
+function stampEdit(row){
+  row.lastEditedAt = new Date().toISOString();
+  if(currentOperator && currentOperator.nombre) row.lastEditedBy = currentOperator.nombre;
+}
+// Busca un operador activo por su código de fotocheck (case-sensitive tal cual está en Sheets, sin espacios).
+function findOperadorByFotocheck(code){
+  const norm = String(code||'').trim();
+  if(!norm) return null;
+  return (state.operadores||[]).find(o=> o.activo !== false && o.fotocheck === norm) || null;
+}
+function operadorAllows(op, sys){ return !!(op && op.accesos && op.accesos[sys]); }
+// Intenta desbloquear `sys` con un código ingresado: primero contra la lista de OPERADORES (fotocheck),
+// y si no coincide con ninguno, contra la contraseña maestra como respaldo. Devuelve:
+//   {ok:true, operador, restrictedTimbrado?} | {ok:false, reason:'empty'|'notfound'|'noaccess', operador?}
+function attemptFotocheckUnlock(sys, code){
+  const val = String(code||'').trim();
+  if(!val) return { ok:false, reason:'empty' };
+  if(val === MASTER_PASSWORD) return { ok:true, operador:null, viaMaster:true };
+  const op = findOperadorByFotocheck(val);
+  if(!op) return { ok:false, reason:'notfound' };
+  if(operadorAllows(op, sys)) return { ok:true, operador:op };
+  // CONEXIONADO también se desbloquea (restringido a Timbrado + Observaciones) con un fotocheck que
+  // solo tenga habilitado TIMBRADO — mismo criterio que antes con el código fijo de Timbrado.
+  if(sys === 'cableado' && operadorAllows(op, 'timbrado')) return { ok:true, operador:op, restrictedTimbrado:true };
+  return { ok:false, reason:'noaccess', operador:op };
+}
+// "Última edición" combinado, para CONEXIONADO toma el más reciente entre from/to/general.
+function lastEditorFor(sys, row){
+  if(sys === 'cableado'){
+    const entries = [
+      { t: row.from.lastEditedAt, by: row.from.lastEditedBy },
+      { t: row.to.lastEditedAt, by: row.to.lastEditedBy },
+      { t: row.lastEditedAt, by: row.lastEditedBy }
+    ].filter(e=>e.t);
+    if(!entries.length) return '';
+    entries.sort((a,b)=> a.t.localeCompare(b.t));
+    return entries[entries.length-1].by || '';
+  }
+  return row.lastEditedBy || '';
+}
+function lastEditedLine(sys, row){
+  const t = sys === 'cableado' ? [row.from.lastEditedAt, row.to.lastEditedAt, row.lastEditedAt].filter(Boolean).sort().pop() : row.lastEditedAt;
+  if(!t) return 'Aún sin editar';
+  const by = lastEditorFor(sys, row);
+  return `Última edición: ${formatDateTime(t)}${by ? ' · ' + by : ''}`;
+}
 function isUnlocked(sys){ return unlockedSystems.has(sys); }
 // Igual que !isUnlocked(sys), pero para CONEXIONADO también deja pasar si entraron con el
 // código de Timbrado — la restricción de qué pueden tocar se aplica más adentro, no aquí.
@@ -3113,7 +3397,7 @@ function openDetail(sys, id){
 function requestOpenDetail(sys, id){
   if(canPassUnlockGate(sys)){ openDetail(sys, id); return; }
   pendingUnlockAction = ()=> openDetail(sys, id);
-  document.getElementById('pinSub').textContent = `Ingresa el código para editar ${SYS[sys].label}`;
+  document.getElementById('pinSub').textContent = `Ingresa tu código de fotocheck para editar ${SYS[sys].label}`;
   document.getElementById('pinInput').value = '';
   document.getElementById('pinErr').textContent = '';
   document.getElementById('pinOverlay').classList.add('open');
@@ -3126,7 +3410,7 @@ function unlockCurrentSystemAfterAuth(){
   unlockedSystems.add(currentSystem);
   document.getElementById('pinOverlay').classList.remove('open');
   renderSystemTabs();
-  showToast(`${SYS[currentSystem].label} desbloqueado para editar`);
+  showToast(`${currentOperator && currentOperator.nombre ? currentOperator.nombre + ' — ' : ''}${SYS[currentSystem].label} desbloqueado para editar`);
   if(pendingUnlockAction){ pendingUnlockAction(); pendingUnlockAction = null; }
 }
 function unlockCurrentSystemAfterPin(){
@@ -3135,30 +3419,52 @@ function unlockCurrentSystemAfterPin(){
 }
 document.getElementById('btnBiometricUnlockSys').addEventListener('click', async ()=>{
   const ok = await verifyBiometricForSys(currentSystem);
-  if(ok){ unlockCurrentSystemAfterAuth(); }
+  if(ok){ currentOperator = getBioOperator(currentSystem); unlockCurrentSystemAfterAuth(); }
   else { document.getElementById('pinErr').textContent = 'No se pudo verificar la huella / Face ID.'; }
 });
 function confirmPin(){
   const val = document.getElementById('pinInput').value.trim();
-  if(val && val === state.access[currentSystem].pin){
+  const result = attemptFotocheckUnlock(currentSystem, val);
+  if(result.ok && !result.restrictedTimbrado){
+    currentOperator = result.operador ? { fotocheck: result.operador.fotocheck, nombre: result.operador.nombre } : null;
     unlockCurrentSystemAfterPin();
-  } else if(currentSystem === 'cableado' && val && state.access.timbrado && val === state.access.timbrado.pin){
+  } else if(result.ok && result.restrictedTimbrado){
+    currentOperator = { fotocheck: result.operador.fotocheck, nombre: result.operador.nombre };
     unlockedSystems.add('timbrado');
     document.getElementById('pinOverlay').classList.remove('open');
     renderSystemTabs();
-    showToast('Acceso con código de Timbrado: solo puedes editar Timbrado y Observaciones');
+    showToast(`${currentOperator.nombre} — acceso con código de Timbrado: solo puedes editar Timbrado y Observaciones`);
     if(pendingUnlockAction){ pendingUnlockAction(); pendingUnlockAction = null; }
   } else {
-    document.getElementById('pinErr').textContent = 'Código incorrecto, intenta de nuevo.';
+    document.getElementById('pinErr').textContent = result.reason === 'noaccess' ? 'Tu fotocheck no tiene acceso a este sistema.' : 'Código no reconocido, intenta de nuevo.';
   }
 }
 document.getElementById('btnClosePin').addEventListener('click', ()=>{
   document.getElementById('pinOverlay').classList.remove('open'); pendingUnlockAction = null;
 });
 
+// Lista de solo lectura de los trabajadores cargados en la pestaña OPERADORES (Sheets), con
+// los sistemas que cada uno puede editar — para que el administrador vea de un vistazo qué hay
+// cargado en este celular, sin tener que abrir la hoja.
+function renderOperadoresAdminList(){
+  const wrap = document.getElementById('operadoresList');
+  if(!wrap) return;
+  const ops = state.operadores || [];
+  const note = document.getElementById('operadoresSyncNote');
+  if(note) note.textContent = ops.length ? `${ops.length} operador(es) cargado(s).` : 'Todavía no hay operadores cargados — agrégalos en la pestaña OPERADORES de tu Google Sheet y tocá Sincronizar.';
+  wrap.innerHTML = ops.map(op=>{
+    const sistemas = SYS_ORDER.filter(s=> op.accesos && op.accesos[s]).map(s=>SYS[s].label);
+    return `<div class="access-row" style="align-items:flex-start;">
+      <span class="sys-dot" style="background:${op.activo===false ? 'var(--steel-400)' : 'var(--green-600)'}"></span>
+      <div class="tx"><div class="t">${escapeHtml(op.nombre || '(sin nombre)')}${op.activo===false ? ' — inactivo' : ''}</div>
+      <div class="d">Fotocheck ${escapeHtml(op.fotocheck)} · ${sistemas.length ? escapeHtml(sistemas.join(', ')) : 'sin sistemas habilitados'}</div></div>
+    </div>`;
+  }).join('');
+}
 function openAccessSheet(){
-  document.getElementById('accessVersionSub').textContent = `Códigos de edición por sistema · App ${APP_VERSION}`;
+  document.getElementById('accessVersionSub').textContent = `Operadores y códigos de edición · App ${APP_VERSION}`;
   updateBiometricStatusNote();
+  renderOperadoresAdminList();
   const list = document.getElementById('accessList');
   list.innerHTML = SYS_ORDER.map(id=>`
     <div class="access-row">
@@ -3190,6 +3496,7 @@ let masterPwIntent = 'accesos'; // 'accesos' | 'unlockAll'
 function unlockAllSystems(){
   SYS_ORDER.forEach(s=> unlockedSystems.add(s));
   accessPanelUnlocked = true;
+  currentOperator = { fotocheck:'', nombre:'Administrador' };
   renderSystemTabs();
   updateAdminModeButton();
   updateLogoutButton();
@@ -3241,6 +3548,7 @@ document.getElementById('btnSidebarLogout').addEventListener('click', ()=>{
   plannerModeActive = false;
   accessPanelUnlocked = false;
   unlockedSystems.clear();
+  currentOperator = null;
   updateAdminModeButton();
   updatePlannerModeButton();
   renderSystemTabs();
@@ -4568,6 +4876,15 @@ document.getElementById('masterPwInput').addEventListener('keydown', (e)=>{ if(e
 // El credencial queda guardado solo en este celular (localStorage), no viaja con el backup ni con Sheets.
 const BIOMETRIC_KEY = 'controlAvanceBiometricCredId';
 function sysBioKey(sys){ return 'controlAvanceBiometricCredId_sys_' + sys; }
+// Recuerda con qué operador (fotocheck) se registró la huella/Face ID de cada sistema en este
+// celular, para seguir estampando su nombre en cada guardado aunque entre sin volver a tipear el código.
+function sysBioOperatorKey(sys){ return 'controlAvanceBiometricOperator_sys_' + sys; }
+function setBioOperator(sys, operator){
+  if(operator) localStorage.setItem(sysBioOperatorKey(sys), JSON.stringify(operator));
+}
+function getBioOperator(sys){
+  try{ const raw = localStorage.getItem(sysBioOperatorKey(sys)); return raw ? JSON.parse(raw) : null; }catch(e){ return null; }
+}
 async function registerBiometricForSys(sys){
   if(!await biometricSupported()) return false;
   try{
@@ -4608,6 +4925,7 @@ async function offerBiometricRegistration(sys){
   if(!await biometricSupported()) return;
   if(confirm(`¿Quieres usar huella / Face ID para entrar a ${SYS[sys].label} en este celular la próxima vez, en vez del código?`)){
     const ok = await registerBiometricForSys(sys);
+    if(ok) setBioOperator(sys, currentOperator);
     showToast(ok ? `Huella / Face ID registrada para ${SYS[sys].label}` : 'No se pudo registrar la huella, intenta de nuevo');
   }
 }
@@ -4696,6 +5014,7 @@ document.getElementById('btnRemoveBiometric').addEventListener('click', ()=>{
 });
 
 document.getElementById('btnRefreshAccess').addEventListener('click', ()=> pullAccessFromSheet(false));
+document.getElementById('btnRefreshOperadores').addEventListener('click', ()=> pullOperadoresFromSheet(false).then(renderOperadoresAdminList));
 document.getElementById('btnCloseAccess').addEventListener('click', ()=> document.getElementById('accessOverlay').classList.remove('open'));
 document.getElementById('accessOverlay').addEventListener('click', (e)=>{ if(e.target.id==='accessOverlay') document.getElementById('accessOverlay').classList.remove('open'); });
 document.getElementById('btnSaveAccess').addEventListener('click', ()=>{
@@ -4816,7 +5135,7 @@ function openDetailHvac(id){
   currentDetailItem = id;
   document.getElementById('hvacDetailTag').textContent = row.tag || ('Ítem #'+row.item);
   document.getElementById('hvacDetailSub').textContent = `Ítem #${row.item} · ${row.level||'—'} · Área ${row.area||'—'} · Room ${row.room||'—'}`;
-  document.getElementById('hvacLastEdited').textContent = row.lastEditedAt ? `Última edición: ${formatDateTime(row.lastEditedAt)}` : 'Aún sin editar';
+  document.getElementById('hvacLastEdited').textContent = lastEditedLine('hvac', row);
   { const dl = document.getElementById('hvacDriveLink'); if(row.fotosLink){ dl.href = row.fotosLink; dl.style.display = 'inline-block'; } else { dl.style.display = 'none'; } }
   document.getElementById('hvacInfoGrid').innerHTML = `
     <div class="info-cell"><div class="lbl">Elevación</div><div class="val">${escapeHtml(orDash(row.elev))}</div></div>
@@ -4878,7 +5197,7 @@ document.getElementById('hvacSaveDetail').addEventListener('click', ()=>{
     row.tierra_soporte = document.getElementById('hvacTierraSoporte').value;
     row.tierra_equipos = document.getElementById('hvacTierraEquipos').value;
     row.observacion = document.getElementById('hvacObservacion').value;
-    row.lastEditedAt = new Date().toISOString();
+    stampEdit(row);
     if(hvacStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt; }
     else { row.completedAt = ''; }
   }
@@ -4931,7 +5250,7 @@ function initCableSheet(){
     const btn = e.target.closest('button'); if(!btn) return;
     const row = state.cableado.find(r=>r.id===currentDetailItem); if(!row) return;
     row.timbrado = (row.timbrado === btn.dataset.val) ? '' : btn.dataset.val;
-    row.lastEditedAt = new Date().toISOString();
+    stampEdit(row);
     document.querySelectorAll('#cableTimbradoSeg button').forEach(b=>b.classList.remove('on-si','on-no'));
     if(row.timbrado) btn.classList.add(btn.dataset.val==='SI'?'on-si':'on-no');
     syncCableTimbradoDate(row);
@@ -4939,7 +5258,7 @@ function initCableSheet(){
   document.getElementById('cableFechaTimbrado').addEventListener('change', (e)=>{
     const row = state.cableado.find(r=>r.id===currentDetailItem); if(!row) return;
     row.fecha_timbrado = e.target.value;
-    row.lastEditedAt = new Date().toISOString();
+    stampEdit(row);
     syncCableTimbradoDate(row, true);
   });
   ['from','to'].forEach(side=>{
@@ -5042,8 +5361,7 @@ function openDetailCable(id){
   currentDetailItem = id;
   document.getElementById('cableDetailTag').textContent = row.cable || ('Cable #'+row.id);
   document.getElementById('cableDetailSub').textContent = `${row.level||'—'} · ${row.from_tag||'—'} → ${row.to_tag||'—'}`;
-  const lastEdited = [row.from.lastEditedAt, row.to.lastEditedAt, row.lastEditedAt].filter(Boolean).sort().pop();
-  document.getElementById('cableLastEdited').textContent = lastEdited ? `Última edición: ${formatDateTime(lastEdited)}` : 'Aún sin editar';
+  document.getElementById('cableLastEdited').textContent = lastEditedLine('cableado', row);
   { const dl = document.getElementById('cableFromDriveLink'); if(row.from.fotosLink){ dl.href = row.from.fotosLink; dl.style.display = 'inline-block'; } else { dl.style.display = 'none'; } }
   { const dl = document.getElementById('cableToDriveLink'); if(row.to.fotosLink){ dl.href = row.to.fotosLink; dl.style.display = 'inline-block'; } else { dl.style.display = 'none'; } }
   document.getElementById('cableInfoGrid').innerHTML = `
@@ -5125,6 +5443,7 @@ document.getElementById('cableSaveDetail').addEventListener('click', ()=>{
       obj.fecha_conexionado = document.getElementById(`cable${cap(side)}FechaConexionado`).value;
       obj.observacion = document.getElementById(`cable${cap(side)}Observacion`).value;
       obj.lastEditedAt = now;
+      if(currentOperator && currentOperator.nombre) obj.lastEditedBy = currentOperator.nombre;
       if(sideStatus(obj) === 'complete'){ if(!obj.completedAt) obj.completedAt = now; }
       else { obj.completedAt = ''; }
     });
@@ -5145,7 +5464,7 @@ function openDetailFds(id){
   currentDetailItem = id;
   document.getElementById('fdsDetailTag').textContent = row.tag || ('Ítem #'+row.item);
   document.getElementById('fdsDetailSub').textContent = `Ítem #${row.item} · ${row.level||'—'}`;
-  document.getElementById('fdsLastEdited').textContent = row.lastEditedAt ? `Última edición: ${formatDateTime(row.lastEditedAt)}` : 'Aún sin editar';
+  document.getElementById('fdsLastEdited').textContent = lastEditedLine('fds', row);
   { const dl = document.getElementById('fdsDriveLink'); if(row.fotosLink){ dl.href = row.fotosLink; dl.style.display = 'inline-block'; } else { dl.style.display = 'none'; } }
   document.getElementById('fdsInfoGrid').innerHTML = `
     <div class="info-cell"><div class="lbl">Tag equipo</div><div class="val">${escapeHtml(orDash(row.tag))}</div></div>
@@ -5241,7 +5560,7 @@ document.getElementById('fdsTimbradoSeg').addEventListener('click', (e)=>{
   const btn = e.target.closest('button'); if(!btn) return;
   const row = state.fds.find(r=>r.id===currentDetailItem); if(!row) return;
   row.timbrado = (row.timbrado === btn.dataset.val) ? '' : btn.dataset.val;
-  row.lastEditedAt = new Date().toISOString();
+  stampEdit(row);
   document.querySelectorAll('#fdsTimbradoSeg button').forEach(b=>b.classList.remove('on-si','on-no'));
   if(row.timbrado) btn.classList.add(btn.dataset.val==='SI'?'on-si':'on-no');
   syncFdsTimbradoDate(row);
@@ -5249,7 +5568,7 @@ document.getElementById('fdsTimbradoSeg').addEventListener('click', (e)=>{
 document.getElementById('fdsFechaTimbrado').addEventListener('change', (e)=>{
   const row = state.fds.find(r=>r.id===currentDetailItem); if(!row) return;
   row.fecha_timbrado = e.target.value;
-  row.lastEditedAt = new Date().toISOString();
+  stampEdit(row);
   syncFdsTimbradoDate(row, true);
 });
 
@@ -5280,7 +5599,7 @@ document.getElementById('fdsSaveDetail').addEventListener('click', ()=>{
     row.tierra_soporte = document.getElementById('fdsTierraSoporte').value;
     row.tierra_equipo = document.getElementById('fdsTierraEquipo').value;
     row.observacion = document.getElementById('fdsObservacion').value;
-    row.lastEditedAt = new Date().toISOString();
+    stampEdit(row);
     if(fdsStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt; }
     else { row.completedAt = ''; }
   }
@@ -5299,7 +5618,7 @@ function openDetailTransit(id){
   currentDetailItem = id;
   document.getElementById('transitDetailTag').textContent = row.tag || ('Ítem #'+row.id);
   document.getElementById('transitDetailSub').textContent = `${row.level||'—'} · Room ${row.room||'—'}`;
-  document.getElementById('transitLastEdited').textContent = row.lastEditedAt ? `Última edición: ${formatDateTime(row.lastEditedAt)}` : 'Aún sin editar';
+  document.getElementById('transitLastEdited').textContent = lastEditedLine('transit', row);
   { const dl = document.getElementById('transitDriveLink'); if(row.fotosLink){ dl.href = row.fotosLink; dl.style.display = 'inline-block'; } else { dl.style.display = 'none'; } }
   document.getElementById('transitInfoGrid').innerHTML = `
     <div class="info-cell"><div class="lbl">Hole name</div><div class="val">${escapeHtml(orDash(row.hole_name))}</div></div>
@@ -5369,7 +5688,7 @@ document.getElementById('transitSaveDetail').addEventListener('click', ()=>{
     row.observacion = document.getElementById('transitObservacion').value;
     if(!row.observacion) row.obsPhotos = [];
     if(row.fotografia !== 'SI') row.fotografiaPhotos = [];
-    row.lastEditedAt = new Date().toISOString();
+    stampEdit(row);
     if(transitStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt; } else { row.completedAt = ''; }
   }
   scheduleSave(); renderAll(); closeDetailTransit(); showToast('Cambios guardados');
@@ -5386,7 +5705,7 @@ function openDetailTimbrado(id){
   currentDetailItem = id;
   document.getElementById('timbradoDetailTag').textContent = row.cable || ('Cable #'+row.id);
   document.getElementById('timbradoDetailSub').textContent = `${row.from_tag||'—'} → ${row.to_tag||'—'}`;
-  document.getElementById('timbradoLastEdited').textContent = row.lastEditedAt ? `Última edición: ${formatDateTime(row.lastEditedAt)}` : 'Aún sin editar';
+  document.getElementById('timbradoLastEdited').textContent = lastEditedLine('timbrado', row);
   { const dl = document.getElementById('timbradoDriveLink'); if(row.fotosLink){ dl.href = row.fotosLink; dl.style.display = 'inline-block'; } else { dl.style.display = 'none'; } }
   document.getElementById('timbradoInfoGrid').innerHTML = `
     <div class="info-cell"><div class="lbl">Desde</div><div class="val">${escapeHtml(orDash(row.from_tag))}</div></div>
@@ -5433,7 +5752,7 @@ document.getElementById('timbradoSaveDetail').addEventListener('click', ()=>{
     row.fecha_timbrado = document.getElementById('timbradoFecha').value;
     row.observacion = document.getElementById('timbradoObservacion').value;
     if(!row.observacion) row.obsPhotos = [];
-    row.lastEditedAt = new Date().toISOString();
+    stampEdit(row);
     if(timbradoStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt; } else { row.completedAt = ''; }
   }
   scheduleSave(); renderAll(); closeDetailTimbrado(); showToast('Cambios guardados');
@@ -5450,7 +5769,7 @@ function openDetailVesda(id){
   currentDetailItem = id;
   document.getElementById('vesdaDetailTag').textContent = row.dms || ('VESDA #'+row.id);
   document.getElementById('vesdaDetailSub').textContent = `${row.cabinet||'—'} · ${row.room||'—'}`;
-  document.getElementById('vesdaLastEdited').textContent = row.lastEditedAt ? `Última edición: ${formatDateTime(row.lastEditedAt)}` : 'Aún sin editar';
+  document.getElementById('vesdaLastEdited').textContent = lastEditedLine('vesda', row);
   { const dl = document.getElementById('vesdaDriveLink'); if(row.fotosLink){ dl.href = row.fotosLink; dl.style.display = 'inline-block'; } else { dl.style.display = 'none'; } }
   document.getElementById('vesdaInfoGrid').innerHTML = `
     <div class="info-cell"><div class="lbl">Room</div><div class="val">${escapeHtml(orDash(row.room))}</div></div>
@@ -5499,7 +5818,7 @@ document.getElementById('vesdaSaveDetail').addEventListener('click', ()=>{
     row.montaje = montajeVal === '' ? '' : String(Math.max(0, Math.min(100, parseFloat(montajeVal) || 0)));
     row.observacion = document.getElementById('vesdaObservacion').value;
     if(!row.observacion) row.obsPhotos = [];
-    row.lastEditedAt = new Date().toISOString();
+    stampEdit(row);
     if(vesdaStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt; } else { row.completedAt = ''; }
   }
   scheduleSave(); renderAll(); closeDetailVesda(); showToast('Cambios guardados');
@@ -5513,29 +5832,130 @@ document.getElementById('btnRestVesda').addEventListener('click', ()=>{
 /* ===================== TENDIDO CABLES detail ===================== */
 const TENDIDO_SEG_ORDER = ['pend','ok','bad'];
 const TENDIDO_SEG_LABEL = { pend:'PENDIENTE', ok:'TENDIDO', bad:'FALTA CONSTRUIR' };
+// Motivos rápidos para un tramo "Falta construir" — reemplaza tener que escribir todo a mano
+// (a pedido del usuario, describiendo el procedimiento real de campo). El texto libre sigue
+// disponible como nota aparte, por si el motivo predefinido no alcanza para explicar el caso.
+const TENDIDO_MOTIVOS = {
+  falta_bandeja: 'Falta bandeja',
+  falta_pintura_soldadura: 'Falta pintar/soldar transit',
+  falta_miniruta: 'Falta miniruta',
+  sin_acceso: 'Sin acceso al área',
+  otro: 'Otro'
+};
+const TENDIDO_EXTRA_TYPE_LABEL = { bandeja:'Bandeja', transit:'Transit', miniruta:'Miniruta', otro:'Otro' };
+// routeExtra = tramos agregados a mano (bandeja/transit tras aprobación de Ingeniería, o
+// miniruta directo, opcional) al inicio o al final del recorrido fijo (route, dato del Excel).
+// routeStates/routeNotes/routeReasons cubren SIEMPRE el recorrido efectivo completo (inicio-extras
+// + route + final-extras), en ese orden — por eso alcanza con su .length para saber el total de
+// tramos, sin tener que recalcular el recorrido efectivo cada vez.
+function tendidoInicioExtras(row){ return (row.routeExtra||[]).filter(e=>e && e.pos==='inicio'); }
+function tendidoFinalExtras(row){ return (row.routeExtra||[]).filter(e=>e && e.pos==='final'); }
+function tendidoEffectiveRoute(row){
+  const inicio = tendidoInicioExtras(row).map(e=>({ code:e.code, type:e.type||'otro', extra:true }));
+  const base = row.route.map(code=>({ code, type:'base', extra:false }));
+  const final = tendidoFinalExtras(row).map(e=>({ code:e.code, type:e.type||'otro', extra:true }));
+  return [...inicio, ...base, ...final];
+}
+// Agrega un tramo manual al recorrido: 'inicio' se inserta justo antes del recorrido fijo (después
+// de los demás extras de inicio ya agregados), 'final' se agrega al final de todo. Mantiene
+// routeStates/routeNotes/routeReasons alineados, insertando un 'pend' en el mismo índice.
+function tendidoAddTramo(row, code, type, pos){
+  if(!Array.isArray(row.routeExtra)) row.routeExtra = [];
+  if(!Array.isArray(row.routeReasons) || row.routeReasons.length !== row.routeStates.length) row.routeReasons = row.routeStates.map(()=>'');
+  let insertIdx;
+  if(pos === 'inicio'){
+    insertIdx = tendidoInicioExtras(row).length;
+    row.routeExtra.splice(insertIdx, 0, { code, type, pos });
+  } else {
+    insertIdx = row.routeStates.length;
+    row.routeExtra.push({ code, type, pos });
+  }
+  row.routeStates.splice(insertIdx, 0, 'pend');
+  row.routeNotes.splice(insertIdx, 0, '');
+  row.routeReasons.splice(insertIdx, 0, '');
+}
+// Busca si un tramo (por cable + código, no por índice — el índice se corre cuando se agregan
+// tramos al inicio) ya tiene un hallazgo de Ingeniería, y devuelve el más reciente.
+function ingenieriaFindingForTramo(cableId, code){
+  if(!Array.isArray(state.tendidoIngenieria)) return null;
+  const matches = state.tendidoIngenieria.filter(f=>f.cableId===cableId && f.tramoCodigo===code);
+  return matches.length ? matches[matches.length-1] : null;
+}
+function enviarTramoAIngenieria(row, idx){
+  const effRoute = tendidoEffectiveRoute(row);
+  const seg = effRoute[idx];
+  if(!seg) return;
+  if(!Array.isArray(row.routeReasons) || row.routeReasons.length !== row.routeStates.length) row.routeReasons = row.routeStates.map(()=>'');
+  const motivoKey = row.routeReasons[idx] || 'otro';
+  const item = {
+    id: 'ing-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),
+    cableId: row.id, cableNumber: row.cableNumber, tramoCodigo: seg.code, tramoIdx: idx,
+    motivo: motivoKey, motivoLabel: TENDIDO_MOTIVOS[motivoKey] || 'Otro',
+    descripcion: row.routeNotes[idx] || '',
+    reportadoPor: (typeof currentOperator !== 'undefined' && currentOperator && currentOperator.nombre) ? currentOperator.nombre : '',
+    estado: 'Pendiente', resolucion: '', date: new Date().toISOString()
+  };
+  if(!Array.isArray(state.tendidoIngenieria)) state.tendidoIngenieria = [];
+  state.tendidoIngenieria.push(item);
+  scheduleSave();
+  pushIngenieriaToSheet(item);
+  showToast('Enviado a Ingeniería');
+  renderTendidoSegGrid();
+}
 function renderTendidoSegGrid(){
   const row = state.tendido.find(r=>r.id===currentDetailItem);
   if(!row) return;
   const grid = document.getElementById('tendidoSegGrid');
-  grid.innerHTML = row.route.map((code, idx)=>{
+  const effRoute = tendidoEffectiveRoute(row);
+  grid.innerHTML = effRoute.map((seg, idx)=>{
     const st = row.routeStates[idx] || 'pend';
     const note = row.routeNotes[idx] || '';
-    return `<button type="button" class="tendido-seg-btn st-${st}" data-idx="${idx}">
-        <span class="idx">${idx+1}</span><span class="code">${escapeHtml(code)}</span><span class="state">${TENDIDO_SEG_LABEL[st]}</span>
+    const motivo = (row.routeReasons && row.routeReasons[idx]) || '';
+    const extraTag = seg.extra ? `<span class="tendido-extra-tag">➕ ${TENDIDO_EXTRA_TYPE_LABEL[seg.type]||'Extra'}</span>` : '';
+    let badBlock = '';
+    if(st === 'bad'){
+      const finding = ingenieriaFindingForTramo(row.id, seg.code);
+      const showBadge = finding && finding.estado !== 'Rechazado';
+      const showResend = finding && finding.estado === 'Rechazado';
+      badBlock = `
+        <select class="tendido-seg-motivo" data-motivo-idx="${idx}">
+          <option value="">Motivo (opcional)...</option>
+          ${Object.keys(TENDIDO_MOTIVOS).map(k=>`<option value="${k}" ${motivo===k?'selected':''}>${TENDIDO_MOTIVOS[k]}</option>`).join('')}
+        </select>
+        <input type="text" class="tendido-seg-note" data-note-idx="${idx}" placeholder="Nota del tramo (opcional)..." value="${escapeHtml(note)}">
+        <div class="tendido-seg-ing-row">
+          ${showBadge ? `<span class="tendido-ing-badge est-${finding.estado.toLowerCase()}">Ingeniería: ${finding.estado}</span>` : `<button type="button" class="tendido-seg-send-ing" data-send-idx="${idx}">📩 Enviar a Ingeniería</button>`}
+          ${showResend ? `<span class="tendido-ing-badge est-rechazado">Ingeniería: Rechazado</span><button type="button" class="tendido-seg-send-ing" data-send-idx="${idx}">Reenviar</button>` : ''}
+        </div>`;
+    }
+    return `<div class="tendido-seg-item">
+      <button type="button" class="tendido-seg-btn st-${st}" data-idx="${idx}">
+        <span class="idx">${idx+1}</span><span class="code">${escapeHtml(seg.code)}</span>${extraTag}<span class="state">${TENDIDO_SEG_LABEL[st]}</span>
       </button>
-      ${st === 'bad' ? `<input type="text" class="tendido-seg-note" data-note-idx="${idx}" placeholder="Nota del tramo (opcional)..." value="${escapeHtml(note)}">` : ''}`;
+      ${badBlock}
+    </div>`;
   }).join('');
   grid.querySelectorAll('.tendido-seg-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const idx = parseInt(btn.dataset.idx);
       const cur = row.routeStates[idx] || 'pend';
       row.routeStates[idx] = TENDIDO_SEG_ORDER[(TENDIDO_SEG_ORDER.indexOf(cur)+1) % TENDIDO_SEG_ORDER.length];
+      if(row.routeStates[idx] !== 'bad' && Array.isArray(row.routeReasons)) row.routeReasons[idx] = '';
       renderTendidoSegGrid();
       updateTendidoProgressUI(row);
     });
   });
   grid.querySelectorAll('.tendido-seg-note').forEach(inp=>{
     inp.addEventListener('change', ()=>{ row.routeNotes[parseInt(inp.dataset.noteIdx)] = inp.value; });
+  });
+  grid.querySelectorAll('.tendido-seg-motivo').forEach(sel=>{
+    sel.addEventListener('change', ()=>{
+      if(!Array.isArray(row.routeReasons) || row.routeReasons.length !== row.routeStates.length) row.routeReasons = row.routeStates.map(()=>'');
+      row.routeReasons[parseInt(sel.dataset.motivoIdx)] = sel.value;
+    });
+  });
+  grid.querySelectorAll('.tendido-seg-send-ing').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ enviarTramoAIngenieria(row, parseInt(btn.dataset.sendIdx)); });
   });
 }
 function updateTendidoProgressUI(row){
@@ -5549,7 +5969,7 @@ function openDetailTendido(id){
   currentDetailItem = id;
   document.getElementById('tendidoDetailTag').textContent = row.cableNumber || ('Cable #'+row.id);
   document.getElementById('tendidoDetailSub').textContent = `${row.sistema||'—'} · ${row.from_area||'—'} → ${row.to_area||'—'}`;
-  document.getElementById('tendidoLastEdited').textContent = row.lastEditedAt ? `Última edición: ${formatDateTime(row.lastEditedAt)}` : 'Aún sin editar';
+  document.getElementById('tendidoLastEdited').textContent = lastEditedLine('tendido', row);
   { const dl = document.getElementById('tendidoDriveLink'); if(row.fotosLink){ dl.href = row.fotosLink; dl.style.display = 'inline-block'; } else { dl.style.display = 'none'; } }
   document.getElementById('tendidoInfoGrid').innerHTML = `
     <div class="info-cell"><div class="lbl">Desde</div><div class="val">${escapeHtml(orDash(row.from_description))}</div></div>
@@ -5587,6 +6007,42 @@ document.querySelectorAll('#detailOverlayTendido .seg[data-vfield="coil"]').forE
     updateTendidoProgressUI(row);
   });
 });
+// + Miniruta al inicio/final — a diferencia de bandeja/transit, la miniruta se puede agregar
+// directo, sin pasar por el Listado de Ingeniería (a pedido del usuario: "es opcional si es
+// que aplica"). Bandeja/transit sí requieren pasar antes por un hallazgo Aprobado (ver el botón
+// "Modificar recorrido" del Listado de Ingeniería).
+let tendidoExtraPendingPos = null;
+document.getElementById('tendidoAddMinirutaInicio').addEventListener('click', ()=>{
+  tendidoExtraPendingPos = 'inicio';
+  document.getElementById('tendidoExtraCodeInput').value = '';
+  document.getElementById('tendidoExtraForm').style.display = '';
+  document.getElementById('tendidoExtraCodeInput').focus();
+});
+document.getElementById('tendidoAddMinirutaFinal').addEventListener('click', ()=>{
+  tendidoExtraPendingPos = 'final';
+  document.getElementById('tendidoExtraCodeInput').value = '';
+  document.getElementById('tendidoExtraForm').style.display = '';
+  document.getElementById('tendidoExtraCodeInput').focus();
+});
+document.getElementById('tendidoExtraCancel').addEventListener('click', ()=>{
+  document.getElementById('tendidoExtraForm').style.display = 'none';
+  tendidoExtraPendingPos = null;
+});
+document.getElementById('tendidoExtraConfirm').addEventListener('click', ()=>{
+  const row = state.tendido.find(r=>r.id===currentDetailItem);
+  if(!row || !tendidoExtraPendingPos) return;
+  const code = document.getElementById('tendidoExtraCodeInput').value.trim();
+  if(!code){ showToast('Escribe un código o descripción para la miniruta'); return; }
+  tendidoAddTramo(row, code, 'miniruta', tendidoExtraPendingPos);
+  stampEdit(row);
+  scheduleSave();
+  document.getElementById('tendidoExtraForm').style.display = 'none';
+  tendidoExtraPendingPos = null;
+  renderTendidoSegGrid();
+  updateTendidoProgressUI(row);
+  showToast('Miniruta agregada al recorrido');
+  pushRowToSheet('tendido', row);
+});
 function closeDetailTendido(){ document.getElementById('detailOverlayTendido').classList.remove('open'); currentDetailItem = null; }
 document.getElementById('tendidoCloseDetail1').addEventListener('click', closeDetailTendido);
 document.getElementById('tendidoCloseDetail2').addEventListener('click', closeDetailTendido);
@@ -5598,7 +6054,7 @@ document.getElementById('tendidoSaveDetail').addEventListener('click', ()=>{
     row.real_length = lenVal === '' ? '' : Math.max(0, parseFloat(lenVal) || 0);
     row.observacion = document.getElementById('tendidoObservacion').value;
     if(!row.observacion) row.obsPhotos = [];
-    row.lastEditedAt = new Date().toISOString();
+    stampEdit(row);
     if(tendidoStatus(row) === 'complete'){ if(!row.completedAt) row.completedAt = row.lastEditedAt; } else { row.completedAt = ''; }
   }
   scheduleSave(); renderAll(); closeDetailTendido(); showToast('Cambios guardados');
@@ -5800,7 +6256,7 @@ function buildWorkbook(sys){
     const header = ['CABLE_NUMBER','INSTALLER','DISCIPLINE','SISTEMA','From_Tag','From_Description','From_Area','To_Tag','To_Description','To_Area','TRAMOS_TOTAL','TRAMOS_TENDIDO','TRAMOS_FALTA_CONSTRUIR','CABLE_ROUTING_PRODUC','REAL_LENGTH','COIL','OBSERVACION','FECHA_EDICION'];
     const data = [header, ...state.tendido.map(r=>[
       r.cableNumber, r.installer, r.discipline, r.sistema, r.from_tag, r.from_description, r.from_area, r.to_tag, r.to_description, r.to_area,
-      r.route.length, r.routeStates.filter(s=>s==='ok').length, r.routeStates.filter(s=>s==='bad').length,
+      r.routeStates.length, r.routeStates.filter(s=>s==='ok').length, r.routeStates.filter(s=>s==='bad').length,
       r.design_length, r.real_length, r.coil, r.observacion, formatDateTime(r.lastEditedAt)
     ])];
     const ws = XLSX.utils.aoa_to_sheet(data);
@@ -5822,7 +6278,14 @@ function buildWorkbook(sys){
 /* ===================== Google Sheets sync ===================== */
 // Sends the filled-in data (no photos — those stay in the app/exports) to a Google Apps
 // Script Web App connected to a Google Sheet, upserting one row per record by UID.
+// Envuelve sheetRowPayloadRaw para agregar, sin tocar cada rama, la columna REPORTADO_POR
+// (nombre de quien entró con su fotocheck e hizo la última edición — ver stampEdit/currentOperator).
 function sheetRowPayload(sys, row){
+  const payload = sheetRowPayloadRaw(sys, row);
+  payload.fields.REPORTADO_POR = lastEditorFor(sys, row);
+  return payload;
+}
+function sheetRowPayloadRaw(sys, row){
   if(sys === 'hvac'){
     return { sheet:'HVAC', uid:'hvac-'+row.uid, fields: {
       SUBCONTRACTOR: row.subcontractor, ITEM: row.item, TAG: row.tag, DESCRIPTION: row.description, 'ELEV.': row.elev,
@@ -5871,6 +6334,7 @@ function sheetRowPayload(sys, row){
       To_Tag: row.to_tag, To_Description: row.to_description, To_Area: row.to_area,
       Cable_Routing_Produc: row.design_length, REAL_LENGTH: row.real_length, COIL: row.coil,
       ROUTE_STATUS: JSON.stringify(row.routeStates), ROUTE_NOTES: JSON.stringify(row.routeNotes),
+      ROUTE_REASONS: JSON.stringify(row.routeReasons||[]), ROUTE_EXTRA: JSON.stringify(row.routeExtra||[]),
       OBSERVACION: row.observacion, FECHA_EDICION: formatDateTime(row.lastEditedAt), IMPUTADO: row.imputado||'', FECHA_IMPUTADO: row.fecha_imputado||''
     } };
   }
@@ -6395,23 +6859,39 @@ function applySheetRowToTendido(obj){
   const idNum = parseInt(String(uid).replace('tendido-',''));
   const row = state.tendido.find(r=>r.id===idNum);
   if(!row) return false;
-  const before = JSON.stringify([row.routeStates,row.routeNotes,row.real_length,row.coil,row.observacion]);
+  const before = JSON.stringify([row.routeStates,row.routeNotes,row.routeReasons,row.routeExtra,row.real_length,row.coil,row.observacion]);
   if(obj.REAL_LENGTH !== undefined) row.real_length = obj.REAL_LENGTH === '' ? '' : (parseFloat(obj.REAL_LENGTH) || 0);
   if(obj.COIL !== undefined) row.coil = obj.COIL || '';
+  // ROUTE_EXTRA (tramos agregados a mano: bandeja/transit/miniruta al inicio o final) se aplica
+  // primero, porque ROUTE_STATUS/ROUTE_NOTES/ROUTE_REASONS deben coincidir en largo con
+  // route.length + routeExtra.length, no solo con route.length (dato fijo original).
+  if(obj.ROUTE_EXTRA){
+    try{
+      const arr = JSON.parse(obj.ROUTE_EXTRA);
+      if(Array.isArray(arr) && arr.every(e=> e && typeof e.code==='string' && (e.pos==='inicio'||e.pos==='final'))) row.routeExtra = arr;
+    }catch(e){ /* se ignora, se conserva lo que ya había localmente */ }
+  }
+  const expectedLen = row.route.length + (Array.isArray(row.routeExtra) ? row.routeExtra.length : 0);
   if(obj.ROUTE_STATUS){
     try{
       const arr = JSON.parse(obj.ROUTE_STATUS);
-      if(Array.isArray(arr) && arr.length === row.route.length) row.routeStates = arr.map(s=> ['pend','ok','bad'].includes(s) ? s : 'pend');
+      if(Array.isArray(arr) && arr.length === expectedLen) row.routeStates = arr.map(s=> ['pend','ok','bad'].includes(s) ? s : 'pend');
     }catch(e){ /* se ignora, se conserva lo que ya había localmente */ }
   }
   if(obj.ROUTE_NOTES){
     try{
       const arr = JSON.parse(obj.ROUTE_NOTES);
-      if(Array.isArray(arr) && arr.length === row.route.length) row.routeNotes = arr.map(s=> String(s||''));
+      if(Array.isArray(arr) && arr.length === expectedLen) row.routeNotes = arr.map(s=> String(s||''));
+    }catch(e){ /* idem */ }
+  }
+  if(obj.ROUTE_REASONS){
+    try{
+      const arr = JSON.parse(obj.ROUTE_REASONS);
+      if(Array.isArray(arr) && arr.length === expectedLen) row.routeReasons = arr.map(s=> String(s||''));
     }catch(e){ /* idem */ }
   }
   row.observacion = obj.OBSERVACION !== undefined ? (obj.OBSERVACION||'') : row.observacion;
-  const after = JSON.stringify([row.routeStates,row.routeNotes,row.real_length,row.coil,row.observacion]);
+  const after = JSON.stringify([row.routeStates,row.routeNotes,row.routeReasons,row.routeExtra,row.real_length,row.coil,row.observacion]);
   if(before !== after) row.lastEditedAt = parseSheetEditDate(obj.FECHA_EDICION) || new Date().toISOString();
   if(obj.FOTOS_LINK) row.fotosLink = obj.FOTOS_LINK;
   if(obj.IMPUTADO !== undefined) row.imputado = obj.IMPUTADO;
@@ -6474,6 +6954,42 @@ async function pullAccessFromSheet(silent){
     return true;
   }catch(e){
     if(note) note.textContent = '✗ No se pudo leer la hoja ACCESS. Revisa que exista esa pestaña y que el doGet esté actualizado.';
+    return false;
+  }
+}
+// Trae la pestaña OPERADORES: una fila por trabajador con su código de FOTOCHECK, NOMBRE, y una
+// columna Sí/No por cada sistema (usa el nombre visible del sistema, ej. "TENDIDO CABLES", o el
+// nombre corto, ej. "TENDIDO" — cualquiera de los dos funciona). ACTIVO (Sí/No) es opcional: si no
+// está la columna, se asume activo. No requiere ningún cambio en el Apps Script (mismo doGet genérico).
+async function pullOperadoresFromSheet(silent){
+  if(!state.sheetSync.url) return false;
+  const note = document.getElementById('operadoresSyncNote');
+  try{
+    const res = await fetch(sheetUrl(`?sheet=${encodeURIComponent('OPERADORES')}`), { method:'GET' });
+    const rows = await res.json();
+    const list = [];
+    rows.forEach(obj=>{
+      const rawFoto = findFlexKey(obj, 'FOTOCHECK', 'CODIGO', 'CÓDIGO');
+      const fotocheck = String(rawFoto !== undefined && rawFoto !== null ? rawFoto : '').replace(/^'/,'').trim();
+      if(!fotocheck) return;
+      const nombre = String(findFlexKey(obj, 'NOMBRE') || '').trim();
+      const rawActivo = findFlexKey(obj, 'ACTIVO');
+      const activo = rawActivo === undefined || rawActivo === null || String(rawActivo).trim() === '' ? true : String(rawActivo).trim().toUpperCase() !== 'NO';
+      const accesos = {};
+      SYS_ORDER.forEach(sys=>{
+        const raw = findFlexKey(obj, SYS[sys].label, sys.toUpperCase());
+        accesos[sys] = String(raw !== undefined && raw !== null ? raw : '').trim().toUpperCase() === 'SI';
+      });
+      list.push({ fotocheck, nombre, accesos, activo });
+    });
+    state.operadores = list;
+    scheduleSave();
+    if(note) note.textContent = list.length ? `${list.length} operador(es) cargado(s) desde Google Sheets.` : 'No se encontraron operadores en la hoja OPERADORES.';
+    if(!silent) showToast(list.length ? `Operadores actualizados (${list.length})` : 'No se encontraron operadores en la hoja OPERADORES');
+    if(document.getElementById('accessOverlay') && document.getElementById('accessOverlay').classList.contains('open')) renderOperadoresAdminList();
+    return true;
+  }catch(e){
+    if(note) note.textContent = '✗ No se pudo leer la hoja OPERADORES. Revisa que exista esa pestaña y que el doGet esté actualizado.';
     return false;
   }
 }
@@ -6871,7 +7387,7 @@ function dailyReportItems(sys, dateStr){
     state.tendido.forEach(r=>{
       if(!sameLocalDate(r.lastEditedAt, dateStr)) return;
       const tendidos = r.routeStates.filter(s=>s==='ok').length;
-      const cambios = fieldChanges([['Tramos tendidos', `${tendidos}/${r.route.length}`],['Real Length',r.real_length],['COIL',r.coil]]);
+      const cambios = fieldChanges([['Tramos tendidos', `${tendidos}/${r.routeStates.length}`],['Real Length',r.real_length],['COIL',r.coil]]);
       if(cambios.length === 0) return;
       out.push({ tag:r.cableNumber||('Cable #'+r.id), nivel:'', area:(r.from_area||r.to_area)?('Área '+(r.from_area||r.to_area)):'', estado: tendidoStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Observación',r.obsPhotos]]), date:r.lastEditedAt, sistema:SYS.tendido.label, uid:r.id, fotosLink:r.fotosLink, pct:weightedProgress('tendido', r) });
     });
@@ -7236,7 +7752,7 @@ function renderLandingCards(){
     return `<div class="sys-card" data-sys="${id}">
       <div class="sys-card-top"><span class="sys-card-dot" style="background:${s.accent}"></span><span class="sys-card-label">${s.label}</span><span class="sys-card-sub">${s.subtitle}<br>${count} registros</span></div>
       <div class="sys-card-row">
-        <input type="password" inputmode="numeric" maxlength="8" placeholder="Código para editar" class="landing-pin-input" data-sys="${id}">
+        <input type="password" inputmode="text" maxlength="20" placeholder="Código de fotocheck" class="landing-pin-input" data-sys="${id}">
         <button style="background:${s.accent}" class="landing-enter-btn" data-sys="${id}">Entrar</button>
       </div>
       <div class="landing-err" data-sys-err="${id}"></div>
@@ -7259,10 +7775,11 @@ function renderLandingCards(){
       const errEl = list.querySelector(`.landing-err[data-sys-err="${sys}"]`);
       const ok = await verifyBiometricForSys(sys);
       if(ok){
+        currentOperator = getBioOperator(sys);
         unlockedSystems.add(sys);
         closeLanding();
         switchSystem(sys);
-        showToast(`${SYS[sys].label} desbloqueado para editar`);
+        showToast(`${currentOperator && currentOperator.nombre ? currentOperator.nombre + ' — ' : ''}${SYS[sys].label} desbloqueado para editar`);
       } else {
         errEl.textContent = 'No se pudo verificar la huella / Face ID.';
       }
@@ -7275,14 +7792,16 @@ function renderLandingCards(){
       const input = list.querySelector(`.landing-pin-input[data-sys="${sys}"]`);
       const errEl = list.querySelector(`.landing-err[data-sys-err="${sys}"]`);
       const val = input.value.trim();
-      if(val && val === state.access[sys].pin){
-        unlockedSystems.add(sys);
+      const result = attemptFotocheckUnlock(sys, val);
+      if(result.ok){
+        currentOperator = result.operador ? { fotocheck: result.operador.fotocheck, nombre: result.operador.nombre } : null;
+        unlockedSystems.add(result.restrictedTimbrado ? 'timbrado' : sys);
         closeLanding();
         switchSystem(sys);
-        showToast(`${SYS[sys].label} desbloqueado para editar`);
+        showToast(`${currentOperator && currentOperator.nombre ? currentOperator.nombre + ' — ' : ''}${SYS[sys].label} desbloqueado para editar${result.restrictedTimbrado ? ' (solo Timbrado y Observaciones)' : ''}`);
         offerBiometricRegistration(sys);
       } else {
-        errEl.textContent = 'Código incorrecto, intenta de nuevo.';
+        errEl.textContent = result.reason === 'noaccess' ? 'Tu fotocheck no tiene acceso a este sistema.' : 'Código no reconocido, intenta de nuevo.';
       }
     };
     btn.addEventListener('click', go);
@@ -7351,7 +7870,7 @@ const EDITABLE_FIELDS = {
   // VESDA se había quedado afuera de este objeto — sus ediciones locales (hechas offline, antes
   // de que la sincronización con Sheets llegara a guardarlas) no se recuperaban al reabrir la app.
   vesda: ['montaje','inc_soporte','inc_pintura','observacion','obsPhotos','lastEditedAt','completedAt'],
-  tendido: ['routeStates','routeNotes','real_length','coil','observacion','obsPhotos','lastEditedAt','completedAt']
+  tendido: ['routeStates','routeNotes','routeReasons','routeExtra','real_length','coil','observacion','obsPhotos','lastEditedAt','completedAt']
 };
 const CABLE_SIDE_EDITABLE_FIELDS = ['minirutas','tendido','marca_gland','gland','fecha_gland','conexionado','fecha_conexionado','conexionadoPhotos','observacion','obsPhotos','lastEditedAt','completedAt'];
 function mergeSavedState(saved){
@@ -7363,6 +7882,8 @@ function mergeSavedState(saved){
   if(saved.documents) state.documents = saved.documents;
   if(saved.restricciones) state.restricciones = saved.restricciones;
   if(saved.metas) state.metas = saved.metas;
+  if(saved.operadores) state.operadores = saved.operadores;
+  if(saved.tendidoIngenieria) state.tendidoIngenieria = saved.tendidoIngenieria;
 
   const idFieldOf = { hvac:'uid', fds:'id', transit:'id', timbrado:'id', vesda:'id', tendido:'id' };
   let mergedAny = false;
@@ -7375,12 +7896,20 @@ function mergeSavedState(saved){
       if(!savedRow) return;
       mergedAny = true;
       EDITABLE_FIELDS[sys].forEach(f=>{ if(savedRow[f] !== undefined) freshRow[f] = savedRow[f]; });
-      // routeStates/routeNotes de TENDIDO CABLES van alineados por índice con route (dato fijo).
-      // Si el Excel de origen cambiara y route tuviera otro largo, se descarta lo guardado para
-      // ese campo puntual en vez de dejar los arrays desalineados.
+      // routeStates/routeNotes/routeReasons de TENDIDO CABLES van alineados por índice con el
+      // "recorrido efectivo" (route fijo del Excel + routeExtra, los tramos agregados a mano).
+      // Si el Excel de origen cambiara y route tuviera otro largo, o routeExtra quedara
+      // inconsistente, se descartan esos campos puntuales en vez de dejar los arrays desalineados.
       if(sys === 'tendido'){
-        if(!Array.isArray(freshRow.routeStates) || freshRow.routeStates.length !== freshRow.route.length) freshRow.routeStates = freshRow.route.map(()=>'pend');
-        if(!Array.isArray(freshRow.routeNotes) || freshRow.routeNotes.length !== freshRow.route.length) freshRow.routeNotes = freshRow.route.map(()=>'');
+        if(!Array.isArray(freshRow.routeExtra)) freshRow.routeExtra = [];
+        let expectedLen = freshRow.route.length + freshRow.routeExtra.length;
+        if(!Array.isArray(freshRow.routeStates) || freshRow.routeStates.length !== expectedLen){
+          freshRow.routeExtra = [];
+          expectedLen = freshRow.route.length;
+          freshRow.routeStates = freshRow.route.map(()=>'pend');
+        }
+        if(!Array.isArray(freshRow.routeNotes) || freshRow.routeNotes.length !== expectedLen) freshRow.routeNotes = freshRow.routeStates.map(()=>'');
+        if(!Array.isArray(freshRow.routeReasons) || freshRow.routeReasons.length !== expectedLen) freshRow.routeReasons = freshRow.routeStates.map(()=>'');
       }
     });
   });
@@ -7428,10 +7957,12 @@ async function init(){
     const syncSystems = ['hvac','fds','cableado','transit','timbrado','vesda','tendido'];
     const results = await Promise.all(syncSystems.map(sys=> pullFromSheet(sys, true).then(res=>({sys, ...res}))));
     await pullAccessFromSheet(true);
+    await pullOperadoresFromSheet(true);
     await pullNotesFromSheet(true);
     await pullDocumentsFromSheet(true);
     await pullRestriccionesFromSheet(true);
     await pullMetasFromSheet(true);
+    await pullIngenieriaFromSheet(true);
     renderAll();
     populateSelects();
     if(syncStatusEl){
