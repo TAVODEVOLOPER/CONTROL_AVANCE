@@ -1188,7 +1188,7 @@ function sheetUrl(queryString){
 function sheetPostBody(obj){
   return JSON.stringify({ ...obj, key: APP_SECRET });
 }
-const APP_VERSION = 'v15.16 · 7 sep 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
+const APP_VERSION = 'v15.17 · 19 sep 2026'; // súbela cada vez que subas una versión nueva, para verificar en el celular
 
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyhlAp-C_xr3a7ci5xlpvS5yBnw4udn17UH0UZUV0BqwJ9G16FetLcyJWerMfhVmffG/exec';
 let currentSystem = 'hvac';
@@ -1782,8 +1782,12 @@ function weightedSystemAverage(sys, rows){
 }
 let insightsActiveSys = 'hvac';
 function authorizedSystems(){
-  if(accessPanelUnlocked || plannerModeActive) return SYS_ORDER;
-  return SYS_ORDER.filter(s=>isUnlocked(s));
+  const base = (accessPanelUnlocked || plannerModeActive) ? SYS_ORDER : SYS_ORDER.filter(s=>isUnlocked(s));
+  // TIMBRADO ya no tiene lista propia (ver nota junto al sidebar) — no se ofrece como opción acá
+  // (Avance/Informe/Restricciones/Documentos/Notas), porque elegirlo llevaría estas pantallas a
+  // currentSystem='timbrado', que ya no tiene datos propios para mostrar. El Informe de Timbrado
+  // tiene su propio botón dedicado (ver openReport('timbrado')), sin pasar por este selector.
+  return base.filter(s => s !== 'timbrado');
 }
 function sysSelectHtml(id){
   const allowed = authorizedSystems();
@@ -1965,11 +1969,15 @@ document.getElementById('btnGoReport').addEventListener('click', ()=>{
   document.getElementById('insightsMenu').style.display = 'none';
   const body = document.getElementById('insightsBody');
   body.style.display = '';
+  // TIMBRADO ya no aparece en este selector (ver nota en authorizedSystems) — su Informe tiene
+  // este botón aparte, que lee de CONEXIONADO sin cambiar de sistema (openReport('timbrado')).
+  const canTimbrado = accessPanelUnlocked || plannerModeActive || isUnlocked('cableado') || isUnlocked('timbrado');
   body.innerHTML = `
     <button class="insights-back-btn" id="btnReportBack"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>Volver</button>
     ${sysSelectHtml('reportSysSelect')}
     <div class="insights-planning-box" style="margin-bottom:14px;">Elige el sistema y genera el informe diario o semanal, en PDF o Excel.</div>
     <button class="insights-save-btn" id="btnReportGo" style="width:100%; padding:12px;">Generar informe</button>
+    ${canTimbrado ? `<button class="insights-back-btn" id="btnReportTimbrado" style="width:100%; padding:10px; margin-top:10px; justify-content:center;">📋 Informe de Timbrado (aparte)</button>` : ''}
   `;
   document.getElementById('btnReportBack').addEventListener('click', showInsightsMenu);
   document.getElementById('reportSysSelect').addEventListener('change', (e)=>{ insightsActiveSys = e.target.value; });
@@ -1977,6 +1985,11 @@ document.getElementById('btnGoReport').addEventListener('click', ()=>{
     switchSystem(insightsActiveSys);
     closeInsights();
     openReport();
+  });
+  const btnTimb = document.getElementById('btnReportTimbrado');
+  if(btnTimb) btnTimb.addEventListener('click', ()=>{
+    closeInsights();
+    openReport('timbrado');
   });
 });
 document.getElementById('btnGoExport').addEventListener('click', ()=>{
@@ -6262,10 +6275,18 @@ function observationEntries(sys){
     }));
   }
   if(sys === 'timbrado'){
-    return state.timbrado.filter(r=>r.observacion).map(r=>({
-      tag:r.cable||('Cable #'+r.id), loc:`${r.from_tag||'—'} → ${r.to_tag||'—'}`,
-      text:r.observacion, photos:r.obsPhotos, date:r.lastEditedAt
-    }));
+    // Igual que en dailyReportItems: TIMBRADO lee de CONEXIONADO (state.cableado), no de la
+    // lista propia (state.timbrado) que quedó sin usarse desde la fusión — ver nota ahí.
+    const out2 = [];
+    state.cableado.forEach(r=>{
+      ['from','to'].forEach(side=>{
+        const obj = r[side];
+        if(obj.observacion && r.fecha_timbrado){
+          out2.push({ tag:`${r.cable} (${side.toUpperCase()})`, loc:`${r.from_tag||'—'} → ${r.to_tag||'—'}`, text:obj.observacion, photos:obj.obsPhotos, date:obj.lastEditedAt });
+        }
+      });
+    });
+    return out2;
   }
   if(sys === 'vesda'){
     return state.vesda.filter(r=>r.observacion).map(r=>({
@@ -6326,13 +6347,16 @@ function buildWorkbook(sys){
     ws['!cols'] = [{wch:6},{wch:6},{wch:14},{wch:22},{wch:16},{wch:10},{wch:12},{wch:8},{wch:14},{wch:12},{wch:14},{wch:18},{wch:16},{wch:12},{wch:10},{wch:10},{wch:14},{wch:14},{wch:16},{wch:10},{wch:12},{wch:34},{wch:16},{wch:12},{wch:12}];
     XLSX.utils.book_append_sheet(wb, ws, 'TRANSIT');
   } else if(sys === 'timbrado'){
-    const header = ['CABLE_NUMBER','From_Tag','From_Description','From_Area','To_Tag','To_Description','To_Area','TIMBRADO','FECHA_TIMBRADO','OBSERVACION','FECHA_EDICION','FOTOS_INCIDENCIA'];
-    const data = [header, ...state.timbrado.map(r=>[
-      r.cable, r.from_tag, r.from_description, r.from_area, r.to_tag, r.to_description, r.to_area,
-      r.timbrado, r.fecha_timbrado, r.observacion, formatDateTime(r.lastEditedAt), r.obsPhotos.length
+    // TIMBRADO lee de CONEXIONADO (state.cableado) desde V15.17 — ver nota en dailyReportItems.
+    // No hay descripción propia a nivel de cable en CONEXIONADO (From_Description/To_Description
+    // existían en la vieja lista separada de TIMBRADO, no en CABLEADO), por eso se omiten acá.
+    const header = ['CABLE_NUMBER','From_Tag','From_Area','To_Tag','To_Area','TIMBRADO','FECHA_TIMBRADO','OBSERVACION','FECHA_EDICION','FOTOS_INCIDENCIA'];
+    const data = [header, ...state.cableado.map(r=>[
+      r.cable, r.from_tag, r.from_area, r.to_tag, r.to_area,
+      r.timbrado, r.fecha_timbrado, [r.from.observacion, r.to.observacion].filter(Boolean).join(' | '), formatDateTime(r.lastEditedAt), r.from.obsPhotos.length + r.to.obsPhotos.length
     ])];
     const ws = XLSX.utils.aoa_to_sheet(data);
-    ws['!cols'] = [{wch:32},{wch:26},{wch:34},{wch:10},{wch:26},{wch:34},{wch:10},{wch:10},{wch:14},{wch:34},{wch:16},{wch:12}];
+    ws['!cols'] = [{wch:32},{wch:26},{wch:10},{wch:26},{wch:10},{wch:10},{wch:14},{wch:34},{wch:16},{wch:12}];
     XLSX.utils.book_append_sheet(wb, ws, 'TIMBRADO');
   } else if(sys === 'vesda'){
     // VESDA se había quedado afuera de este switch: el Excel exportado para VESDA no tenía
@@ -7328,6 +7352,11 @@ document.getElementById('importFile').addEventListener('change', (e)=>{
 
 /* ===================== Weekly report ===================== */
 let reportMode = 'weekly';
+// Permite abrir el Informe de Timbrado sin cambiar currentSystem a 'timbrado' (esa lista ya no
+// tiene datos propios — ver nota en authorizedSystems). openReport('timbrado') fija este override;
+// closeReport() lo limpia. Todo lo demás sigue leyendo currentSystem como siempre.
+let reportSysOverride = null;
+function currentReportSys(){ return reportSysOverride || currentSystem; }
 function todayLocalISO(){
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -7341,7 +7370,8 @@ function currentWeekMonToSat(){
   const toISO = (dt)=> `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
   return { start: toISO(monday), end: toISO(saturday) };
 }
-function openReport(){
+function openReport(forcedSys){
+  reportSysOverride = forcedSys || null;
   reportMode = 'weekly';
   document.querySelectorAll('.report-tab').forEach(t=>t.classList.toggle('active', t.dataset.reportTab==='weekly'));
   document.getElementById('reportDailyControls').style.display = 'none';
@@ -7357,8 +7387,8 @@ function openReport(){
   renderReport();
   document.getElementById('reportOverlay').classList.add('open');
 }
-function closeReport(){ document.getElementById('reportOverlay').classList.remove('open'); }
-document.getElementById('btnReportOpen').addEventListener('click', openReport);
+function closeReport(){ document.getElementById('reportOverlay').classList.remove('open'); reportSysOverride = null; }
+document.getElementById('btnReportOpen').addEventListener('click', ()=>openReport());
 document.getElementById('btnCloseReport').addEventListener('click', closeReport);
 document.getElementById('reportOverlay').addEventListener('click', (e)=>{ if(e.target.id==='reportOverlay') closeReport(); });
 document.querySelectorAll('.report-tab').forEach(tab=>{
@@ -7376,12 +7406,13 @@ document.getElementById('reportDailyDate').addEventListener('change', renderRepo
 document.getElementById('reportWeeklyStart').addEventListener('change', renderReport);
 document.getElementById('reportWeeklyEnd').addEventListener('change', renderReport);
 document.getElementById('btnExportReport').addEventListener('click', ()=>{
-  const wb = buildWorkbook(currentSystem);
-  XLSX.writeFile(wb, `${SYS[currentSystem].label}_Informe_Semanal_${dateStamp()}.xlsx`);
+  const sys = currentReportSys();
+  const wb = buildWorkbook(sys);
+  XLSX.writeFile(wb, `${SYS[sys].label}_Informe_Semanal_${dateStamp()}.xlsx`);
   showToast('Informe descargado');
 });
 document.getElementById('btnExportDailyPdf').addEventListener('click', ()=>{
-  const sys = currentSystem;
+  const sys = currentReportSys();
   if(reportMode === 'weekly'){
     buildWeeklyReportPDF(sys);
     return;
@@ -7396,7 +7427,7 @@ function renderReport(){
   if(reportMode === 'daily') renderDailyReport(); else renderWeeklyReport();
 }
 function renderWeeklyReport(){
-  const sys = currentSystem;
+  const sys = currentReportSys();
   const body = document.getElementById('reportBody');
   const { start, end } = getWeeklyRange();
   const items = weeklyReportItems(sys, start, end);
@@ -7472,11 +7503,16 @@ function dailyReportItems(sys, dateStr){
       out.push({ tag:r.tag||('Ítem #'+r.id), nivel:r.level, area:r.room?('Room '+r.room):'', estado: transitStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Fotografía',r.fotografiaPhotos],['Observación',r.obsPhotos]]), date:r.lastEditedAt, sistema:SYS.transit.label, uid:r.id, fotosLink:r.fotosLink, pct:weightedProgress('transit', r) });
     });
   } else if(sys === 'timbrado'){
-    state.timbrado.forEach(r=>{
+    // TIMBRADO ya no tiene lista propia — desde que se fusionó con CONEXIONADO, el dato real
+    // vive en el propio cable (row.timbrado/row.fecha_timbrado, a nivel de cable, no por lado).
+    // Este Informe de Timbrado (reactivado en V15.17) lee de state.cableado, no de state.timbrado
+    // (que quedó sin usarse — nada lo edita desde la fusión).
+    state.cableado.forEach(r=>{
       if(r.fecha_timbrado !== dateStr) return;
       const cambios = fieldChanges([['Timbrado',r.timbrado],['Fecha timbrado',r.fecha_timbrado]]);
       if(cambios.length === 0) return;
-      out.push({ tag:r.cable||('Cable #'+r.id), nivel:'', area:r.from_area?('Área '+r.from_area):'', estado: timbradoStatus(r)==='complete'?'Completo':'Pendiente', observacion:r.observacion, cambios, photos:labeledPhotos([['Observación',r.obsPhotos]]), date:r.lastEditedAt, sistema:SYS.timbrado.label, uid:r.id, fotosLink:r.fotosLink, pct:(timbradoStatus(r)==='complete'?100:0) });
+      const obs = [r.from.observacion, r.to.observacion].filter(Boolean).join(' | ');
+      out.push({ tag:r.cable||('Cable #'+r.id), nivel:r.level||'', area:r.from_area?('Área '+r.from_area):'', estado: timbradoStatus(r)==='complete'?'Completo':'Pendiente', observacion:obs, cambios, photos:labeledPhotos([['Observación (From)',r.from.obsPhotos],['Observación (To)',r.to.obsPhotos]]), date:r.lastEditedAt, sistema:SYS.timbrado.label, uid:r.id, fotosLink:r.from.fotosLink||r.to.fotosLink||'', pct:(timbradoStatus(r)==='complete'?100:0) });
     });
   } else if(sys === 'vesda'){
     state.vesda.forEach(r=>{
@@ -7498,7 +7534,7 @@ function dailyReportItems(sys, dateStr){
   return out.sort((a,b)=> (a.date||'').localeCompare(b.date||''));
 }
 function renderDailyReport(){
-  const sys = currentSystem;
+  const sys = currentReportSys();
   const dateStr = document.getElementById('reportDailyDate').value || todayLocalISO();
   const items = dailyReportItems(sys, dateStr);
   document.getElementById('reportSysName').textContent = `${SYS[sys].label} · lo modificado el ${formatDateShort(dateStr+'T00:00:00')}`;
@@ -7880,8 +7916,10 @@ function renderLandingCards(){
         currentOperator = getBioOperator(sys);
         unlockedSystems.add(sys);
         closeLanding();
-        switchSystem(sys);
-        showToast(`${currentOperator && currentOperator.nombre ? currentOperator.nombre + ' — ' : ''}${SYS[sys].label} desbloqueado para editar`);
+        // TIMBRADO ya no tiene tabla propia — su acceso ahora entra a CONEXIONADO en modo
+        // restringido (solo Timbrado y Observaciones), igual que el mismo click desde el menú lateral.
+        switchSystem(sys === 'timbrado' ? 'cableado' : sys);
+        showToast(`${currentOperator && currentOperator.nombre ? currentOperator.nombre + ' — ' : ''}${SYS[sys].label} desbloqueado para editar${sys === 'timbrado' ? ' (solo Timbrado y Observaciones)' : ''}`);
       } else {
         errEl.textContent = 'No se pudo verificar la huella / Face ID.';
       }
@@ -7899,8 +7937,10 @@ function renderLandingCards(){
         currentOperator = result.operador ? { fotocheck: result.operador.fotocheck, nombre: result.operador.nombre } : null;
         unlockedSystems.add(result.restrictedTimbrado ? 'timbrado' : sys);
         closeLanding();
-        switchSystem(sys);
-        showToast(`${currentOperator && currentOperator.nombre ? currentOperator.nombre + ' — ' : ''}${SYS[sys].label} desbloqueado para editar${result.restrictedTimbrado ? ' (solo Timbrado y Observaciones)' : ''}`);
+        // Igual que en el menú lateral: entrar por la tarjeta de TIMBRADO ya no abre su tabla
+        // propia (quedó sin usarse) — entra a CONEXIONADO en modo restringido.
+        switchSystem(sys === 'timbrado' ? 'cableado' : sys);
+        showToast(`${currentOperator && currentOperator.nombre ? currentOperator.nombre + ' — ' : ''}${SYS[sys].label} desbloqueado para editar${(result.restrictedTimbrado || sys === 'timbrado') ? ' (solo Timbrado y Observaciones)' : ''}`);
         offerBiometricRegistration(sys);
       } else {
         errEl.textContent = result.reason === 'noaccess' ? 'Tu fotocheck no tiene acceso a este sistema.' : 'Código no reconocido, intenta de nuevo.';
@@ -7913,7 +7953,8 @@ function renderLandingCards(){
   list.querySelectorAll('.sys-card-view').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       closeLanding();
-      switchSystem(btn.dataset.sysView);
+      const sysView = btn.dataset.sysView;
+      switchSystem(sysView === 'timbrado' ? 'cableado' : sysView);
     });
   });
 }
@@ -7975,6 +8016,11 @@ const EDITABLE_FIELDS = {
   tendido: ['routeStates','routeNotes','routeReasons','routeExtra','real_length','coil','observacion','obsPhotos','lastEditedAt','completedAt']
 };
 const CABLE_SIDE_EDITABLE_FIELDS = ['minirutas','tendido','marca_gland','gland','fecha_gland','conexionado','fecha_conexionado','conexionadoPhotos','observacion','obsPhotos','lastEditedAt','completedAt'];
+// Campos a nivel de CABLE (no por lado From/To) — Timbrado vive acá desde que se fusionó con
+// CONEXIONADO. mergeSavedState() solo restauraba from/to; un Timbrado cargado offline y todavía
+// sin sincronizar se perdía al recargar la app porque nunca se restauraba desde lo guardado
+// localmente (bug encontrado al reactivar el Informe de Timbrado en V15.17).
+const CABLE_TOP_EDITABLE_FIELDS = ['timbrado','fecha_timbrado','imputado','fecha_imputado','lastEditedAt','lastEditedBy'];
 function mergeSavedState(saved){
   if(!saved) return;
   if(saved.sheetSync) state.sheetSync = { ...state.sheetSync, ...saved.sheetSync };
@@ -8021,6 +8067,7 @@ function mergeSavedState(saved){
       const savedRow = savedById.get(freshRow.id);
       if(!savedRow) return;
       mergedAny = true;
+      CABLE_TOP_EDITABLE_FIELDS.forEach(f=>{ if(savedRow[f] !== undefined) freshRow[f] = savedRow[f]; });
       if(savedRow.from){ CABLE_SIDE_EDITABLE_FIELDS.forEach(f=>{ if(savedRow.from[f] !== undefined) freshRow.from[f] = savedRow.from[f]; }); }
       if(savedRow.to){ CABLE_SIDE_EDITABLE_FIELDS.forEach(f=>{ if(savedRow.to[f] !== undefined) freshRow.to[f] = savedRow.to[f]; }); }
     });
